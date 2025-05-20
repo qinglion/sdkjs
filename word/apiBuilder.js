@@ -182,7 +182,22 @@
 			}
 		}
 	}
-
+	
+	/**
+	 * This element specifies the information which shall be used to establish a mapping to an XML element stored within a Custom XML.
+	 * @typedef {Object} XmlMapping
+	 * @property {string} prefixMapping Specifies the set of prefix mappings which shall be used to interpret the XPath expression specified on the xpath.
+	 * @property {string} xpath Local timestamp of the comment.
+	 * @property {string} storeItemID Specifies the custom XML data identifier.
+	 * @example
+	 * {
+	 *   "prefixMapping": "xmlns:ns0='http://example.com/example'",
+	 *   "xpath": "//ns0:book",
+	 *   "storeItemID": "testXmlPart"
+	 * }
+	 */
+	
+	
 	/**
 	 * Class representing a bookmark in the document.
 	 * @constructor
@@ -4809,24 +4824,6 @@
 	};
 
 	/**
-	 * Creates a new data binding for the given parameters.
-	 * This method initializes an ApiDataBinding instance with the specified prefix, itemId, and xPath.
-	 * @memberof Api
-	 * @typeofeditors ["CDE"]
-	 * @since 9.0.0
-	 * @param {string} prefix - The prefix to be used for the data binding.
-	 * @param {string} itemId - The item ID associated with the data binding.
-	 * @param {string} xPath - The XPath expression used to define the binding.
-	 * @returns {ApiDataBinding} A new instance of ApiDataBinding.
-	 * @see office-js-api/Examples/{Editor}/Api/Methods/CreateDataBinding.js
-	 */
-	Api.prototype.CreateDataBinding = function(prefix, itemId, xPath)
-	{
-		return new ApiDataBinding(new AscWord.DataBinding(prefix, itemId, xPath));
-	};
-
-
-	/**
 	 * Saves changes to the specified document.
 	 * @typeofeditors ["CDE"]
 	 * @memberof Api
@@ -6419,79 +6416,6 @@
 	ApiCustomXmlNode.prototype.GetAttribute = function(name)
 	{
 		return this.CustomXmlContent.attributes[name] || null;
-	};
-
-	/**
-	 * Class representing a data binding.
-	 *
-	 * @constructor
-	 * @memberof Api
-	 * @since 9.0.0
-	 * @param DataBinding
-	 */
-	function ApiDataBinding(DataBinding)
-	{
-		this.DataBinding = DataBinding;
-		this.ItemId = DataBinding.getItemId();
-		this.Prefix = DataBinding.getPrefix();
-		this.xPath = DataBinding.getXPath();
-	}
-	ApiDataBinding.prototype = Object.create(ApiDataBinding.prototype);
-	ApiDataBinding.prototype.constructor = ApiDataBinding;
-
-	/**
-	 * Returns a type of the ApiDataBinding class.
-	 * @memberof ApiDataBinding
-	 * @typeofeditors ["CDE"]
-	 * @returns {"dataBinding"}
-	 * @see office-js-api/Examples/{Editor}/ApiDataBinding/Methods/GetClassType.js
-	 */
-	ApiDataBinding.prototype.GetClassType = function()
-	{
-		return "dataBinding";
-	};
-
-
-	/**
-	 * Retrieves the prefix of the data binding.
-	 *
-	 * @memberof ApiDataBinding
-	 * @typeofeditors ["CDE"]
-	 * @since 9.0.0
-	 * @returns {string} The prefix of the data binding.
-	 * @see office-js-api/Examples/{Editor}/ApiDataBinding/Methods/GetPrefix.js
-	 */
-	ApiDataBinding.prototype.GetPrefix = function()
-	{
-		return this.DataBinding.getPrefix();
-	};
-
-	/**
-	 * Retrieves the item ID of the data binding.
-	 *
-	 * @memberof ApiDataBinding
-	 * @typeofeditors ["CDE"]
-	 * @since 9.0.0
-	 * @returns {string} The item ID of the data binding.
-	 * @see office-js-api/Examples/{Editor}/ApiDataBinding/Methods/GetItemId.js
-	 */
-	ApiDataBinding.prototype.GetItemId = function()
-	{
-		return this.DataBinding.getItemId();
-	}
-
-	/**
-	 * Retrieves the XPath of the data binding.
-	 *
-	 * @memberof ApiDataBinding
-	 * @typeofeditors ["CDE"]
-	 * @since 9.0.0
-	 * @returns {string} The XPath of the data binding.
-	 * @see office-js-api/Examples/{Editor}/ApiDataBinding/Methods/GetXPath.js
-	 */
-	ApiDataBinding.prototype.GetXPath = function()
-	{
-		return this.DataBinding.getXPath();
 	};
 
 	//------------------------------------------------------------------------------------------------------------------
@@ -19694,26 +19618,52 @@
 
 	/**
 	 * Sets the data binding for the content control.
-	 *
 	 * @memberof ApiInlineLvlSdt
 	 * @typeofeditors ["CDE"]
 	 * @since 9.0.0
-	 * @param {ApiDataBinding | null} oApiDataBinding - The data binding to associate with the content control.
+	 * @param {XmlMapping | null} xmlMapping - The data binding to associate with the content control.
 	 * @returns {boolean}
 	 * @see office-js-api/Examples/{Editor}/ApiInlineLvlSdt/Methods/SetDataBinding.js
 	 */
-	ApiInlineLvlSdt.prototype.SetDataBinding = function(oApiDataBinding)
+	ApiInlineLvlSdt.prototype.SetDataBinding = function(xmlMapping)
 	{
-		if (oApiDataBinding === null)
+		if (!xmlMapping)
 		{
 			this.Sdt.setDataBinding();
 			return true;
 		}
-		this.Sdt.setDataBinding(oApiDataBinding.DataBinding);
+		
+		let prefix = xmlMapping["prefixMapping"];
+		let itemId = xmlMapping["storeItemID"];
+		let xPath  = xmlMapping["xpath"];
+		
+		this.Sdt.setDataBinding(new AscWord.DataBinding(prefix, itemId, xPath));
 		this.Sdt.checkDataBinding();
 		return true;
 	};
-
+	
+	/**
+	 * Retrieves the data binding of the content control.
+	 *
+	 * @memberof ApiInlineLvlSdt
+	 * @typeofeditors ["CDE"]
+	 * @since 9.0.0
+	 * @returns {?XmlMapping} Returns the data binding of the content control if it exists, otherwise `null`.
+	 * @see office-js-api/Examples/{Editor}/ApiInlineLvlSdt/Methods/GetDataBinding.js
+	 */
+	ApiInlineLvlSdt.prototype.GetDataBinding = function()
+	{
+		let dataBinding = this.Sdt.getDataBinding();
+		if (!dataBinding)
+			return null;
+		
+		return {
+			"prefixMapping" : dataBinding.prefixMappings,
+			"xpath"         : dataBinding.xpath,
+			"storeItemID"   : dataBinding.storeItemID
+		};
+	};
+	
 	/**
 	 * Loads the value from the data binding of the content control.
 	 *
@@ -19727,25 +19677,7 @@
 	{
 		return this.Sdt.checkDataBinding();
 	};
-
-	/**
-	 * Retrieves the data binding of the content control.
-	 *
-	 * @memberof ApiInlineLvlSdt
-	 * @typeofeditors ["CDE"]
-	 * @since 9.0.0
-	 * @returns {null | ApiDataBinding} Returns the data binding of the content control if it exists, otherwise `null`.
-	 * @see office-js-api/Examples/{Editor}/ApiInlineLvlSdt/Methods/GetDataBinding.js
-	 */
-	ApiInlineLvlSdt.prototype.GetDataBinding = function()
-	{
-		let oDataBinding = this.Sdt.getDataBinding();
-		if (oDataBinding)
-			return new ApiDataBinding(oDataBinding);
-
-		return null;
-	};
-
+	
 	/**
 	 * Checks if the content control is a checkbox.
 	 *
@@ -20558,25 +20490,29 @@
 	{
 		return this.Sdt.GetLabel();
 	};
-
+	
 	/**
 	 * Sets the data binding for the content control.
-	 *
 	 * @memberof ApiBlockLvlSdt
 	 * @typeofeditors ["CDE"]
 	 * @since 9.0.0
-	 * @param {ApiDataBinding | null} oApiDataBinding - The data binding to be applied to the content control.
-	 * @returns {boolean} Returns `true` after successfully setting the data binding.
-	 * @constructor
+	 * @param {XmlMapping | null} xmlMapping - The data binding to associate with the content control.
+	 * @returns {boolean}
+	 * @see office-js-api/Examples/{Editor}/ApiBlockLvlSdt/Methods/SetDataBinding.js
 	 */
-	ApiBlockLvlSdt.prototype.SetDataBinding = function(oApiDataBinding)
+	ApiBlockLvlSdt.prototype.SetDataBinding = function(xmlMapping)
 	{
-		if (oApiDataBinding === null)
+		if (!xmlMapping)
 		{
 			this.Sdt.setDataBinding();
 			return true;
 		}
-		this.Sdt.setDataBinding(oApiDataBinding.DataBinding);
+		
+		let prefix = xmlMapping["prefixMapping"];
+		let itemId = xmlMapping["storeItemID"];
+		let xPath  = xmlMapping["xpath"];
+		
+		this.Sdt.setDataBinding(new AscWord.DataBinding(prefix, itemId, xPath));
 		this.Sdt.checkDataBinding();
 		return true;
 	};
@@ -20649,7 +20585,28 @@
 	{
 		return this.Sdt.IsPicture();
 	};
-
+	
+	/**
+	 * Retrieves the data binding of the content control.
+	 *
+	 * @memberof ApiBlockLvlSdt
+	 * @typeofeditors ["CDE"]
+	 * @since 9.0.0
+	 * @returns {?XmlMapping} Returns the data binding of the content control if it exists, otherwise `null`.
+	 */
+	ApiBlockLvlSdt.prototype.GetDataBinding = function()
+	{
+		let dataBinding = this.Sdt.getDataBinding();
+		if (!dataBinding)
+			return null;
+		
+		return {
+			"prefixMapping" : dataBinding.prefixMappings,
+			"xpath"         : dataBinding.xpath,
+			"storeItemID"   : dataBinding.storeItemID
+		};
+	};
+	
 	/**
 	 * Loads the value from the data binding of the content control.
 	 *
@@ -20662,24 +20619,7 @@
 	{
 		return this.Sdt.checkDataBinding();
 	};
-
-	/**
-	 * Retrieves the data binding of the content control.
-	 *
-	 * @memberof ApiBlockLvlSdt
-	 * @typeofeditors ["CDE"]
-	 * @since 9.0.0
-	 * @returns {null | ApiDataBinding} Returns the data binding of the content control if it exists, otherwise `null`.
-	 */
-	ApiBlockLvlSdt.prototype.GetDataBinding = function()
-	{
-		let oDataBinding = this.Sdt.getDataBinding();
-		if (oDataBinding)
-			return new ApiDataBinding(oDataBinding);
-
-		return null;
-	};
-
+	
 	/**
 	 * Sets the alias attribute to the current container.
 	 * @memberof ApiBlockLvlSdt
@@ -24189,7 +24129,6 @@
 	Api.prototype["CreateWordArt"]		             = Api.prototype.CreateWordArt;
 	Api.prototype["CreateOleObject"]		         = Api.prototype.CreateOleObject;
 	Api.prototype["GetFullName"]		             = Api.prototype.GetFullName;
-	Api.prototype["CreateDataBinding"]				 = Api.prototype.CreateDataBinding;
 
 	Api.prototype["ConvertDocument"]		         = Api.prototype.ConvertDocument;
 	Api.prototype["FromJSON"]		                 = Api.prototype.FromJSON;
@@ -25180,12 +25119,6 @@
 	ApiCustomXmlNode.prototype["SetXml"]			= ApiCustomXmlNode.prototype.SetXml;
 	ApiCustomXmlNode.prototype["UpdateAttribute"]	= ApiCustomXmlNode.prototype.UpdateAttribute;
 	ApiCustomXmlNode.prototype["GetClassType"]		= ApiCustomXmlNode.prototype.GetClassType;
-
-	ApiDataBinding.prototype["GetItemId"]			= ApiDataBinding.prototype.GetItemId;
-	ApiDataBinding.prototype["GetPrefix"]			= ApiDataBinding.prototype.GetPrefix;
-	ApiDataBinding.prototype["GetXPath"]			= ApiDataBinding.prototype.GetXPath;
-	ApiDataBinding.prototype["GetClassType"]		= ApiDataBinding.prototype.GetClassType;
-
 
 	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	// Export for internal usage
