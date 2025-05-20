@@ -35,19 +35,19 @@
 (function()
 {
 	/**
-	 * @param {array} [uri]
-	 * @param {string} [itemId]
+	 * @param {AscWord.CustomXmlManager} xmlManager
+	 * @param {string} [itemId=null]
+	 * @param {CustomXmlPrefixMappings} [nsManager=null]
 	 * @param {CustomXmlContent} [content]
-	 * @param [oContentLink]
 	 *
 	 * Класс представляющий CustomXML
 	 * @constructor
 	 */
-	function CustomXml(oParent, itemId, nsManager, content)
+	function CustomXml(xmlManager, itemId, nsManager, content)
 	{
 		this.Id			= AscCommon.g_oIdCounter.Get_NewId();
-		this.Parent		= oParent;
-		this.itemId		= itemId ? itemId : this.setItemId();
+		this.Parent		= xmlManager;
+		this.itemId		= itemId ? itemId : AscCommon.CreateGUID();
 		this.content	= null;
 		this.nsManager	= (nsManager && nsManager instanceof CustomXmlPrefixMappings)
 			? nsManager
@@ -75,10 +75,8 @@
 	CustomXml.prototype.Delete = function ()
 	{
 		if (this.Parent)
-		{
-			this.Parent.deleteExactXml(this.itemId);
-			return true;
-		}
+			return this.Parent.deleteExactXml(this.itemId);
+		
 		return false;
 	};
 	CustomXml.prototype.Get_Id = function ()
@@ -119,7 +117,8 @@
 	{
 		this.Write_ToBinary2(Writer);
 	};
-	CustomXml.prototype.Read_FromBinary = function (Reader) {
+	CustomXml.prototype.Read_FromBinary = function (Reader)
+	{
 		this.Read_FromBinary2(Reader);
 	};
 	CustomXml.prototype.writeContent = function(strPrevXml, strCustomXml)
@@ -141,26 +140,18 @@
 		AscCommon.History.Add(new CChangesEndCustomXml(this, null, null, false));
 		this.m_aBinaryData = strCustomXml;
 	};
-
-	/**
-	 * Set UID of CustomXML
-	 * @param {uId} itemId
-	 */
-	CustomXml.prototype.setItemId = function ()
-	{
-		return AscCommon.CreateGUID();
-	};
 	/**
 	 * Set UID of CustomXML by given data
-	 * @param itemUId {string}
+	 * @param itemId {string}
 	 */
-	CustomXml.prototype.setItemIdManually = function (itemUId)
+	CustomXml.prototype.setItemId = function (itemId)
 	{
-		this.itemId = itemUId;
+		this.itemId = itemId;
 	};
 	/**
 	 * Add given uri to CustomXMl uri list
-	 * @param uri {string}
+	 * @param {string} prefix
+	 * @param {string} ns
 	 */
 	CustomXml.prototype.addNamespace = function(prefix, ns)
 	{
@@ -205,12 +196,13 @@
 		
 		this.addContentByXMLString(customXml);
 	};
-	CustomXml.prototype.addContentByXMLString = function (strCustomXml)
+	CustomXml.prototype.addContentByXMLString = function(strCustomXml)
 	{
 		if (strCustomXml === undefined)
 			return;
+		
 		if (strCustomXml instanceof CustomXmlContent)
-			strCustomXml = content.getStringFromBuffer();
+			strCustomXml = strCustomXml.getStringFromBuffer();
 
 		this.content = CustomXmlCreateContent(strCustomXml, this);
 	};
@@ -459,13 +451,13 @@
 		};
 		this.addElement = function(xmlStr, index)
 		{
-			let newItem = new CustomXmlContent(this, name, this.xml);
+			let newItem = new CustomXmlContent(this, null, this.xml);
 			newItem.setXml(xmlStr);
 
 			if (index !== undefined)
 				this.childNodes.splice(index, 0, newItem);
 			else
-				this.childNodes.splice(this.childNodes.length, 0, newItem);
+				this.childNodes.push(newItem);
 		};
 		this.setAttribute = function (attribute, value)
 		{
@@ -529,8 +521,7 @@
 					return;
 				}
 
-				let current = null;
-
+				let current;
 				if (!content.nodeName)
 				{
 					if (content.xmlQuestionHeader !== null)
@@ -762,15 +753,15 @@
 			this.namespaceUri = Reader.GetString2()
 			let url = [];
 
-			var Count = Reader.GetLong();
-			for (var Index = 0; Index < Count; Index++)
+			let Count = Reader.GetLong();
+			for (let Index = 0; Index < Count; Index++)
 			{
 				url.push(Reader.GetString2());
 				this.urls[url[url.length - 1]] = "";
 			}
-
-			var Count = Reader.GetLong();
-			for (var Index = 0; Index < Count; Index++)
+			
+			Count = Reader.GetLong();
+			for (let Index = 0; Index < Count; Index++)
 			{
 				let prefix = Reader.GetString2()
 				this.prefix[prefix] = url[Index];
