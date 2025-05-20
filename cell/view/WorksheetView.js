@@ -18682,8 +18682,9 @@
 		if (!isFormula && canConverToFormula) {
 			newFP = new AscCommonExcel.parserFormula(valText, cellWithFormula, this.model);
 			parseResult = new AscCommonExcel.ParseResult();
-			// todo добавить подсветку при выборе ref/range. Одно число не должно превращаться в формулу (+5) 
-			if (newFP.parse(AscCommonExcel.oFormulaLocaleInfo.Parse, AscCommonExcel.oFormulaLocaleInfo.DigitSep, parseResult)) {
+			// todo add backlight when choosing Ref/Range. One number should not turn into a formula (+5) 
+			if (newFP.parse(AscCommonExcel.oFormulaLocaleInfo.Parse, AscCommonExcel.oFormulaLocaleInfo.DigitSep, parseResult)
+				|| !(parseResult.error !== c_oAscError.ID.FrmlParenthesesCorrectCount)) {
 				valText = "=" + valText;
 				val[0].setFragmentText(valText);
 				isFormulaFromVal = true;
@@ -18704,7 +18705,8 @@
 					endTransaction();
 					return;
 				}
-			} else {
+			}
+
 				// we check for new links to external data
 				if (parseResult.externalReferenesNeedAdd) {
 					t.model.workbook.addExternalReferencesAfterParseFormulas(parseResult.externalReferenesNeedAdd);
@@ -18747,8 +18749,18 @@
 					// TODO ctrlKey+enter used to fills the selected cell range with the current entry. Dynamic arrays will have to work the same
 					// refInfo = {cannoChangeFormulaArray: true|false, applyByArray: true|false, ctrlKey: true|false, dynamicRange: range}
 
-					let canAutoExpand = newFP.findRefByOutStack(true);
-					let refInfo = canAutoExpand ? ws.getRefDynamicInfo(newFP, calculateResult) : false;
+					let canAutoExpand, refInfo;
+					if (parseResult.error === c_oAscError.ID.FrmlParenthesesCorrectCount) {
+						// parse again with correct amount of parentheses
+						newFP = new AscCommonExcel.parserFormula(newFP.getFormula(), cellWithFormula, this.model);
+						if (!newFP.parse(AscCommonExcel.oFormulaLocaleInfo.Parse, AscCommonExcel.oFormulaLocaleInfo.DigitSep, parseResult)) {
+							this.model.workbook.handlers.trigger("asc_onError", parseResult.error, c_oAscError.Level.NoCritical);
+							endTransaction();
+							return;
+						}
+					}
+					canAutoExpand = newFP.findRefByOutStack(true);
+					refInfo = canAutoExpand ? ws.getRefDynamicInfo(newFP, calculateResult) : false;
 					if (refInfo) {
 						if (refInfo.cannotChangeFormulaArray) {
 							t.handlers.trigger("onErrorEvent", c_oAscError.ID.CannotChangeFormulaArray,
@@ -18770,7 +18782,7 @@
 					endTransaction();
 					return false;
 				}
-			}
+
 		}
 
 		const pivotTable = c.worksheet.getPivotTable(c.bbox.c1, c.bbox.r1);

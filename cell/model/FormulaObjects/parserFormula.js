@@ -8146,6 +8146,7 @@ function parserFormula( formula, parent, _ws ) {
 			found_operand = null;
 
 			let needSplitString = true;
+			let removeUnarOperator = false;
 			let _doSplitString = function(str) {
 				// Cache concatenation operator to avoid repeated lookups
 				const concatOperator = cFormulaOperators["&"].prototype;
@@ -8542,6 +8543,12 @@ function parserFormula( formula, parent, _ws ) {
 						return false;
 					}
 					found_operand = new cNumber(_number);
+					if (local) {
+						let lastElem = elemArr[elemArr.length-1];
+						if (lastElem && lastElem.name && lastElem.name === "un_plus") {
+							removeUnarOperator = true;
+						}
+					}
 				} else {
 					parseResult.setError(c_oAscError.ID.FrmlAnotherParsingError);
 					if (!ignoreErrors) {
@@ -8631,6 +8638,10 @@ function parserFormula( formula, parent, _ws ) {
 			}
 
 			if (null !== found_operand) {
+				if (removeUnarOperator) {
+					elemArr.pop();
+				}
+
 				t.outStack.push(found_operand);
 				parseResult.addElem(found_operand);
 				parseResult.operand_expected = false;
