@@ -395,6 +395,17 @@
 			}
 			return res;
 		},
+		getImagesWithOtherExtension: function(imageLocal) {
+			var res = [];
+			var filename = GetFileName(imageLocal);
+			var prefix = this.mediaPrefix + filename + '.';
+			for (var i in this.urls) {
+				if (0 == i.indexOf(prefix) && !i.endsWith(imageLocal)) {
+					res.push(i.substring(prefix.length));
+				}
+			}
+			return res;
+		},
 
 		isThemeUrl: function(sUrl) {
 			return sUrl && (0 === sUrl.indexOf('theme'));
