@@ -4812,6 +4812,150 @@
 	};
 
 	/**
+	 * @typedef {Object} CheckBoxPr
+	 * @property {boolean} [Checked] Indicates whether the checkbox is checked by default.
+	 * @property {string} [CheckedSymbol] A custom symbol to display when the checkbox is checked (e.g., "☒").
+	 * @property {string} [UncheckedSymbol] A custom symbol to display when the checkbox is unchecked (e.g., "☐").
+	 */
+
+	/**
+	 * Creates a content control checkbox with the specified properties.
+	 * @memberof Api
+	 * @typeofeditors ["CDE"]
+	 * @since 9.0.0
+	 * @param {CheckBoxPr} checkBoxPr Configuration object for the checkbox.
+	 * @returns {ApiInlineLvlSdt} The created inline-level.
+	 */
+	Api.prototype.CreateContentControlCheckBox = function(checkBoxPr)
+	{
+		var oPr;
+		var oSdt = new CInlineLevelSdt();
+
+		if (checkBoxPr)
+		{
+			oPr = new AscWord.CSdtCheckBoxPr()
+			if (checkBoxPr["Checked"])
+				oPr.SetChecked(checkBoxPr["Checked"]);
+			if (checkBoxPr["CheckedSymbol"])
+				oPr.SetCheckedSymbol(checkBoxPr["CheckedSymbol"]);
+			if (checkBoxPr["UncheckedSymbol"])
+				oPr.SetUncheckedSymbol(checkBoxPr["UncheckedSymbol"]);
+		}
+
+		oSdt.ApplyCheckBoxPr(oPr);
+		return new ApiInlineLvlSdt(oSdt);
+	};
+
+	/**
+	 * Create a new picture container.
+	 *
+	 * @memberof Api
+	 * @typeofeditors ["CDE"]
+	 * @since 9.0.0
+	 * @param {EMU} [width] - Optional width of the image.
+	 * @param {EMU} [height] - Optional height of the image.
+	 * @return {ApiInlineLvlSdt}
+	 */
+	Api.prototype.CreateContentControlPicture = function(width, height)
+	{
+		var oSdt = new CInlineLevelSdt();
+
+		var nW = width ? private_EMU2MM(width) : -1;
+		var nH = height ? private_EMU2MM(height) : -1;
+
+		oSdt.ApplyPicturePr(true, nW, nH);
+		return new ApiInlineLvlSdt(oSdt);
+	};
+
+	/**
+	 * @typedef {Object} ListItem
+	 * @property {string} Display - The text to be displayed in the combo box or dropdown.
+	 * @property {string} Value - The internal value associated with the item.
+	 */
+
+	/**
+	 * Create a new combo box container with the given list of options.
+	 * @memberof Api
+	 * @typeofeditors ["CDE"]
+	 * @since 9.0.0
+	 * @param {Array<ListItem>} [list] - An array of objects representing the items in the combo box.
+	 * @param {string} [selected] - Optional value of the item that should be selected by default (must match one of the ListItem.Value).
+	 * @return {ApiInlineLvlSdt}
+	 */
+	Api.prototype.CreateContentControlComboBox = function(list, selected)
+	{
+		let oPr = createListForControlList(list);
+		var oSdt = new CInlineLevelSdt();
+		oSdt.ApplyComboBoxPr(oPr);
+		oSdt.SelectListItem(selected);
+		return new ApiInlineLvlSdt(oSdt);
+	};
+
+	/**
+	 * Create a new dropdown list container with the given list of options.
+	 *
+	 * @memberof Api
+	 * @typeofeditors ["CDE"]
+	 * @since 9.0.0
+	 * @param {Array<ListItem>} [list] - An array of objects representing the items in the dropdown list.
+	 * @param {string} [selected] - Optional value of the item that should be selected by default (must match one of the ListItem.Value).
+	 * @return {ApiInlineLvlSdt}
+	 */
+	Api.prototype.CreateContentControlDropDownList = function(list, selected)
+	{
+		let oPr = createListForControlList(list);
+		var oSdt = new CInlineLevelSdt();
+		oSdt.ApplyDropDownListPr(oPr);
+		oSdt.SelectListItem(selected);
+		return ToApiContentControl(oSdt);
+	};
+
+	function createListForControlList(list)
+	{
+		if (list)
+		{
+			let oPrTemp = new AscWord.CSdtComboBoxPr();
+
+			list.forEach(function(el) {
+				oPrTemp.AddItem(el["Display"], el["Value"]);
+			});
+
+			return oPrTemp;
+		}
+	};
+
+	/**
+	 * @typedef {Object} DatePickerPr
+	 * @property {Date|string} [Date] - The date to set initially. Can be a Date object or a string.
+	 * @property {DateFormatEnum} [DateFormat] - The format string to display the date.
+	 */
+
+	/**
+	 * Create a new date picker content control.
+	 * @memberof Api
+	 * @typeofeditors ["CDE"]
+	 * @since 9.0.0
+	 * @param {DatePickerPr} [datePickerPr] - Optional date picker properties.
+	 * @return {ApiInlineLvlSdt}
+	 */
+	Api.prototype.CreateContentControlDatePicker = function(datePickerPr)
+	{
+		var oPr;
+		if (datePickerPr)
+		{
+			oPr = new AscWord.CSdtDatePickerPr();
+			if (datePickerPr["Date"])
+				oPr.SetFullDate(datePickerPr["Date"]);
+			if (datePickerPr["DateFormat"])
+				oPr.SetDateFormat(datePickerPr["DateFormat"]);
+		}
+
+		var oSdt = new CInlineLevelSdt();
+		oSdt.ApplyDatePickerPr(oPr, true);
+		return ToApiContentControl(oSdt);
+	};
+
+	/**
 	 * Creates a new block level container.
 	 * @memberof Api
 	 * @typeofeditors ["CDE"]
@@ -8745,12 +8889,26 @@
 	 * This method creates a checkbox content control and sets its properties to default values.
 	 * @memberof ApiDocument
 	 * @since 9.0.0
+	 * @param {CheckBoxPr} checkBoxPr Configuration object for the checkbox.
 	 * @returns {ApiInlineLvlSdt} An instance of the ApiInlineLvlSdt representing the checkbox content control.
 	 * @see office-js-api/Examples/{Editor}/ApiDocument/Methods/AddCheckBoxContentControl.js
 	 */
-	ApiDocument.prototype.AddCheckBoxContentControl = function()
+	ApiDocument.prototype.AddCheckBoxContentControl = function(checkBoxPr)
 	{
-		var oCheckBoxCC = this.Document.AddContentControlCheckBox();
+		var oPr;
+
+		if (checkBoxPr)
+		{
+			oPr = new AscWord.CSdtCheckBoxPr()
+			if (checkBoxPr["Checked"])
+				oPr.SetChecked(checkBoxPr["Checked"]);
+			if (checkBoxPr["CheckedSymbol"])
+				oPr.SetCheckedSymbol(checkBoxPr["CheckedSymbol"]);
+			if (checkBoxPr["UncheckedSymbol"])
+				oPr.SetUncheckedSymbol(checkBoxPr["UncheckedSymbol"]);
+		}
+
+		var oCheckBoxCC = this.Document.AddContentControlCheckBox(oPr);
 		oCheckBoxCC.SetContentControlPr({});
 		return ToApiContentControl(oCheckBoxCC);
 	};
@@ -8760,12 +8918,17 @@
 	 * This method creates a picture content control and sets its properties to default values.
 	 * @memberof ApiDocument
 	 * @since 9.0.0
+	 * @param {EMU} [width] - Optional width of the image.
+	 * @param {EMU} [height] - Optional height of the image.
 	 * @returns {ApiInlineLvlSdt} An instance of the ApiInlineLvlSdt representing the picture content control.
 	 * @see office-js-api/Examples/{Editor}/ApiDocument/Methods/AddPictureContentControl.js
 	 */
-	ApiDocument.prototype.AddPictureContentControl = function()
+	ApiDocument.prototype.AddPictureContentControl = function(width, height)
 	{
-		var oPictureCC = this.Document.AddContentControlPicture();
+		var nW = width ? private_EMU2MM(width) : -1;
+		var nH = height ? private_EMU2MM(height) : -1;
+
+		var oPictureCC = this.Document.AddContentControlPicture(nW, nH);
 		oPictureCC.SetContentControlPr({});
 		return ToApiContentControl(oPictureCC);
 	};
@@ -8775,13 +8938,17 @@
 	 * @memberof ApiDocument
 	 * @typeofeditors ["CDE"]
 	 * @since 9.0.0
+	 * @param {Array<ListItem>} [list] - An array of objects representing the items in the combo box.
+	 * @param {string} [selected] - Optional value of the item that should be selected by default (must match one of the ListItem.Value).
 	 * @returns {ApiInlineLvlSdt}
 	 * @see office-js-api/Examples/{Editor}/ApiDocument/Methods/AddComboBoxContentControl.js
 	 */
-	ApiDocument.prototype.AddComboBoxContentControl = function()
+	ApiDocument.prototype.AddComboBoxContentControl = function(list, selected)
 	{
-		var oComboBox = this.Document.AddContentControlComboBox();
+		let oPr = createListForControlList(list);
+		var oComboBox = this.Document.AddContentControlComboBox(oPr);
 		oComboBox.SetContentControlPr({});
+		oComboBox.SelectListItem(selected);
 		return ToApiContentControl(oComboBox);
 	};
 	
@@ -8790,13 +8957,17 @@
 	 * @memberof ApiDocument
 	 * @typeofeditors ["CDE"]
 	 * @since 9.0.0
+	 * @param {Array<ListItem>} [list] - An array of objects representing the items in the combo box.
+	 * @param {string} [selected] - Optional value of the item that should be selected by default (must match one of the ListItem.Value).
 	 * @returns {ApiInlineLvlSdt}
 	 * @see office-js-api/Examples/{Editor}/ApiDocument/Methods/AddDropDownListContentControl.js
 	 */
-	ApiDocument.prototype.AddDropDownListContentControl = function()
+	ApiDocument.prototype.AddDropDownListContentControl = function(list, selected)
 	{
-		var oDrowDown = this.Document.AddContentControlDropDownList();
+		let oPr = createListForControlList(list);
+		var oDrowDown = this.Document.AddContentControlDropDownList(oPr);
 		oDrowDown.SetContentControlPr({});
+		oDrowDown.SelectListItem(selected);
 		return ToApiContentControl(oDrowDown);
 	};
 	
@@ -8805,13 +8976,24 @@
 	 * @memberof ApiDocument
 	 * @typeofeditors ["CDE"]
 	 * @since 9.0.0
+	 * @param {DatePickerPr} [datePickerPr] - Optional date picker properties.
 	 * @returns {ApiInlineLvlSdt}
 	 * @see office-js-api/Examples/{Editor}/ApiDocument/Methods/AddDatePickerContentControl.js
 	 */
-	ApiDocument.prototype.AddDatePickerContentControl = function()
+	ApiDocument.prototype.AddDatePickerContentControl = function(datePickerPr)
 	{
+		var oPr;
+		if (datePickerPr)
+		{
+			oPr = new AscWord.CSdtDatePickerPr();
+			if (datePickerPr["Date"])
+				oPr.SetFullDate(datePickerPr["Date"]);
+			if (datePickerPr["DateFormat"])
+				oPr.SetDateFormat(datePickerPr["DateFormat"]);
+		}
+
 		var oDate = this.Document.AddContentControlDatePicker();
-		oDate.SetContentControlPr({});
+		oDate.ApplyDatePickerPr(oPr, true);
 		return ToApiContentControl(oDate);
 	};
 	
