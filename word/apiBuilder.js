@@ -24312,6 +24312,12 @@
 	Api.prototype["CreateWordArt"]		             = Api.prototype.CreateWordArt;
 	Api.prototype["CreateOleObject"]		         = Api.prototype.CreateOleObject;
 	Api.prototype["GetFullName"]		             = Api.prototype.GetFullName;
+	Api.prototype["CreateContentControlCheckBox"]    = Api.prototype.CreateContentControlCheckBox;
+	Api.prototype["CreateContentControlPicture"]     = Api.prototype.CreateContentControlPicture;
+	Api.prototype["CreateContentControlComboBox"]    = Api.prototype.CreateContentControlComboBox;
+	Api.prototype["CreateContentControlDropDownList"]= Api.prototype.CreateContentControlDropDownList;
+	Api.prototype["CreateContentControlDatePicker"]  = Api.prototype.CreateContentControlDatePicker;
+
 
 	Api.prototype["ConvertDocument"]		         = Api.prototype.ConvertDocument;
 	Api.prototype["FromJSON"]		                 = Api.prototype.FromJSON;
