@@ -3244,7 +3244,7 @@ function (window, undefined) {
 			if (this._compareValues(valueForSearching, val, "=", opt_arg4)) {
 				if (array[k] >= startIndex && array[k] <= endIndex) {
 					resultIndex = array[k];
-					i = revert ? k + 1 : k - 1;
+					revert ? (i = k + 1) : (j = k - 1);
 				} else if (array[k] < startIndex) {
 					i = k + 1
 				} else {
