@@ -12429,10 +12429,10 @@
 			});
 		}
 		wsTo && wsTo.forEachConditionalFormattingRules(function (_rule) {
-			_rule.updateFormulas();
+			_rule.updateFormulas(wsTo);
 		});
 		wsFrom && wsFrom.forEachConditionalFormattingRules(function (_rule) {
-			_rule.updateFormulas();
+			_rule.updateFormulas(wsFrom);
 		});
 	};
 

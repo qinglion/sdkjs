@@ -638,10 +638,10 @@
 		}
 	};
 
-	CConditionalFormattingRule.prototype.updateFormulas = function () {
+	CConditionalFormattingRule.prototype.updateFormulas = function (ws) {
 		if (this.aRuleElements && this.aRuleElements.length) {
 			for (let i = 0; i < this.aRuleElements.length; i++) {
-				let _formula = this.aRuleElements[i] && this.aRuleElements[i].getFormula && this.aRuleElements[i].getFormula();
+				let _formula = this.aRuleElements[i] && this.aRuleElements[i]._f && this.aRuleElements[i].getFormula && this.aRuleElements[i].getFormula(ws);
 				if (_formula && _formula.Formula && this.aRuleElements[i] && this.aRuleElements[i].Text && this.aRuleElements[i].Text !== _formula.Formula) {
 					this.aRuleElements[i].Text = this.aRuleElements[i].getFormulaStr();
 				}
