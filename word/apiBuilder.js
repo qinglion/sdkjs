@@ -5874,24 +5874,7 @@
 
 		return xmlParts;
 	};
-
-	/**
-	 * Get XML data from the content control bound to custom XML.
-	 * @memberof ApiCustomXmlParts
-	 * @typeofeditors ["CDE"]
-	 * @since 9.0.0
-	 * @param {ApiInlineLvlSdt | ApiBlockLvlSdt} sdt - The content control (inline or block level).
-	 * @returns {string} - The XML data as a string for block-level controls or inner text for inline-level controls.
-	 * @see office-js-api/Examples/{Editor}/ApiCustomXmlParts/Methods/GetDataFromContentControl.js
-	 */
-	ApiCustomXmlParts.prototype.GetDataFromContentControl = function(oApiSdt)
-	{
-		if (oApiSdt)
-			return this.customXMLManager.GetDataFromContentControl(oApiSdt.Sdt);
-
-		return "";
-	};
-
+	
 	/**
 	 * Class representing a custom XML part.
 	 * @constructor
@@ -19658,17 +19641,33 @@
 	};
 	
 	/**
-	 * Loads the value from the data binding of the content control.
+	 * Update the content using the value from the XML mapping.
 	 *
 	 * @memberof ApiInlineLvlSdt
 	 * @typeofeditors ["CDE"]
 	 * @since 9.0.0
-	 * @returns {boolean} Returns `true` if the data binding is successfully checked, otherwise `false`.
-	 * @see office-js-api/Examples/{Editor}/ApiInlineLvlSdt/Methods/LoadFromDataBinding.js
+	 * @returns {boolean} Returns if the update was successful or not.
+	 * @see office-js-api/Examples/{Editor}/ApiInlineLvlSdt/Methods/UpdateFromXmlMapping.js
 	 */
-	ApiInlineLvlSdt.prototype.LoadFromDataBinding = function()
+	ApiInlineLvlSdt.prototype.UpdateFromXmlMapping = function()
 	{
 		return this.Sdt.checkDataBinding();
+	};
+	
+	/**
+	 * Get data for xml mapping.
+	 *
+	 * @memberof ApiInlineLvlSdt
+	 * @typeofeditors ["CDE"]
+	 * @since 9.0.0
+	 * @returns {string} String data representing the contents of the current content control.
+	 * @see office-js-api/Examples/{Editor}/ApiInlineLvlSdt/Methods/GetDataForXmlMapping.js
+	 */
+	ApiInlineLvlSdt.prototype.GetDataForXmlMapping = function()
+	{
+		let logicDocument = this.Sdt.GetLogicDocument();
+		let xmlManager = logicDocument ? logicDocument.getCustomXmlManager() : null;
+		return xmlManager ? xmlManager.GetDataFromContentControl(this.Sdt) : "";
 	};
 	
 	/**
@@ -20601,17 +20600,26 @@
 	};
 	
 	/**
-	 * Loads the value from the data binding of the content control.
+	 * Update the content using the value from the XML mapping.
 	 *
 	 * @memberof ApiBlockLvlSdt
 	 * @typeofeditors ["CDE"]
 	 * @since 9.0.0
-	 * @returns {boolean} Returns `true` if the data binding is successfully checked, otherwise `false`.
+	 * @returns {boolean} Returns if the update was successful or not.
+	 * @see office-js-api/Examples/{Editor}/ApiBlockLvlSdt/Methods/UpdateFromXmlMapping.js
 	 */
-	ApiBlockLvlSdt.prototype.LoadFromDataBinding = function()
-	{
-		return this.Sdt.checkDataBinding();
-	};
+	ApiBlockLvlSdt.prototype.UpdateFromXmlMapping = ApiInlineLvlSdt.prototype.UpdateFromXmlMapping;
+	
+	/**
+	 * Get data for xml mapping.
+	 *
+	 * @memberof ApiBlockLvlSdt
+	 * @typeofeditors ["CDE"]
+	 * @since 9.0.0
+	 * @returns {string} String data representing the contents of the current content control.
+	 * @see office-js-api/Examples/{Editor}/ApiBlockLvlSdt/Methods/GetDataForXmlMapping.js
+	 */
+	ApiBlockLvlSdt.prototype.GetDataForXmlMapping = ApiInlineLvlSdt.prototype.GetDataForXmlMapping;
 	
 	/**
 	 * Sets the alias attribute to the current container.
@@ -24856,18 +24864,19 @@
 	ApiInlineLvlSdt.prototype["GetBorderColor"]         = ApiInlineLvlSdt.prototype.GetBorderColor;
 	ApiInlineLvlSdt.prototype["SetBackgroundColor"]     = ApiInlineLvlSdt.prototype.SetBackgroundColor;
 	ApiInlineLvlSdt.prototype["GetBackgroundColor"]     = ApiInlineLvlSdt.prototype.GetBackgroundColor;
+	ApiInlineLvlSdt.prototype["GetDataBinding"]			= ApiInlineLvlSdt.prototype.GetDataBinding;
+	ApiInlineLvlSdt.prototype["SetDataBinding"]			= ApiInlineLvlSdt.prototype.SetDataBinding;
+	ApiInlineLvlSdt.prototype["UpdateFromXmlMapping"]   = ApiInlineLvlSdt.prototype.UpdateFromXmlMapping;
+	ApiInlineLvlSdt.prototype["GetDataForXmlMapping"]   = ApiInlineLvlSdt.prototype.GetDataForXmlMapping;
 
 	ApiInlineLvlSdt.prototype["AddListItem"]			= ApiInlineLvlSdt.prototype.AddListItem;
-	ApiInlineLvlSdt.prototype["GetDataBinding"]			= ApiInlineLvlSdt.prototype.GetDataBinding;
 	ApiInlineLvlSdt.prototype["IsCheckBox"]				= ApiInlineLvlSdt.prototype.IsCheckBox;
 	ApiInlineLvlSdt.prototype["IsComboBox"]				= ApiInlineLvlSdt.prototype.IsComboBox;
 	ApiInlineLvlSdt.prototype["IsDropDownList"]			= ApiInlineLvlSdt.prototype.IsDropDownList;
 	ApiInlineLvlSdt.prototype["IsPicture"]				= ApiInlineLvlSdt.prototype.IsPicture;
-	ApiInlineLvlSdt.prototype["LoadFromDataBinding"]	= ApiInlineLvlSdt.prototype.LoadFromDataBinding;
 	ApiInlineLvlSdt.prototype["RemoveListItem"]			= ApiInlineLvlSdt.prototype.RemoveListItem;
 	ApiInlineLvlSdt.prototype["Select"]					= ApiInlineLvlSdt.prototype.Select;
 	ApiInlineLvlSdt.prototype["SetCheckBoxChecked"]		= ApiInlineLvlSdt.prototype.SetCheckBoxChecked;
-	ApiInlineLvlSdt.prototype["SetDataBinding"]			= ApiInlineLvlSdt.prototype.SetDataBinding;
 	ApiInlineLvlSdt.prototype["SetDate"]				= ApiInlineLvlSdt.prototype.SetDate;
 	ApiInlineLvlSdt.prototype["SetDateFormat"]			= ApiInlineLvlSdt.prototype.SetDateFormat;
 	ApiInlineLvlSdt.prototype["SetPicture"]				= ApiInlineLvlSdt.prototype.SetPicture;
@@ -24937,11 +24946,11 @@
 	ApiBlockLvlSdt.prototype["GetBorderColor"]          = ApiBlockLvlSdt.prototype.GetBorderColor;
 	ApiBlockLvlSdt.prototype["SetBackgroundColor"]      = ApiBlockLvlSdt.prototype.SetBackgroundColor;
 	ApiBlockLvlSdt.prototype["GetBackgroundColor"]      = ApiBlockLvlSdt.prototype.GetBackgroundColor;
-
 	ApiBlockLvlSdt.prototype["GetDataBinding"]          = ApiBlockLvlSdt.prototype.GetDataBinding;
-	ApiBlockLvlSdt.prototype["LoadFromDataBinding"]     = ApiBlockLvlSdt.prototype.LoadFromDataBinding;
 	ApiBlockLvlSdt.prototype["SetDataBinding"]          = ApiBlockLvlSdt.prototype.SetDataBinding;
-
+	ApiBlockLvlSdt.prototype["UpdateFromXmlMapping"]    = ApiBlockLvlSdt.prototype.UpdateFromXmlMapping;
+	ApiBlockLvlSdt.prototype["GetDataForXmlMapping"]    = ApiBlockLvlSdt.prototype.GetDataForXmlMapping;
+	
 	ApiFormBase.prototype["GetClassType"]        = ApiFormBase.prototype.GetClassType;
 	ApiFormBase.prototype["GetFormType"]         = ApiFormBase.prototype.GetFormType;
 	ApiFormBase.prototype["GetFormKey"]          = ApiFormBase.prototype.GetFormKey;
@@ -25073,14 +25082,13 @@
 	ApiChartSeries.prototype["GetClassType"]      =  ApiChartSeries.prototype.GetClassType;
 	ApiChartSeries.prototype["ChangeChartType"]   =  ApiChartSeries.prototype.ChangeChartType;
 	ApiChartSeries.prototype["GetChartType"]      =  ApiChartSeries.prototype.GetChartType;
-
-	ApiCustomXmlParts.prototype["Add"]							= ApiCustomXmlParts.prototype.Add;
-	ApiCustomXmlParts.prototype["GetById"]						= ApiCustomXmlParts.prototype.GetById;
-	ApiCustomXmlParts.prototype["GetByNamespace"]				= ApiCustomXmlParts.prototype.GetByNamespace;
-	ApiCustomXmlParts.prototype["GetAll"]						= ApiCustomXmlParts.prototype.GetAll;
-	ApiCustomXmlParts.prototype["GetCount"]						= ApiCustomXmlParts.prototype.GetCount;
-	ApiCustomXmlParts.prototype["GetClassType"]					= ApiCustomXmlParts.prototype.GetClassType;
-	ApiCustomXmlParts.prototype["GetDataFromContentControl"]	= ApiCustomXmlParts.prototype.GetDataFromContentControl;
+	
+	ApiCustomXmlParts.prototype["Add"]            = ApiCustomXmlParts.prototype.Add;
+	ApiCustomXmlParts.prototype["GetById"]        = ApiCustomXmlParts.prototype.GetById;
+	ApiCustomXmlParts.prototype["GetByNamespace"] = ApiCustomXmlParts.prototype.GetByNamespace;
+	ApiCustomXmlParts.prototype["GetAll"]         = ApiCustomXmlParts.prototype.GetAll;
+	ApiCustomXmlParts.prototype["GetCount"]       = ApiCustomXmlParts.prototype.GetCount;
+	ApiCustomXmlParts.prototype["GetClassType"]   = ApiCustomXmlParts.prototype.GetClassType;
 
 	ApiCustomXmlPart.prototype["Delete"]			= ApiCustomXmlPart.prototype.Delete;
 	ApiCustomXmlPart.prototype["DeleteAttribute"]	= ApiCustomXmlPart.prototype.DeleteAttribute;
