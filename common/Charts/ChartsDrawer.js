@@ -5086,6 +5086,8 @@ CChartsDrawer.prototype =
 		var posY = this.calcProp.chartGutter._top;
 		var posMinorX;
 		var points = axis.xPoints;
+		let axisMin = axis.scaling && AscFormat.isRealNumber(axis.scaling.min) ? axis.scaling.min : null;
+		let axisMax = axis.scaling && AscFormat.isRealNumber(axis.scaling.max) ? axis.scaling.max : null;
 
 		if (!points) {
 			return;
@@ -5109,6 +5111,9 @@ CChartsDrawer.prototype =
 		var i;
 		for (i = 0; i < points.length; i++) {
 			if((isCatAxis && points[i].val < 0) && !isChartEx) {
+				continue;
+			}
+			if ((axisMin && points[i].val < axisMin) || (axisMax && points[i].val > axisMax)) {
 				continue;
 			}
 
@@ -16081,13 +16086,6 @@ axisChart.prototype = {
 		}
 		this.cChartDrawer.cShapeDrawer.bDrawSmartAttack = true;
 
-		this.cChartDrawer.cShapeDrawer.Graphics.SaveGrState();
-		var left = (this.chartProp.chartGutter._left - 1) / this.chartProp.pxToMM;
-		var top = (this.chartProp.chartGutter._top - 1) / this.chartProp.pxToMM;
-		var right = this.chartProp.trueWidth / this.chartProp.pxToMM;
-		var bottom = this.chartProp.trueHeight / this.chartProp.pxToMM;
-		this.cChartDrawer.cShapeDrawer.Graphics.AddClipRect(left, top, right + 1, bottom + 1);
-
 		if (this.paths.minorGridLines) {
 			path = this.paths.minorGridLines;
 			pen = this.axis.compiledMinorGridLines;
@@ -16098,8 +16096,6 @@ axisChart.prototype = {
 			path = this.paths.gridLines;
 			this.cChartDrawer.drawPath(path, pen);
 		}
-
-		this.cChartDrawer.cShapeDrawer.Graphics.RestoreGrState();
 
 		this.cChartDrawer.cShapeDrawer.bDrawSmartAttack = false;
 	},
