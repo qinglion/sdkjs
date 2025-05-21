@@ -3065,7 +3065,7 @@ function (window, undefined) {
 		 * @type {{number: {offset: number, data: {number: Uint32Array}}}}
 		 */
 		this.data = {};
-	};
+	}
 	/**
 	 * @param {number} rowColIndex
 	 * @param {number} startOffset
@@ -3074,10 +3074,7 @@ function (window, undefined) {
 	SortedCache.prototype.saveRange = function (rowColIndex, startOffset, data) {
 		const res = {};
 		for (let i in data) {
-			const typed = Uint32Array.from(data[i].map(function (elem) {
-				return elem.i;
-			}));
-			res[i] = typed;
+			res[i] = Uint32Array.from(data[i], function(elem) { return elem.i; });
 		}
 		this.data[rowColIndex] = {offset: startOffset, data: res};
 	};
@@ -3087,7 +3084,7 @@ function (window, undefined) {
 				dataToSort[i].sort(function (a, b) {
 					return a.v.value - b.v.value;
 				});
-			} else if (i !== String(cElementType.Empty)) {
+			} else if (i !== String(cElementType.empty)) {
 				dataToSort[i].sort(function (a, b) {
 					return String(a.v.value).toLowerCase().localeCompare(String(b.v.value).toLowerCase());
 				});
@@ -3225,13 +3222,12 @@ function (window, undefined) {
 	 * @param {Uint32Array} array
 	 * @param {LookUpElement} valueForSearching
 	 * @param {boolean} revert
-	 * @param {boolean} xlookup
 	 * @param {Worksheet} ws
 	 * @param {number} rowCol
 	 * @param {number} startIndex
 	 * @param {number} endIndex
 	 * @param {number} [opt_arg4]
-	 * @return {{found: number, nextVal: LookUpElement}}
+	 * @return {number}
 	 */
 	VHLOOKUPCache.prototype._indexedBinarySearch = function (array, valueForSearching, revert, ws, rowCol, startIndex, endIndex, opt_arg4) {
 		const t = this;
@@ -3242,49 +3238,25 @@ function (window, undefined) {
 		let i = 0;
 		let j = array.length - 1;
 		let resultIndex = -1;
-		if (revert) {
-			while (i <= j) {
-				const k = Math.floor((i + j) / 2);
-				let val = getValue(array[k]);
-				if (this._compareValues(valueForSearching, val, "=", opt_arg4)) {
-					if (array[k] >= startIndex && array[k] <= endIndex) {
-						resultIndex = array[k];
-						i = k + 1;
-					} else if (array[k] < startIndex) {
-						i = k + 1
-					} else {
-						j = k - 1;
-					}
-				} else if (this._compareValues(val, valueForSearching, ">", opt_arg4)) {
-					j = k - 1;
+		while (i <= j) {
+			const k = Math.floor((i + j) / 2);
+			let val = getValue(array[k]);
+			if (this._compareValues(valueForSearching, val, "=", opt_arg4)) {
+				if (array[k] >= startIndex && array[k] <= endIndex) {
+					resultIndex = array[k];
+					i = revert ? k + 1 : k - 1;
+				} else if (array[k] < startIndex) {
+					i = k + 1
 				} else {
-					i = k + 1;
-				}
-			}
-		} else {
-			while (i <= j) {
-				const k = Math.floor((i + j) / 2);
-				let val = getValue(array[k]);
-				if (this._compareValues(valueForSearching, val, "=", opt_arg4)) {
-					if (array[k] >= startIndex && array[k] <= endIndex) {
-						resultIndex = array[k];
-						j = k - 1;
-					} else if (array[k] < startIndex) {
-						i = k + 1;
-					} else {
-						j = k - 1;
-					}
-				} else if (this._compareValues(val, valueForSearching, ">", opt_arg4)) {
 					j = k - 1;
-				} else {
-					i = k + 1;
 				}
+			} else if (this._compareValues(val, valueForSearching, ">", opt_arg4)) {
+				j = k - 1;
+			} else {
+				i = k + 1;
 			}
 		}
-		if (resultIndex !== -1 && resultIndex >= startIndex && resultIndex <= endIndex) {
-			return resultIndex;
-		}
-		return -1;
+		return resultIndex;
 	};
 	/**
 	 * @private
@@ -3296,7 +3268,7 @@ function (window, undefined) {
 	 * @param {number} [opt_arg4]
 	 * @return {{found: number, nextVal: LookUpElement}}
 	 */
-	VHLOOKUPCache.prototype._defaultBinarySerach = function (array, valueForSearching, nextVal, revert, xlookup, opt_arg4) {
+	VHLOOKUPCache.prototype._defaultBinarySearch = function (array, valueForSearching, nextVal, revert, xlookup, opt_arg4) {
 		let canCompare;
 		let i = 0;
 		let j = array.length - 1;
@@ -3333,11 +3305,7 @@ function (window, undefined) {
 				}
 
 				if (valueForSearching.type !== val.type) {
-					if (valueForSearching.type !== cElementType.string && val.type !== cElementType.string) {
-						canCompare = true;
-					} else {
-						canCompare = false;
-					}
+					canCompare = valueForSearching.type !== cElementType.string && val.type !== cElementType.string;
 				}
 
 				if (this._compareValues(valueForSearching, val, "=", opt_arg4)) {
@@ -3417,7 +3385,7 @@ function (window, undefined) {
 				res = searchRes.found;
 				nextVal = searchRes.nextVal;
 			} else if (Math.abs(opt_arg5) === 2) {
-				const searchRes = this._defaultBinarySerach(cacheArray,valueForSearching, nextVal, revert, xlookup, opt_arg4);
+				const searchRes = this._defaultBinarySearch(cacheArray,valueForSearching, nextVal, revert, xlookup, opt_arg4);
 				res = searchRes.found;
 				nextVal = searchRes.nextVal;
 			}
@@ -3428,7 +3396,7 @@ function (window, undefined) {
 				}
 			}
 		} else if (lookup) {
-			const searchRes = this._defaultBinarySerach(cacheArray, valueForSearching, nextVal, false, xlookup, opt_arg4);
+			const searchRes = this._defaultBinarySearch(cacheArray, valueForSearching, nextVal, false, xlookup, opt_arg4);
 			res = searchRes.found;
 			nextVal = searchRes.nextVal;
 			if (res === -1 && cElementType.string === valueForSearching.type) {
