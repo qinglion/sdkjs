@@ -88,6 +88,12 @@
 		data.Read_FromBinary(reader);
 		return data;
 	};
+	DataBinding.fromObject = function(obj)
+	{
+		let data = new DataBinding();
+		data.fillFromObject(obj);
+		return data;
+	};
 	DataBinding.prototype.Write_ToBinary = function(writer)
 	{
 		let startPos = writer.GetCurPosition();
