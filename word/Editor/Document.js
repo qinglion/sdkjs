@@ -23092,21 +23092,10 @@ CDocument.prototype.RemoveContentControlWrapper = function(Id)
 };
 CDocument.prototype.GetContentControl = function(Id)
 {
-	if (undefined === Id || null === Id)
-	{
-		var oInfo          = this.GetSelectedElementsInfo({SkipTOC : true});
-		var oInlineControl = oInfo.GetInlineLevelSdt();
-		var oBlockControl  = oInfo.GetBlockLevelSdt();
-
-		if (oInlineControl)
-			return oInlineControl;
-		else if (oBlockControl)
-			return oBlockControl;
-
-		return null;
-	}
-
-	return this.TableId.Get_ById(Id);
+	if (undefined !== Id && null !== Id)
+		return this.TableId.Get_ById(Id);
+	
+	return this.GetCurrentContentControl();
 };
 CDocument.prototype.ClearContentControl = function(Id)
 {

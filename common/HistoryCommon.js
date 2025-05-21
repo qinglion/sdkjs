@@ -1438,7 +1438,13 @@
 	window['AscDFH'].historyitem_type_Endnotes           = 69 << 16;
 	window['AscDFH'].historyitem_type_ParagraphPermStart = 70 << 16;
 	window['AscDFH'].historyitem_type_ParagraphPermEnd   = 71 << 16;
-	
+	window['AscDFH'].historyitem_type_CustomXML_Add      = 72 << 16;
+	window['AscDFH'].historyitem_type_ChangeCustomXML    = 73 << 16;
+	window['AscDFH'].historyitem_type_CustomXML_Remove   = 74 << 16;
+	window['AscDFH'].historyitem_type_ChangeCustomXMLStart= 76 << 16;
+	window['AscDFH'].historyitem_type_ChangeCustomXMLPart = 77 << 16;
+	window['AscDFH'].historyitem_type_ChangeCustomXMLEnd  = 78 << 16;
+
 	window['AscDFH'].historyitem_type_CommonShape            = 1000 << 16; // Этот класс добавлен для элементов, у которых нет конкретного класса
 
 	window['AscDFH'].historyitem_type_ColorMod               = 1001 << 16;
@@ -1641,6 +1647,7 @@
 	window['AscDFH'].historyitem_type_ChartStyleEntry        = 1198 << 16;
 	window['AscDFH'].historyitem_type_MarkerLayout           = 1199 << 16;
 	window['AscDFH'].historyitem_type_TimelineSlicerView     = 1200 << 16;
+	window['AscDFH'].historyitem_type_ImageBlipFillPart      = 1201 << 16;
 
 
 	window['AscDFH'].historyitem_type_Address                          = 1201 << 16;

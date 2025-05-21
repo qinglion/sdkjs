@@ -3791,6 +3791,11 @@ CInlineLevelSdt.prototype.CorrectSingleLineFormContent = function()
 		}
 	}
 };
+CInlineLevelSdt.prototype.GetDataBinding = function()
+{
+	return this.Pr.DataBinding;
+};
+
 
 //--------------------------------------------------------export--------------------------------------------------------
 window['AscCommonWord'] = window['AscCommonWord'] || {};
