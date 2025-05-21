@@ -1169,15 +1169,12 @@
 					}
 
 
-					this.checkSelectedObjectsAndCallback(function () {
-						cropObject.checkSrcRect();
-						if (cropObject.createCropObject()) {
-							this.selection.cropSelection = cropObject;
-							this.sendCropState();
-							this.updateOverlay();
-							bRes = true;
-						}
-					}, [], false);
+					if (cropObject.createCropObject()) {
+						this.selection.cropSelection = cropObject;
+						this.sendCropState();
+						this.updateOverlay();
+						bRes = true;
+					}
 					return bRes;
 				},
 
