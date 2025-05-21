@@ -4825,6 +4825,7 @@
 	 * @since 9.0.0
 	 * @param {CheckBoxPr} checkBoxPr Configuration object for the checkbox.
 	 * @returns {ApiInlineLvlSdt} The created inline-level.
+	 * @see office-js-api/Examples/{Editor}/Api/Methods/CreateContentControlCheckBox.js
 	 */
 	Api.prototype.CreateContentControlCheckBox = function(checkBoxPr)
 	{
@@ -4848,13 +4849,13 @@
 
 	/**
 	 * Create a new picture container.
-	 *
 	 * @memberof Api
 	 * @typeofeditors ["CDE"]
 	 * @since 9.0.0
 	 * @param {EMU} [width] - Optional width of the image.
 	 * @param {EMU} [height] - Optional height of the image.
 	 * @return {ApiInlineLvlSdt}
+	 * @see office-js-api/Examples/{Editor}/Api/Methods/CreateContentControlPicture.js
 	 */
 	Api.prototype.CreateContentControlPicture = function(width, height)
 	{
@@ -4881,6 +4882,7 @@
 	 * @param {Array<ListItem>} [list] - An array of objects representing the items in the combo box.
 	 * @param {string} [selected] - Optional value of the item that should be selected by default (must match one of the ListItem.Value).
 	 * @return {ApiInlineLvlSdt}
+	 * @see office-js-api/Examples/{Editor}/Api/Methods/CreateContentControlComboBox.js
 	 */
 	Api.prototype.CreateContentControlComboBox = function(list, selected)
 	{
@@ -4893,13 +4895,13 @@
 
 	/**
 	 * Create a new dropdown list container with the given list of options.
-	 *
 	 * @memberof Api
 	 * @typeofeditors ["CDE"]
 	 * @since 9.0.0
 	 * @param {Array<ListItem>} [list] - An array of objects representing the items in the dropdown list.
 	 * @param {string} [selected] - Optional value of the item that should be selected by default (must match one of the ListItem.Value).
 	 * @return {ApiInlineLvlSdt}
+	 * @see office-js-api/Examples/{Editor}/Api/Methods/CreateContentControlDropDownList.js
 	 */
 	Api.prototype.CreateContentControlDropDownList = function(list, selected)
 	{
@@ -4937,6 +4939,7 @@
 	 * @since 9.0.0
 	 * @param {DatePickerPr} [datePickerPr] - Optional date picker properties.
 	 * @return {ApiInlineLvlSdt}
+	 * @see office-js-api/Examples/{Editor}/Api/Methods/CreateContentControlDatePicker.js
 	 */
 	Api.prototype.CreateContentControlDatePicker = function(datePickerPr)
 	{
