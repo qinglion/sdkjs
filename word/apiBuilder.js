@@ -4812,38 +4812,27 @@
 	};
 
 	/**
-	 * @typedef {Object} CheckBoxPr
-	 * @property {boolean} [Checked] Indicates whether the checkbox is checked by default.
-	 * @property {string} [CheckedSymbol] A custom symbol to display when the checkbox is checked (e.g., "☒").
-	 * @property {string} [UncheckedSymbol] A custom symbol to display when the checkbox is unchecked (e.g., "☐").
+	 * @typedef {Object} ContentControlCheckBoxPr
+	 * @property {boolean} [checked] Indicates whether the checkbox is checked by default.
+	 * @property {string} [checkedSymbol] A custom symbol to display when the checkbox is checked (e.g., "☒").
+	 * @property {string} [uncheckedSymbol] A custom symbol to display when the checkbox is unchecked (e.g., "☐").
 	 */
 
 	/**
-	 * Creates a content control checkbox with the specified properties.
+	 * Creates a check box content control.
 	 * @memberof Api
 	 * @typeofeditors ["CDE"]
 	 * @since 9.0.0
-	 * @param {CheckBoxPr} checkBoxPr Configuration object for the checkbox.
-	 * @returns {ApiInlineLvlSdt} The created inline-level.
+	 * @param {ContentControlCheckBoxPr} checkBoxPr Configuration object for the checkbox.
+	 * @returns {ApiInlineLvlSdt} Inline-level content control that represents a check box.
+	 * @see office-js-api/Examples/{Editor}/Api/Methods/CreateCheckBoxContentControl.js
 	 */
-	Api.prototype.CreateContentControlCheckBox = function(checkBoxPr)
+	Api.prototype.CreateCheckBoxContentControl = function(checkBoxPr)
 	{
-		var oPr;
-		var oSdt = new CInlineLevelSdt();
-
-		if (checkBoxPr)
-		{
-			oPr = new AscWord.CSdtCheckBoxPr()
-			if (checkBoxPr["Checked"])
-				oPr.SetChecked(checkBoxPr["Checked"]);
-			if (checkBoxPr["CheckedSymbol"])
-				oPr.SetCheckedSymbol(checkBoxPr["CheckedSymbol"]);
-			if (checkBoxPr["UncheckedSymbol"])
-				oPr.SetUncheckedSymbol(checkBoxPr["UncheckedSymbol"]);
-		}
-
-		oSdt.ApplyCheckBoxPr(oPr);
-		return new ApiInlineLvlSdt(oSdt);
+		let pr = getSdtCheckBoxPr(checkBoxPr);
+		let sdt = new CInlineLevelSdt();
+		sdt.ApplyCheckBoxPr(pr);
+		return new ApiInlineLvlSdt(sdt);
 	};
 
 	/**
@@ -4854,11 +4843,15 @@
 	 * @since 9.0.0
 	 * @param {EMU} [width] - Optional width of the image.
 	 * @param {EMU} [height] - Optional height of the image.
-	 * @return {ApiInlineLvlSdt}
+	 * @return {ApiInlineLvlSdt} Inline-level content control that represents a picture container.
+	 * @see office-js-api/Examples/{Editor}/Api/Methods/CreatePictureContentControl.js
 	 */
-	Api.prototype.CreateContentControlPicture = function(width, height)
+	Api.prototype.CreatePictureContentControl = function(width, height)
 	{
 		var oSdt = new CInlineLevelSdt();
+		
+		width  = GetIntParameter(width, 0);
+		height = GetIntParameter(height, 0);
 
 		var nW = width ? private_EMU2MM(width) : -1;
 		var nH = height ? private_EMU2MM(height) : -1;
@@ -4868,9 +4861,9 @@
 	};
 
 	/**
-	 * @typedef {Object} ListItem
-	 * @property {string} Display - The text to be displayed in the combo box or dropdown.
-	 * @property {string} Value - The internal value associated with the item.
+	 * @typedef {Object} ContentControlListItem
+	 * @property {string} display - The text to be displayed in the combo box or dropdown.
+	 * @property {string} value - The value associated with the item.
 	 */
 
 	/**
@@ -4878,17 +4871,23 @@
 	 * @memberof Api
 	 * @typeofeditors ["CDE"]
 	 * @since 9.0.0
-	 * @param {Array<ListItem>} [list] - An array of objects representing the items in the combo box.
-	 * @param {string} [selected] - Optional value of the item that should be selected by default (must match one of the ListItem.Value).
-	 * @return {ApiInlineLvlSdt}
+	 * @param {Array<ContentControlListItem>} [list] - An array of objects representing the items in the combo box.
+	 * @param {number} [selected=-1] - Index of the selected item.
+	 * @return {ApiInlineLvlSdt} Inline-level content control that represents a combo box.
+	 * @see office-js-api/Examples/{Editor}/Api/Methods/CreateComboBoxContentControl.js
 	 */
-	Api.prototype.CreateContentControlComboBox = function(list, selected)
+	Api.prototype.CreateComboBoxContentControl = function(list, selected)
 	{
-		let oPr = createListForControlList(list);
-		var oSdt = new CInlineLevelSdt();
-		oSdt.ApplyComboBoxPr(oPr);
-		oSdt.SelectListItem(selected);
-		return new ApiInlineLvlSdt(oSdt);
+		let comboBoxPr = getSdtComboBoxPr(list);
+		
+		selected = GetIntParameter(selected, -1);
+		
+		let sdt = new CInlineLevelSdt();
+		sdt.ApplyComboBoxPr(comboBoxPr);
+		if (-1 !== selected && list && list[selected])
+			sdt.SelectListItem(list[selected]["value"]);
+		
+		return new ApiInlineLvlSdt(sdt);
 	};
 
 	/**
@@ -4897,37 +4896,30 @@
 	 * @memberof Api
 	 * @typeofeditors ["CDE"]
 	 * @since 9.0.0
-	 * @param {Array<ListItem>} [list] - An array of objects representing the items in the dropdown list.
-	 * @param {string} [selected] - Optional value of the item that should be selected by default (must match one of the ListItem.Value).
-	 * @return {ApiInlineLvlSdt}
+	 * @param {Array<ContentControlListItem>} [list] - An array of objects representing the items in the drop-down list.
+	 * @param {number} [selected=-1] - Index of the selected item.
+	 * @return {ApiInlineLvlSdt} Inline-level content control that represents a drop down list.
+	 * @see office-js-api/Examples/{Editor}/Api/Methods/CreateDropDownListContentControl.js
 	 */
-	Api.prototype.CreateContentControlDropDownList = function(list, selected)
+	Api.prototype.CreateDropDownListContentControl = function(list, selected)
 	{
-		let oPr = createListForControlList(list);
-		var oSdt = new CInlineLevelSdt();
-		oSdt.ApplyDropDownListPr(oPr);
-		oSdt.SelectListItem(selected);
-		return ToApiContentControl(oSdt);
+		let comboBoxPr = getSdtComboBoxPr(list);
+		
+		selected = GetIntParameter(selected, -1);
+		
+		let sdt = new CInlineLevelSdt();
+		sdt.ApplyDropDownListPr(comboBoxPr);
+		if (-1 !== selected && list && list[selected])
+			sdt.SelectListItem(list[selected]["value"]);
+		
+		return new ApiInlineLvlSdt(sdt);
 	};
-
-	function createListForControlList(list)
-	{
-		if (list)
-		{
-			let oPrTemp = new AscWord.CSdtComboBoxPr();
-
-			list.forEach(function(el) {
-				oPrTemp.AddItem(el["Display"], el["Value"]);
-			});
-
-			return oPrTemp;
-		}
-	};
-
+	
 	/**
-	 * @typedef {Object} DatePickerPr
-	 * @property {Date|string} [Date] - The date to set initially. Can be a Date object or a string.
-	 * @property {DateFormatEnum} [DateFormat] - The format string to display the date.
+	 * @typedef {Object} ContentControlDatePr
+	 * @property {string} format - The date format, ex: mm.dd.yyyy
+	 * @property {string} lang   - The date language. Possible value for this parameter is a language identifier as defined by
+	 * RFC 4646/BCP 47. Example: "en-CA".
 	 */
 
 	/**
@@ -4935,24 +4927,17 @@
 	 * @memberof Api
 	 * @typeofeditors ["CDE"]
 	 * @since 9.0.0
-	 * @param {DatePickerPr} [datePickerPr] - Optional date picker properties.
-	 * @return {ApiInlineLvlSdt}
+	 * @param {ContentControlDatePr} [datePickerPr] - Optional date picker properties.
+	 * @return {ApiInlineLvlSdt} Inline-level content control that represents a date-time picker.
+	 * @see office-js-api/Examples/{Editor}/Api/Methods/CreateDatePickerContentControl.js
 	 */
-	Api.prototype.CreateContentControlDatePicker = function(datePickerPr)
+	Api.prototype.CreateDatePickerContentControl = function(datePickerPr)
 	{
-		var oPr;
-		if (datePickerPr)
-		{
-			oPr = new AscWord.CSdtDatePickerPr();
-			if (datePickerPr["Date"])
-				oPr.SetFullDate(datePickerPr["Date"]);
-			if (datePickerPr["DateFormat"])
-				oPr.SetDateFormat(datePickerPr["DateFormat"]);
-		}
-
-		var oSdt = new CInlineLevelSdt();
-		oSdt.ApplyDatePickerPr(oPr, true);
-		return ToApiContentControl(oSdt);
+		let pr = getSdtDatePickerPr(datePickerPr);
+		
+		let sdt = new CInlineLevelSdt();
+		sdt.ApplyDatePickerPr(pr, true);
+		return new ApiInlineLvlSdt(sdt);
 	};
 
 	/**
@@ -8886,36 +8871,21 @@
 	
 	/**
 	 * Adds a new checkbox content control to the document.
-	 * This method creates a checkbox content control and sets its properties to default values.
 	 * @memberof ApiDocument
 	 * @since 9.0.0
-	 * @param {CheckBoxPr} checkBoxPr Configuration object for the checkbox.
+	 * @param {ContentControlCheckBoxPr} checkBoxPr Configuration object for the checkbox.
 	 * @returns {ApiInlineLvlSdt} An instance of the ApiInlineLvlSdt representing the checkbox content control.
 	 * @see office-js-api/Examples/{Editor}/ApiDocument/Methods/AddCheckBoxContentControl.js
 	 */
 	ApiDocument.prototype.AddCheckBoxContentControl = function(checkBoxPr)
 	{
-		var oPr;
-
-		if (checkBoxPr)
-		{
-			oPr = new AscWord.CSdtCheckBoxPr()
-			if (checkBoxPr["Checked"])
-				oPr.SetChecked(checkBoxPr["Checked"]);
-			if (checkBoxPr["CheckedSymbol"])
-				oPr.SetCheckedSymbol(checkBoxPr["CheckedSymbol"]);
-			if (checkBoxPr["UncheckedSymbol"])
-				oPr.SetUncheckedSymbol(checkBoxPr["UncheckedSymbol"]);
-		}
-
-		var oCheckBoxCC = this.Document.AddContentControlCheckBox(oPr);
-		oCheckBoxCC.SetContentControlPr({});
+		let pr = getSdtCheckBoxPr(checkBoxPr);
+		var oCheckBoxCC = this.Document.AddContentControlCheckBox(pr);
 		return ToApiContentControl(oCheckBoxCC);
 	};
 	
 	/**
 	 * Adds a new picture content control to the document.
-	 * This method creates a picture content control and sets its properties to default values.
 	 * @memberof ApiDocument
 	 * @since 9.0.0
 	 * @param {EMU} [width] - Optional width of the image.
@@ -8927,9 +8897,8 @@
 	{
 		var nW = width ? private_EMU2MM(width) : -1;
 		var nH = height ? private_EMU2MM(height) : -1;
-
+		
 		var oPictureCC = this.Document.AddContentControlPicture(nW, nH);
-		oPictureCC.SetContentControlPr({});
 		return ToApiContentControl(oPictureCC);
 	};
 	
@@ -8938,18 +8907,21 @@
 	 * @memberof ApiDocument
 	 * @typeofeditors ["CDE"]
 	 * @since 9.0.0
-	 * @param {Array<ListItem>} [list] - An array of objects representing the items in the combo box.
+	 * @param {Array<ContentControlListItem>} [list] - An array of objects representing the items in the combo box.
 	 * @param {string} [selected] - Optional value of the item that should be selected by default (must match one of the ListItem.Value).
 	 * @returns {ApiInlineLvlSdt}
 	 * @see office-js-api/Examples/{Editor}/ApiDocument/Methods/AddComboBoxContentControl.js
 	 */
 	ApiDocument.prototype.AddComboBoxContentControl = function(list, selected)
 	{
-		let oPr = createListForControlList(list);
-		var oComboBox = this.Document.AddContentControlComboBox(oPr);
-		oComboBox.SetContentControlPr({});
-		oComboBox.SelectListItem(selected);
-		return ToApiContentControl(oComboBox);
+		let pr = getSdtComboBoxPr(list);
+		let comboBox = this.Document.AddContentControlComboBox(pr);
+		
+		selected = GetIntParameter(selected, -1);
+		if (-1 !== selected && list && list[selected])
+			comboBox.SelectListItem(list[selected]["value"]);
+		
+		return ToApiContentControl(comboBox);
 	};
 	
 	/**
@@ -8957,18 +8929,19 @@
 	 * @memberof ApiDocument
 	 * @typeofeditors ["CDE"]
 	 * @since 9.0.0
-	 * @param {Array<ListItem>} [list] - An array of objects representing the items in the combo box.
+	 * @param {Array<ContentControlListItem>} [list] - An array of objects representing the items in the combo box.
 	 * @param {string} [selected] - Optional value of the item that should be selected by default (must match one of the ListItem.Value).
 	 * @returns {ApiInlineLvlSdt}
 	 * @see office-js-api/Examples/{Editor}/ApiDocument/Methods/AddDropDownListContentControl.js
 	 */
 	ApiDocument.prototype.AddDropDownListContentControl = function(list, selected)
 	{
-		let oPr = createListForControlList(list);
-		var oDrowDown = this.Document.AddContentControlDropDownList(oPr);
-		oDrowDown.SetContentControlPr({});
-		oDrowDown.SelectListItem(selected);
-		return ToApiContentControl(oDrowDown);
+		let pr = getSdtComboBoxPr(list);
+		let dropDown = this.Document.AddContentControlDropDownList(pr);
+		if (-1 !== selected && list && list[selected])
+			dropDown.SelectListItem(list[selected]["value"]);
+		
+		return ToApiContentControl(dropDown);
 	};
 	
 	/**
@@ -8976,25 +8949,15 @@
 	 * @memberof ApiDocument
 	 * @typeofeditors ["CDE"]
 	 * @since 9.0.0
-	 * @param {DatePickerPr} [datePickerPr] - Optional date picker properties.
+	 * @param {ContentControlDatePr} [datePickerPr] - Optional date picker properties.
 	 * @returns {ApiInlineLvlSdt}
 	 * @see office-js-api/Examples/{Editor}/ApiDocument/Methods/AddDatePickerContentControl.js
 	 */
 	ApiDocument.prototype.AddDatePickerContentControl = function(datePickerPr)
 	{
-		var oPr;
-		if (datePickerPr)
-		{
-			oPr = new AscWord.CSdtDatePickerPr();
-			if (datePickerPr["Date"])
-				oPr.SetFullDate(datePickerPr["Date"]);
-			if (datePickerPr["DateFormat"])
-				oPr.SetDateFormat(datePickerPr["DateFormat"]);
-		}
-
-		var oDate = this.Document.AddContentControlDatePicker();
-		oDate.ApplyDatePickerPr(oPr, true);
-		return ToApiContentControl(oDate);
+		let pr = getSdtDatePickerPr(datePickerPr);
+		let datePicker = this.Document.AddContentControlDatePicker(pr);
+		return ToApiContentControl(datePicker);
 	};
 	
 	/**
@@ -24275,48 +24238,48 @@
 	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	// Export
 	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-	Api.prototype["GetDocument"]                     = Api.prototype.GetDocument;
-	Api.prototype["CreateParagraph"]                 = Api.prototype.CreateParagraph;
-	Api.prototype["CreateTable"]                     = Api.prototype.CreateTable;
-	Api.prototype["AddComment"]                      = Api.prototype.AddComment;
-	Api.prototype["CreateRun"]                       = Api.prototype.CreateRun;
-	Api.prototype["CreateHyperlink"]                 = Api.prototype.CreateHyperlink;
-	Api.prototype["CreateImage"]                     = Api.prototype.CreateImage;
-	Api.prototype["CreateShape"]                     = Api.prototype.CreateShape;
-	Api.prototype["CreateGroup"]                     = Api.prototype.CreateGroup;
-	Api.prototype["CreateChart"]                     = Api.prototype.CreateChart;
-	Api.prototype["CreateRGBColor"]                  = Api.prototype.CreateRGBColor;
-	Api.prototype["CreateSchemeColor"]               = Api.prototype.CreateSchemeColor;
-	Api.prototype["CreatePresetColor"]               = Api.prototype.CreatePresetColor;
-	Api.prototype["CreateSolidFill"]                 = Api.prototype.CreateSolidFill;
-	Api.prototype["CreateLinearGradientFill"]        = Api.prototype.CreateLinearGradientFill;
-	Api.prototype["CreateRadialGradientFill"]        = Api.prototype.CreateRadialGradientFill;
-	Api.prototype["CreatePatternFill"]               = Api.prototype.CreatePatternFill;
-	Api.prototype["CreateBlipFill"]                  = Api.prototype.CreateBlipFill;
-	Api.prototype["CreateNoFill"]                    = Api.prototype.CreateNoFill;
-	Api.prototype["CreateStroke"]                    = Api.prototype.CreateStroke;
-	Api.prototype["CreateGradientStop"]              = Api.prototype.CreateGradientStop;
-	Api.prototype["CreateBullet"]                    = Api.prototype.CreateBullet;
-	Api.prototype["CreateNumbering"]                 = Api.prototype.CreateNumbering;
-	Api.prototype["CreateInlineLvlSdt"]              = Api.prototype.CreateInlineLvlSdt;
-	Api.prototype["CreateBlockLvlSdt"]               = Api.prototype.CreateBlockLvlSdt;
-	Api.prototype["Save"]               			 = Api.prototype.Save;
-	Api.prototype["LoadMailMergeData"]               = Api.prototype.LoadMailMergeData;
-	Api.prototype["GetMailMergeTemplateDocContent"]  = Api.prototype.GetMailMergeTemplateDocContent;
-	Api.prototype["GetMailMergeReceptionsCount"]     = Api.prototype.GetMailMergeReceptionsCount;
-	Api.prototype["ReplaceDocumentContent"]          = Api.prototype.ReplaceDocumentContent;
-	Api.prototype["MailMerge"]                       = Api.prototype.MailMerge;
-	Api.prototype["ReplaceTextSmart"]				 = Api.prototype.ReplaceTextSmart;
-	Api.prototype["CoAuthoringChatSendMessage"]		 = Api.prototype.CoAuthoringChatSendMessage;
-	Api.prototype["CreateTextPr"]		             = Api.prototype.CreateTextPr;
-	Api.prototype["CreateWordArt"]		             = Api.prototype.CreateWordArt;
-	Api.prototype["CreateOleObject"]		         = Api.prototype.CreateOleObject;
-	Api.prototype["GetFullName"]		             = Api.prototype.GetFullName;
-	Api.prototype["CreateContentControlCheckBox"]    = Api.prototype.CreateContentControlCheckBox;
-	Api.prototype["CreateContentControlPicture"]     = Api.prototype.CreateContentControlPicture;
-	Api.prototype["CreateContentControlComboBox"]    = Api.prototype.CreateContentControlComboBox;
-	Api.prototype["CreateContentControlDropDownList"]= Api.prototype.CreateContentControlDropDownList;
-	Api.prototype["CreateContentControlDatePicker"]  = Api.prototype.CreateContentControlDatePicker;
+	Api.prototype["GetDocument"]                      = Api.prototype.GetDocument;
+	Api.prototype["CreateParagraph"]                  = Api.prototype.CreateParagraph;
+	Api.prototype["CreateTable"]                      = Api.prototype.CreateTable;
+	Api.prototype["AddComment"]                       = Api.prototype.AddComment;
+	Api.prototype["CreateRun"]                        = Api.prototype.CreateRun;
+	Api.prototype["CreateHyperlink"]                  = Api.prototype.CreateHyperlink;
+	Api.prototype["CreateImage"]                      = Api.prototype.CreateImage;
+	Api.prototype["CreateShape"]                      = Api.prototype.CreateShape;
+	Api.prototype["CreateGroup"]                      = Api.prototype.CreateGroup;
+	Api.prototype["CreateChart"]                      = Api.prototype.CreateChart;
+	Api.prototype["CreateRGBColor"]                   = Api.prototype.CreateRGBColor;
+	Api.prototype["CreateSchemeColor"]                = Api.prototype.CreateSchemeColor;
+	Api.prototype["CreatePresetColor"]                = Api.prototype.CreatePresetColor;
+	Api.prototype["CreateSolidFill"]                  = Api.prototype.CreateSolidFill;
+	Api.prototype["CreateLinearGradientFill"]         = Api.prototype.CreateLinearGradientFill;
+	Api.prototype["CreateRadialGradientFill"]         = Api.prototype.CreateRadialGradientFill;
+	Api.prototype["CreatePatternFill"]                = Api.prototype.CreatePatternFill;
+	Api.prototype["CreateBlipFill"]                   = Api.prototype.CreateBlipFill;
+	Api.prototype["CreateNoFill"]                     = Api.prototype.CreateNoFill;
+	Api.prototype["CreateStroke"]                     = Api.prototype.CreateStroke;
+	Api.prototype["CreateGradientStop"]               = Api.prototype.CreateGradientStop;
+	Api.prototype["CreateBullet"]                     = Api.prototype.CreateBullet;
+	Api.prototype["CreateNumbering"]                  = Api.prototype.CreateNumbering;
+	Api.prototype["CreateInlineLvlSdt"]               = Api.prototype.CreateInlineLvlSdt;
+	Api.prototype["CreateBlockLvlSdt"]                = Api.prototype.CreateBlockLvlSdt;
+	Api.prototype["Save"]                             = Api.prototype.Save;
+	Api.prototype["LoadMailMergeData"]                = Api.prototype.LoadMailMergeData;
+	Api.prototype["GetMailMergeTemplateDocContent"]   = Api.prototype.GetMailMergeTemplateDocContent;
+	Api.prototype["GetMailMergeReceptionsCount"]      = Api.prototype.GetMailMergeReceptionsCount;
+	Api.prototype["ReplaceDocumentContent"]           = Api.prototype.ReplaceDocumentContent;
+	Api.prototype["MailMerge"]                        = Api.prototype.MailMerge;
+	Api.prototype["ReplaceTextSmart"]                 = Api.prototype.ReplaceTextSmart;
+	Api.prototype["CoAuthoringChatSendMessage"]       = Api.prototype.CoAuthoringChatSendMessage;
+	Api.prototype["CreateTextPr"]                     = Api.prototype.CreateTextPr;
+	Api.prototype["CreateWordArt"]                    = Api.prototype.CreateWordArt;
+	Api.prototype["CreateOleObject"]                  = Api.prototype.CreateOleObject;
+	Api.prototype["GetFullName"]                      = Api.prototype.GetFullName;
+	Api.prototype["CreateCheckBoxContentControl"]     = Api.prototype.CreateCheckBoxContentControl;
+	Api.prototype["CreatePictureContentControl"]      = Api.prototype.CreatePictureContentControl;
+	Api.prototype["CreateComboBoxContentControl"]     = Api.prototype.CreateComboBoxContentControl;
+	Api.prototype["CreateDropDownListContentControl"] = Api.prototype.CreateDropDownListContentControl;
+	Api.prototype["CreateDatePickerContentControl"]   = Api.prototype.CreateDatePickerContentControl;
 
 
 	Api.prototype["ConvertDocument"]		         = Api.prototype.ConvertDocument;
@@ -26200,7 +26163,52 @@
 		}
 		return "unknown";
 	}
-
+	
+	function getSdtCheckBoxPr(pr)
+	{
+		let checkBoxPr = new AscWord.CSdtCheckBoxPr();
+		if (!pr)
+			return checkBoxPr;
+		
+		if (pr["checked"])
+			checkBoxPr.SetChecked(pr["checked"]);
+		if (pr["checkedSymbol"])
+			checkBoxPr.SetCheckedSymbol(pr["checkedSymbol"]);
+		if (pr["uncheckedSymbol"])
+			checkBoxPr.SetUncheckedSymbol(pr["uncheckedSymbol"]);
+		
+		return checkBoxPr;
+	}
+	
+	function getSdtComboBoxPr(list)
+	{
+		let comboBoxPr = new AscWord.CSdtComboBoxPr();
+		
+		if (!list || !Array.isArray(list))
+			return comboBoxPr;
+		
+		list.forEach(function(el) {
+			comboBoxPr.AddItem(el["display"], el["value"]);
+		});
+		
+		return comboBoxPr;
+	}
+	
+	function getSdtDatePickerPr(pr)
+	{
+		let datePickerPr = new AscWord.CSdtDatePickerPr();
+		if (!pr)
+			return datePickerPr;
+		
+		let lcid = Asc.g_oLcidNameToIdMap[pr["lang"]];
+		if (undefined === lcid)
+			lcid = 1033;
+		
+		datePickerPr.SetDateFormat(GetStringParameter(pr["format"], "mm/dd/yyyy"));
+		datePickerPr.SetLangId(lcid);
+		return datePickerPr;
+	}
+	
 	function logError(err) {
 		if (console.error)
 			console.error(err);
