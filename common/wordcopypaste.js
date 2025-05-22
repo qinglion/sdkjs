@@ -1332,8 +1332,8 @@ CopyProcessor.prototype =
 			//в html записываем первый вариант - конечное форматирование
 			//в банарник пишем: 1)конечное форматирование 2)исходное форматирование 3)картинка
 			this.oPDFWriter.WriteULong(elementsContent.length);
-			for(var i = 0; i < elementsContent.length; i++) {
-				if(i === 0) {
+			for (var i = 0; i < elementsContent.length; i++) {
+				if (i === 0) {
 					this.copyPDFContent(elementsContent[i], oDomTarget);
 				}
 			}
@@ -5378,9 +5378,6 @@ PasteProcessor.prototype =
 
 			var arr_shapes = content.Drawings;
 			var arrImages = pasteObj.images;
-			if (content.Drawings.length === selectedContent2[1].content.Drawings.length) {
-				AscFormat.checkDrawingsTransformBeforePaste(content, selectedContent2[1].content, null);
-			}
 			//****если записана одна табличка, то вставляем html и поддерживаем все цвета и стили****
 			if (!arrImages.length && arr_shapes.length === 1 && arr_shapes[0] && arr_shapes[0].Drawing &&
 				arr_shapes[0].Drawing.graphicObject) {
