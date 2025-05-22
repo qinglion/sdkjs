@@ -952,7 +952,7 @@
 		let returnValue;
 
 		// supported cells
-		let fillResultCells = ["LineColor", "FillForegnd", "FillBkgnd"];
+		let fillResultCells = ["LineColor", "FillForegnd", "FillBkgnd", "ShdwForegnd"];
 		let fillColorResultCells = ["Color", "GradientStopColor"];
 		let numberResultCells = ["LinePattern", "LineWeight", "GradientStopColorTrans", "GradientStopPosition",
 		"FillGradientAngle", "EndArrowSize", "BeginArrowSize", "FillPattern", "LineCap"];

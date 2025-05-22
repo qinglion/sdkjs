@@ -49,7 +49,7 @@ AscFormat.CShape.prototype.getParentObjects = function ()
 {
 	let oTheme = null;
 	if (this.parent) {
-		oTheme = this.parent.theme;
+		oTheme = this.parent.themes[0];
 	} else {
 		AscCommon.consoleLog("Parent was not set for shape/group. GenerateDefaultTheme is used. shape/group:", this);
 		oTheme = AscFormat.GenerateDefaultTheme(null, null);
@@ -63,6 +63,39 @@ AscFormat.CShape.prototype.getParentObjects = function ()
  */
 AscFormat.CGroupShape.prototype.getParentObjects = CShape.prototype.getParentObjects;
 
+/**
+ * @memberOf AscFormat.CImageShape
+ * @type {function(): {layout: null, slide: null, theme: CTheme, master: null}}
+ */
+AscFormat.CImageShape.prototype.getParentObjects = CShape.prototype.getParentObjects;
+
+/**
+ * @memberof AscFormat.CGraphicObjectBase
+ * @param outerShdw
+ * @param mainShape
+ * @return {CMatrix}
+ */
+AscFormat.CGraphicObjectBase.prototype.getShdwTransform = function(outerShdw, mainShape) {
+	var oTransform = new AscCommon.CMatrix();
+	var dist = outerShdw.dist ? outerShdw.dist / 36000 : 0;
+	var dir = outerShdw.dir ? outerShdw.dir : 0;
+	// if(this.extX < mainShape.extX && this.extY < mainShape.extY) {
+	oTransform.tx = dist * Math.cos(AscFormat.cToRad * dir);
+	oTransform.ty = dist * Math.sin(AscFormat.cToRad * dir);
+	// }
+	// else {
+	// 	oTransform.tx = dist * Math.cos(AscFormat.cToRad * dir) - (this.extX - mainShape.extX) / 2.0;
+	// 	oTransform.ty = dist * Math.sin(AscFormat.cToRad * dir) - (this.extY - mainShape.extY) / 2.0;
+	// }
+	if(this.flipH) {
+		oTransform.tx -= this.extX;
+	}
+	if(this.flipV) {
+		oTransform.ty += this.extY;
+	}
+	global_MatrixTransformer.MultiplyAppend(oTransform, mainShape.transform);
+	return  oTransform;
+};
 
 /**
  * Draw editor.

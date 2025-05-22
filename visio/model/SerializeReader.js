@@ -2011,7 +2011,7 @@
 						sReadPath = AscCommon.changeFileExtention(sReadPath, "svg");
 						uni_fill.fill.setRasterImageId(sReadPath);
 					} else if (allowExt.indexOf(ext) === -1) {
-						var images = AscCommon.g_oDocumentUrls.getImagesWithOtherExtention(sReadPath);
+						var images = AscCommon.g_oDocumentUrls.getImagesWithOtherExtension(sReadPath);
 						if (images.length > 0) {
 							for (var i = 0; i < images.length; i++) {
 								var image = images[i];
