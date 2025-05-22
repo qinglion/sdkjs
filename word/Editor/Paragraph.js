@@ -20532,3 +20532,4 @@ window['AscCommonWord'].UnknownValue = UnknownValue;
 window['AscCommonWord'].type_Paragraph = type_Paragraph;
 
 window['AscWord'].Paragraph = Paragraph;
+window['AscWord'].CParagraphSearchPos = CParagraphSearchPos;

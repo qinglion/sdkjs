@@ -757,6 +757,56 @@
 			oDoc.RemovePages(aPages);
         }, AscDFH.historydescription_Pdf_RemovePage, this, aPages);
 	};
+	PDFEditorApi.prototype.asc_CanRemovePages = function(aPages) {
+		let oViewer = this.getDocumentRenderer();
+		let oDoc = this.getPDFDoc();
+
+		let oThumbnails = oViewer.thumbnails;
+		aPages = aPages != undefined ? aPages : oThumbnails.getSelectedPages().slice();
+
+		let nPagesCount = oDoc.GetPagesCount();
+		let canDelete = false;
+
+		// check if last pages without lock
+		for (let i = 0; i < nPagesCount; i++) {
+			let oPageInfo = oDoc.GetPageInfo(i);
+			if (!aPages.includes(oPageInfo.GetIndex()) && !oPageInfo.IsDeleteLock()) {
+				canDelete = true;
+				break;
+			}
+		}
+
+		// check if pages with lock
+		for (let i = 0; i < aPages.length; i++) {
+			let oPageInfo = oDoc.GetPageInfo(aPages[i]);
+			if (oPageInfo.IsDeleteLock()) {
+				canDelete = false;
+				break;
+			}
+		}
+
+		return canDelete;
+	};
+	PDFEditorApi.prototype.asc_CanRotatePages = function(aPages) {
+		let oViewer = this.getDocumentRenderer();
+		let oDoc = this.getPDFDoc();
+
+		let oThumbnails = oViewer.thumbnails;
+		aPages = aPages != undefined ? aPages : oThumbnails.getSelectedPages().slice();
+		
+		let canDelete = false;
+
+		// check if pages with lock
+		for (let i = 0; i < aPages.length; i++) {
+			let oPageInfo = oDoc.GetPageInfo(aPages[i]);
+			if (oPageInfo.IsRotateLock()) {
+				canDelete = false;
+				break;
+			}
+		}
+
+		return canDelete;
+	};
 	PDFEditorApi.prototype.asc_GetSelectedText = function(bClearText, select_Pr) {
 		if (!this.DocumentRenderer)
 			return "";
@@ -4219,13 +4269,14 @@
 	PDFEditorApi.prototype.onDocumentContentReady = function() {
 		AscCommon.DocumentEditorApi.prototype.onDocumentContentReady.call(this);
 
+		let _t = this;
 		let thumbnailsDivId = "thumbnails-list";
 		if (document.getElementById(thumbnailsDivId)) {
 			this.DocumentRenderer.Thumbnails = new AscCommon.ThumbnailsControl(thumbnailsDivId);
 			this.DocumentRenderer.setThumbnailsControl(this.DocumentRenderer.Thumbnails);
 			
 			this.DocumentRenderer.Thumbnails.registerEvent("onZoomChanged", function (value) {
-				this.sendEvent("asc_onViewerThumbnailsZoomUpdate", value);
+				_t.sendEvent("asc_onViewerThumbnailsZoomUpdate", value);
 			});
 		}
 	};
@@ -4457,6 +4508,8 @@
 	PDFEditorApi.prototype['asc_EditPage']                 = PDFEditorApi.prototype.asc_EditPage;
 	PDFEditorApi.prototype['asc_AddPage']                  = PDFEditorApi.prototype.asc_AddPage;
 	PDFEditorApi.prototype['asc_RemovePage']			   = PDFEditorApi.prototype.asc_RemovePage;
+	PDFEditorApi.prototype['asc_CanRemovePages']           = PDFEditorApi.prototype.asc_CanRemovePages;
+	PDFEditorApi.prototype['asc_CanRotatePages']           = PDFEditorApi.prototype.asc_CanRotatePages;
 	PDFEditorApi.prototype['asc_createSmartArt']		   = PDFEditorApi.prototype.asc_createSmartArt;
 	PDFEditorApi.prototype['asc_undoAllChanges']		   = PDFEditorApi.prototype.asc_undoAllChanges;
 

@@ -329,6 +329,12 @@
 
         oDoc.History.Add(new CChangesPDFDocumentRotatePage(this, oFile.pages[nIndex].Rotate, nAngle));
 		oFile.pages[nIndex].Rotate = nAngle;
+
+		if (oDoc.IsEditFieldsMode()) {
+			this.fields.forEach(function(field) {
+				field.UpdateEditShape();
+			});
+		}
 	};
 	CPageInfo.prototype.GetRotate = function() {
 		let oDoc		= this.GetDocument();
@@ -3137,7 +3143,6 @@
 			this._paintAnnots();
 			this._paintForms();
 			this._paintFormsHighlight();
-			this._paintFormsMarkers();
 			oDoc.UpdateInterface(true);
 			oDoc.UpdateInterfaceTracks();
 			
@@ -4155,32 +4160,6 @@
 		}
 
 		oCtx.restore();
-	};
-	CHtmlPage.prototype._paintFormsMarkers = function()
-	{
-		return;
-		let oCtx = this.canvasForms.getContext("2d");
-		for (let i = this.startVisiblePage; i <= this.endVisiblePage; i++)
-		{
-			let page = this.drawingPages[i];
-			if (!page)
-				break;
-
-			let aForms = this.pagesInfo.pages[i].fields != null ? this.pagesInfo.pages[i].fields : null;
-			
-			if (!aForms)
-				continue;
-			
-			if (this.pagesInfo.pages[i].fields != null) {
-				this.pagesInfo.pages[i].fields.forEach(function(field) {
-					if (field.GetType() == AscPDF.FIELD_TYPES.combobox)
-						field.DrawMarker(oCtx);
-					else if (field.GetType() == AscPDF.FIELD_TYPES.text && field.IsDateFormat()) {
-						field.IsNeedDrawHighlight() == false && field.DrawDateMarker(oCtx);
-					}
-				});
-			}
-		}
 	};
 	// возвращает видимый рект страницы (процентах от полной), не учитывая поворот
 	CHtmlPage.prototype.getViewingRect = function(nPage) {

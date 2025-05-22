@@ -100,6 +100,10 @@
             this.content.Recalculate_Page(0, true);
         }
 
+        if (this.IsNeedRecalcTextTransform()) {
+            this.RecalculateTextTransform();
+        }
+
         this.SetNeedRecalc(false);
     };
     CListBoxField.prototype.RecalculateContentRect = function() {
@@ -160,6 +164,7 @@
             H: (nHeight - oMargins.top - oMargins.bottom) * g_dKoef_pt_to_mm,
             Page: this.GetPage()
         }
+        return this.contentClipRect;
     };
     /**
 	 * Synchronizes this field with fields with the same name.

@@ -142,6 +142,10 @@
                 }
     
                 field.SetImage(sTargetSrc);
+                if (undefined == nAPType) {
+                    field.SetImageRasterId('', AscPDF.APPEARANCE_TYPES.rollover);
+                    field.SetImageRasterId('', AscPDF.APPEARANCE_TYPES.mouseDown);
+                }            
             });
             
             if (oViewer.IsOpenFormsInProgress == false) {
@@ -274,8 +278,16 @@
                 break;
         }
 
-        const dFrmW = oRect.W;
-        const dFrmH = oRect.H;
+        let dFrmW = oRect.W;
+        let dFrmH = oRect.H;
+        
+        let nRotAngle = this.GetRotate();
+        if (nRotAngle === 90 || nRotAngle === 270) {
+            let tmp = dFrmW;
+            dFrmW = dFrmH;
+            dFrmH = tmp;
+        }
+
         const dCW   = (dFrmW - nContentW)/dImgW;
         const dCH   = (dFrmH - nContentH)/dImgH;
         const dCoef = Math.min(dCW, dCH);
@@ -328,7 +340,7 @@
                 break;
             }
         }
-        const oDrawing  = new AscCommonWord.ParaDrawing(dDrawingW, dDrawingH, null, this.content.DrawingDocument, this.content, null);
+        const oDrawing = new AscCommonWord.ParaDrawing(dDrawingW, dDrawingH, null, this.content.DrawingDocument, this.content, null);
         oDrawing.Set_WrappingType(WRAPPING_TYPE_SQUARE);
         oDrawing.Set_DrawingType(drawing_Inline);
         
@@ -1031,6 +1043,7 @@
             H: (nHeight - 2 * oMargins.top -  2 * oMargins.bottom) * g_dKoef_pt_to_mm,
             Page: this.GetPage()
         };
+        return this.contentClipRect;
     };
     CPushButtonField.prototype.DoInitialRecalc = function() {
         if (null == this.contentClipRect || this.IsNeedRecalc()) {
@@ -1056,6 +1069,10 @@
             this.content.Recalculate_Page(0, false);
         }
 
+        if (this.IsNeedRecalcTextTransform()) {
+            this.RecalculateTextTransform();
+        }
+        
         this.SetNeedRecalc(false);
     };
     CPushButtonField.prototype.RecalculateContentRect = function() {
@@ -1111,6 +1128,12 @@
                 }
             }
         }
+	
+		let rot = this.GetRotate();
+		if (90 === rot || 270 === rot){
+			let contentW = contentYLimit - contentY;
+			contentXLimit = contentX + contentW;
+		}
 
         if (contentX != this.content.X || contentY != this.content.Y ||
             contentXLimit != this.content.XLimit) {
@@ -1379,16 +1402,30 @@
             return;
         }
         
-        let Api             = editor;
-        let oThis           = this;
-        let oDoc            = this.GetDocument();
-        let oActionsQueue   = oDoc.GetActionsQueue();
+        let Api                 = Asc.editor;
+        let oThis               = this;
+        let oDoc                = this.GetDocument();
+        let oActionsQueue       = oDoc.GetActionsQueue();
+        this.asc_curImageState  = undefined;
 
         if (oActionsQueue.curAction) {
             oActionsQueue.curAction.bContinueAfterEval = false;
         }
         
         Api.oSaveObjectForAddImage = this;
+
+        function importCanceled(error, files) {
+            if (error.canceled == true || !files) {
+                oActionsQueue.Continue();
+            }
+            else {
+                Api._uploadCallback(error, files, oThis);
+            }
+
+            AscCommon.global_mouseEvent.UnLockMouse();
+        }
+
+        this.fErrorCallback = importCanceled;
 
         AscCommon.global_mouseEvent.LockMouse();
         if (window["AscDesktopEditor"] && window["AscDesktopEditor"]["IsLocalFile"]()) {
@@ -1406,17 +1443,7 @@
             });
         }
         else {
-            AscCommon.ShowImageFileDialog(Api.documentId, Api.documentUserId, undefined, Api.documentShardKey, Api.documentWopiSrc, Api.documentUserSessionId, function(error, files) {
-                if (error.canceled == true) {
-                    oActionsQueue.Continue();
-                }
-                else {
-                    Api._uploadCallback(error, files, oThis);
-                }
-
-                AscCommon.global_mouseEvent.UnLockMouse();
-
-            }, function(error) {
+            AscCommon.ShowImageFileDialog(Api.documentId, Api.documentUserId, undefined, Api.documentShardKey, Api.documentWopiSrc, Api.documentUserSessionId, importCanceled, function(error) {
                 if (c_oAscError.ID.No !== error) {
                     Api.sendEvent("asc_onError", error, c_oAscError.Level.NoCritical);
                 }
@@ -1528,22 +1555,28 @@
             // выставляем положение картинки только в случае, когда скейл пропорциональный или его нет вовсе или когда размеры картинки больше чем размеры drawing под эту картинку,
             // т.к. в ином случае картинка будет растянута по размерам формы
             if (nScaleHow === scaleHow["proportional"] || nScaleWhen == scaleWhen["never"] || (nScaleWhen == scaleWhen["tooSmall"] && (this.relImgSize.W > nDrawingW || this.relImgSize.H > nDrawingH))) {
-                let oImgShape = oDrawing.GraphicObj;
-                let oClip = new AscFormat.CSrcRect();
-                // кроп считается в процентах относительно размеров drawing
-                let nLC; // left crop
-                let nRC; // right crop
-                let nTC; // top crop
-                let nBC; // bottom crop
+                let shape = oDrawing.GraphicObj;
+				let nW = nDrawingW;
+				let nH = nDrawingH;
 
-                nLC = ((this.relImgSize.W - nDrawingW) * (this._buttonAlignX)) / this.relImgSize.W * 100;
-                nTC = ((this.relImgSize.H - nDrawingH) * (1 - this._buttonAlignY) / this.relImgSize.H * 100);
-                nRC = nLC + (nDrawingW / this.relImgSize.W * 100);
-                nBC = nTC + (nDrawingH / this.relImgSize.H * 100);                        
+				let nDstW = this.relImgSize.W;
+				let nDstH = this.relImgSize.H;
+				
+				let spaceX = nW - nDstW;
+				let spaceY = nH - nDstH;
+				//
+				var nPadL = this._buttonAlignX * spaceX;
+				var nPadT = (1 - this._buttonAlignY) * spaceY;
 
-                oClip.setLTRB(nLC, nTC, nRC, nBC);
-                oImgShape.blipFill.setSrcRect(oClip);
-                oImgShape.blipFill.stretch = false;
+				let srcRect = new AscFormat.CSrcRect();
+				srcRect.setLTRB(
+					100 * -nPadL / nDstW,
+					100 * -nPadT / nDstH,
+					100 * (1 + (spaceX - nPadL) / nDstW),
+					100 * (1 + (spaceY - nPadT) / nDstH)
+				);
+				shape.setSrcRect(srcRect);
+				shape.blipFill.stretch = false;
             }
         }
         AscCommon.History.EndNoHistoryMode();
@@ -1587,7 +1620,12 @@
             }
         }
 
+        this.SetImage('');
         AscCommon.History.EndNoHistoryMode();
+
+        this.SetImageRasterId('', AscPDF.APPEARANCE_TYPES.normal);
+        this.SetImageRasterId('', AscPDF.APPEARANCE_TYPES.rollover);
+        this.SetImageRasterId('', AscPDF.APPEARANCE_TYPES.mouseDown);
 
         this.SetWasChanged(true);
         this.SetNeedRecalc(true);
@@ -1936,6 +1974,9 @@
         AscCommon.History.EndNoHistoryMode();
         this.SetNeedRecalc(true);
     };
+	CPushButtonField.prototype._isCenterAlign = function() {
+		return false;
+	};
 
     /**
      * Applies value of this field to all field with the same name.

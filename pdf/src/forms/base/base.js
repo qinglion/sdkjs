@@ -2383,6 +2383,7 @@
         this._origRect = aOrigRect;
         this.SetWasChanged(true);
         this.SetNeedRecalc(true);
+		this.RecalcTextTransform();
 
         if (this.IsEditMode()) {
             let oShape = this.GetEditShape();
@@ -2392,6 +2393,18 @@
                 let offY = aOrigRect[1] * g_dKoef_pt_to_mm;
                 let extX = (aOrigRect[2] - aOrigRect[0]) * g_dKoef_pt_to_mm;
                 let extY = (aOrigRect[3] - aOrigRect[1]) * g_dKoef_pt_to_mm;
+
+                let oDoc = this.GetDocument();
+                let nPage = this.GetPage();
+                let nPageRotate = oDoc.Viewer.getPageRotate(nPage);
+                if (nPageRotate === 90 || nPageRotate === 270) {
+                    let tmp = extX;
+                    extX = extY;
+                    extY = tmp;
+
+                    offX -= (extX - extY) / 2;
+                    offY -= (extY - extX) / 2;
+                }
 
                 let oXfrm = oShape.getXfrm();
                 oXfrm.setExtX(extX);
@@ -2603,6 +2616,18 @@
         let nExtX = aRectMM[2] - aRectMM[0];
         let nExtY = aRectMM[3] - aRectMM[1];
 
+        let oDoc = this.GetDocument();
+        let nPage = this.GetPage();
+        let nPageRotate = oDoc.Viewer.getPageRotate(nPage);
+        if (nPageRotate === 90 || nPageRotate === 270) {
+            let tmp = nExtX;
+            nExtX = nExtY;
+            nExtY = tmp;
+
+            nOffX -= (nExtX - nExtY) / 2;
+            nOffY -= (nExtY - nExtX) / 2;
+        }
+
         oPdfShape.setSpPr(new AscFormat.CSpPr());
         oPdfShape.spPr.setLn(new AscFormat.CLn());
         oPdfShape.setFLocksText(true);
@@ -2619,7 +2644,8 @@
         oPdfShape.spPr.xfrm.setOffY(nOffY);
         oPdfShape.spPr.xfrm.setExtX(nExtX);
         oPdfShape.spPr.xfrm.setExtY(nExtY);
-        
+        oPdfShape.spPr.xfrm.setRot(-nPageRotate * (Math.PI / 180));
+
         oPdfShape.spPr.setGeometry(AscFormat.CreateGeometry("rect"));
 
         oPdfShape.createTextBody();
@@ -2647,6 +2673,45 @@
 
         this.AddToRedraw();
     };
+    CBaseField.prototype.UpdateEditShape = function() {
+        if (!this.editShape) {
+            return false;
+        }
+
+        let aOrigRect = this.GetRect();
+        let aRectMM = aOrigRect ? aOrigRect.map(function(measure) {
+            return measure * g_dKoef_pt_to_mm;
+        }) : [];
+
+        let nOffX = aRectMM[0];
+        let nOffY = aRectMM[1];
+        let nExtX = aRectMM[2] - aRectMM[0];
+        let nExtY = aRectMM[3] - aRectMM[1];
+
+        let oDoc = this.GetDocument();
+        let nPage = this.GetPage();
+        let nPageRotate = oDoc.Viewer.getPageRotate(nPage);
+        if (nPageRotate === 90 || nPageRotate === 270) {
+            let tmp = nExtX;
+            nExtX = nExtY;
+            nExtY = tmp;
+
+            nOffX -= (nExtX - nExtY) / 2;
+            nOffY -= (nExtY - nExtX) / 2;
+        }
+
+        let oPdfShape = this.GetEditShape();
+        oPdfShape.spPr.xfrm.setOffX(nOffX);
+        oPdfShape.spPr.xfrm.setOffY(nOffY);
+        oPdfShape.spPr.xfrm.setExtX(nExtX);
+        oPdfShape.spPr.xfrm.setExtY(nExtY);
+        oPdfShape.spPr.xfrm.setRot(-nPageRotate * (Math.PI / 180));
+        oPdfShape.recalcContent();
+        oPdfShape.recalculate();
+
+        this.AddToRedraw();
+        return true;
+    };
     CBaseField.prototype.IsEditMode = function() {
         return !!this.editShape;
     };
@@ -2666,6 +2731,55 @@
     CBaseField.prototype.GetRotate = function() {
         return this._rotate;
     };
+	CBaseField.prototype._isCenterAlign = function() {
+		return true;
+	};
+	CBaseField.prototype.GetRotateTransform = function() {
+		let angle = this.GetRotate();
+		if (0 === angle)
+			return null;
+		
+		let clipRect = this.CalculateContentClipRect();
+		
+		let t = new AscCommon.CMatrix();
+		
+		if (this._isCenterAlign()) {
+			if (90 === angle) {
+				global_MatrixTransformer.TranslateAppend(t, -clipRect.X, -clipRect.Y - clipRect.H / 2);
+				global_MatrixTransformer.RotateRadAppend(t, 0.5 * Math.PI);
+				global_MatrixTransformer.TranslateAppend(t, clipRect.X + clipRect.W / 2, clipRect.Y + clipRect.H);
+			}
+			else if (180 === angle) {
+				global_MatrixTransformer.TranslateAppend(t, -clipRect.X, -clipRect.Y - clipRect.H / 2);
+				global_MatrixTransformer.RotateRadAppend(t, Math.PI);
+				global_MatrixTransformer.TranslateAppend(t, clipRect.X + clipRect.W, clipRect.Y + clipRect.H / 2);
+			}
+			else if (270 === angle) {
+				global_MatrixTransformer.TranslateAppend(t, -clipRect.X, -clipRect.Y - clipRect.H / 2);
+				global_MatrixTransformer.RotateRadAppend(t, -0.5 * Math.PI);
+				global_MatrixTransformer.TranslateAppend(t, clipRect.X + clipRect.W / 2, clipRect.Y);
+			}
+		}
+		else {
+			if (90 === angle) {
+				global_MatrixTransformer.TranslateAppend(t, -clipRect.X, -clipRect.Y);
+				global_MatrixTransformer.RotateRadAppend(t, 0.5 *  Math.PI);
+				global_MatrixTransformer.TranslateAppend(t, clipRect.X, clipRect.Y + clipRect.H);
+			}
+			else if (180 === angle) {
+				global_MatrixTransformer.TranslateAppend(t, -clipRect.X, -clipRect.Y);
+				global_MatrixTransformer.RotateRadAppend(t, Math.PI);
+				global_MatrixTransformer.TranslateAppend(t, clipRect.X + clipRect.W, clipRect.Y + clipRect.H);
+			}
+			else if (270 === angle) {
+				global_MatrixTransformer.TranslateAppend(t, -clipRect.X, -clipRect.Y);
+				global_MatrixTransformer.RotateRadAppend(t, -0.5 * Math.PI);
+				global_MatrixTransformer.TranslateAppend(t, clipRect.X + clipRect.W, clipRect.Y);
+			}
+		}
+		
+		return t;
+	};
     CBaseField.prototype.RecalculateTextTransform = function() {
 		
 		if (!this._needRecalcTxTransform)
@@ -2675,11 +2789,13 @@
 		if (!clipRect)
 			return;
 		
+		let transform = this.GetRotateTransform();
+		
 		if (this.content)
-			this.content.SetFieldRotate(this._rotate, clipRect);
+			this.content.SetTransform(transform);
 		
 		if (this.contentFormat)
-			this.contentFormat.SetFieldRotate(this._rotate, clipRect);
+			this.contentFormat.SetTransform(transform);
 		
 		this._needRecalcTxTransform = false;
     };

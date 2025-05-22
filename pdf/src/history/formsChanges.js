@@ -55,6 +55,7 @@ AscDFH.changesFactory[AscDFH.historyitem_Pdf_Form_Read_Only]		= CChangesPDFFormR
 AscDFH.changesFactory[AscDFH.historyitem_Pdf_Form_No_Export]		= CChangesPDFFormNoExport;
 AscDFH.changesFactory[AscDFH.historyitem_Pdf_Form_Border_Width]		= CChangesPDFFormBorderWidth;
 AscDFH.changesFactory[AscDFH.historyitem_Pdf_Form_Locked]			= CChangesPDFFormLocked;
+AscDFH.changesFactory[AscDFH.historyitem_Pdf_Form_Rotate]			= CChangesPDFFormRotate;
 
 // text
 AscDFH.changesFactory[AscDFH.historyitem_Pdf_Text_Form_Multiline]			= CChangesPDFTextFormMultiline;

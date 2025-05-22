@@ -238,35 +238,11 @@
 		}
 		return this.transform || parentTransform;
 	};
-	CTextBoxContent.prototype.SetFieldRotate = function(angle, clipRect) {
-		
-		if (0 === angle)
-		{
+	CTextBoxContent.prototype.SetTransform = function(transform) {
+		if (!transform || transform.IsIdentity())
 			this.transform = null;
-			return;
-		}
-		
-		let t = new AscCommon.CMatrix();
-		if (90 === angle)
-		{
-			global_MatrixTransformer.TranslateAppend(t, -clipRect.X, -clipRect.Y - clipRect.H / 2);
-			global_MatrixTransformer.RotateRadAppend(t, 0.5 *  Math.PI);
-			global_MatrixTransformer.TranslateAppend(t, clipRect.X + clipRect.W / 2, clipRect.Y + clipRect.H);
-		}
-		else if (180 === angle)
-		{
-			global_MatrixTransformer.TranslateAppend(t, -clipRect.X, -clipRect.Y - clipRect.H / 2);
-			global_MatrixTransformer.RotateRadAppend(t, Math.PI);
-			global_MatrixTransformer.TranslateAppend(t, clipRect.X + clipRect.W, clipRect.Y + clipRect.H / 2);
-		}
-		else if (270 === angle)
-		{
-			global_MatrixTransformer.TranslateAppend(t, -clipRect.X, -clipRect.Y - clipRect.H / 2);
-			global_MatrixTransformer.RotateRadAppend(t, -0.5 * Math.PI);
-			global_MatrixTransformer.TranslateAppend(t, clipRect.X + clipRect.W / 2, clipRect.Y);
-		}
-		
-		this.transform = t;
+		else
+			this.transform = transform;
 	};
 	
 	function getInternalAlignByPdfType(nPdfType) {
