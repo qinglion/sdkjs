@@ -5827,6 +5827,7 @@ var CPresentation = CPresentation || function(){};
     CPDFDoc.prototype.AddImages = function(arrImages) {
         let oViewer     = this.Viewer;
         let nCurPage    = oViewer.currentPage;
+        let nRotAngle   = this.Viewer.getPageRotate(nCurPage);
         let oController = this.GetController();
         let nPageW      = this.GetPageWidthMM(nCurPage);
         let nPageH      = this.GetPageHeightMM(nCurPage);
@@ -5850,6 +5851,9 @@ var CPresentation = CPresentation || function(){};
             let oXfrm = oImage.getXfrm();
             oXfrm.setOffX(oPos.x);
             oXfrm.setOffY(oPos.y);
+            if (nRotAngle != 0) {
+                oXfrm.setRot(-nRotAngle * Math.PI / 180);
+            }
 
             this.AddDrawing(oImage, nCurPage);
 
