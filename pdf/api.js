@@ -794,7 +794,7 @@
 		let oThumbnails = oViewer.thumbnails;
 		aPages = aPages != undefined ? aPages : oThumbnails.getSelectedPages().slice();
 		
-		let canDelete = false;
+		let canDelete = true;
 
 		// check if pages with lock
 		for (let i = 0; i < aPages.length; i++) {
