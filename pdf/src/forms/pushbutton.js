@@ -1414,6 +1414,19 @@
         
         Api.oSaveObjectForAddImage = this;
 
+        function importCanceled(error, files) {
+            if (error.canceled == true || !files) {
+                oActionsQueue.Continue();
+            }
+            else {
+                Api._uploadCallback(error, files, oThis);
+            }
+
+            AscCommon.global_mouseEvent.UnLockMouse();
+        }
+
+        this.fErrorCallback = importCanceled;
+
         AscCommon.global_mouseEvent.LockMouse();
         if (window["AscDesktopEditor"] && window["AscDesktopEditor"]["IsLocalFile"]()) {
             window["AscDesktopEditor"]["OpenFilenameDialog"]("images", false, function(_file) {
@@ -1430,17 +1443,7 @@
             });
         }
         else {
-            AscCommon.ShowImageFileDialog(Api.documentId, Api.documentUserId, undefined, Api.documentShardKey, Api.documentWopiSrc, Api.documentUserSessionId, function(error, files) {
-                if (error.canceled == true) {
-                    oActionsQueue.Continue();
-                }
-                else {
-                    Api._uploadCallback(error, files, oThis);
-                }
-
-                AscCommon.global_mouseEvent.UnLockMouse();
-
-            }, function(error) {
+            AscCommon.ShowImageFileDialog(Api.documentId, Api.documentUserId, undefined, Api.documentShardKey, Api.documentWopiSrc, Api.documentUserSessionId, importCanceled, function(error) {
                 if (c_oAscError.ID.No !== error) {
                     Api.sendEvent("asc_onError", error, c_oAscError.Level.NoCritical);
                 }
