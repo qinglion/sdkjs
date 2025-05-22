@@ -9942,8 +9942,14 @@ function parserFormula( formula, parent, _ws ) {
 				let externalLink = this.wb.getExternalLinkByName(i);
 				if (externalLink) {
 					for (let j in this.importFunctionsRangeLinks[i]) {
+						let firstSheet;
 						let _rangeInfo = this.importFunctionsRangeLinks[i][j];
-						let _ws = externalLink.worksheets[_rangeInfo.sheet];
+						if (!_rangeInfo.sheet) {
+							// get first sheet if we haven't sheet name in rangeInfo object
+							firstSheet = externalLink.SheetNames && externalLink.SheetNames[0];
+						}
+
+						let _ws = externalLink.worksheets[firstSheet ? firstSheet : _rangeInfo.sheet];
 						if (_ws) {
 							this._buildDependenciesRef(_ws.getId(), AscCommonExcel.g_oRangeCache.getRangesFromSqRef(_rangeInfo.range)[0], null, true);
 						}
@@ -10012,8 +10018,14 @@ function parserFormula( formula, parent, _ws ) {
 				let externalLink = this.wb.getExternalLinkByName(i);
 				if (externalLink) {
 					for (let j in this.importFunctionsRangeLinks[i]) {
+						let firstSheet;
 						let _rangeInfo = this.importFunctionsRangeLinks[i][j];
-						let _ws = externalLink.worksheets[_rangeInfo.sheet];
+						if (!_rangeInfo.sheet) {
+							// get first sheet if we haven't sheet name in rangeInfo object
+							firstSheet = externalLink.SheetNames && externalLink.SheetNames[0];
+						}
+
+						let _ws = externalLink.worksheets[firstSheet ? firstSheet : _rangeInfo.sheet];
 						if (_ws) {
 							this._buildDependenciesRef(_ws.getId(), AscCommonExcel.g_oRangeCache.getRangesFromSqRef(_rangeInfo.range)[0], null, false);
 						}

@@ -5659,10 +5659,55 @@
 
 	Workbook.prototype.changeExternalReference = function (index, to) {
 		if (index != null) {
-			var from = this.externalReferences[index - 1].clone();
+			let from = this.externalReferences[index - 1].clone(true);
+			// var from = this.externalReferences[index - 1].clone();
+
+			// change formulas with importRange 
+			this.changeImportRangeLinks(index, from, to);
+
 			this.externalReferences[index - 1] = to;
+
 			AscCommon.History.Add(AscCommonExcel.g_oUndoRedoWorkbook, AscCH.historyitem_Workbook_ChangeExternalReference,
 				null, null, new UndoRedoData_FromTo(from, to));
+		}
+	};
+
+	Workbook.prototype.changeImportRangeLinks = function (index, fromER, toER) {
+		if (index != null && fromER && toER) {
+			let fromLinkStr = fromER.Id;
+			let toLinkStr = toER.Id;
+
+			for (let ws in toER.worksheets) {
+				let changedSheet = toER.worksheets[ws];
+				if (changedSheet) {
+					let changedSheetId = changedSheet.getId();
+
+					this.dependencyFormulas.forEachSheetListeners(changedSheetId, function (parsed) {
+						// we go through the external sheet listeners and change each importRange
+						let cell = parsed && parsed.parent;
+						if (cell && cell && cell.nCol != null && cell.nRow != null && parsed.Formula) {
+							let newFormulaStr = "";
+							let formula = parsed.getFormula();
+							if (formula) {
+								newFormulaStr = formula.split(fromLinkStr).join(toLinkStr);
+							}
+
+							if (newFormulaStr) {
+								let newFP = new AscCommonExcel.parserFormula(newFormulaStr, cell, parsed.ws);
+								let parseResult = new AscCommonExcel.ParseResult();;
+								if (newFP.parse(AscCommonExcel.oFormulaLocaleInfo.Parse, AscCommonExcel.oFormulaLocaleInfo.DigitSep, parseResult)) {
+									parsed.ws._getCellNoEmpty(cell.nRow, cell.nCol, function(cell) {
+										if (cell) {
+											cell.setValue("=" + newFormulaStr, null, null, parsed.ref, null, null, true);
+										}
+									});
+
+								}
+							}
+						}
+					});
+				}
+			}
 		}
 	};
 
@@ -14412,7 +14457,7 @@
 		this.textIndex = null;
 		this._hasChanged = true;
 	};
-	Cell.prototype.setValue=function(val,callback, isCopyPaste, byRef, ignoreHyperlink, dynamicRange) {
+	Cell.prototype.setValue=function(val,callback, isCopyPaste, byRef, ignoreHyperlink, dynamicRange, skipExternalCheck) {
 		var ws = this.ws;
 		var wb = ws.workbook;
 		var DataOld = null;
@@ -14492,7 +14537,9 @@
 			cell.removeHyperlink();
 		}
 
-		this.checkRemoveExternalReferences(newFP, oldFP);
+		if (!skipExternalCheck) {
+			this.checkRemoveExternalReferences(newFP, oldFP);
+		}
 	};
 
 	Cell.prototype.checkRemoveExternalReferences=function(fNew, fOld) {
