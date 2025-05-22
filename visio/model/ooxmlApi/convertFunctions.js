@@ -1525,6 +1525,24 @@
 			}
 		}
 
+		function createEmptyShape() {
+			let emptyCShape = new AscFormat.CShape();
+			emptyCShape.setWordShape(false);
+			emptyCShape.setBDeleted(false);
+
+			var oSpPr = new AscFormat.CSpPr();
+			var oXfrm = new AscFormat.CXfrm();
+
+			oSpPr.setXfrm(oXfrm);
+			oXfrm.setParent(oSpPr);
+
+			emptyCShape.setSpPr(oSpPr);
+			oSpPr.setParent(emptyCShape);
+			emptyCShape.setParent2(visioDocument);
+
+			return emptyCShape;
+		}
+
 		// Method start
 
 		// Refact:
@@ -1587,21 +1605,7 @@
 			// AscCommon.consoleLog('pinX_inch or pinY_inch is NaN for Shape or areShapeLayersInvisible. Its ok sometimes. ' +
 				// 'Empty CShape is returned. See original shape: ', this);
 			// let's use empty shape
-			let emptyCShape = new AscFormat.CShape();
-			emptyCShape.setWordShape(false);
-			emptyCShape.setBDeleted(false);
-
-			var oSpPr = new AscFormat.CSpPr();
-			var oXfrm = new AscFormat.CXfrm();
-
-			oSpPr.setXfrm(oXfrm);
-			oXfrm.setParent(oSpPr);
-
-			emptyCShape.setSpPr(oSpPr);
-			oSpPr.setParent(emptyCShape);
-			emptyCShape.setParent2(visioDocument);
-
-			return emptyCShape;
+			return createEmptyShape();
 		}
 
 		let shapeAngle = this.getCellNumberValue("Angle");
@@ -2149,14 +2153,71 @@
 			pageInfo: pageInfo,
 			cVisioDocument: visioDocument,
 			drawingPageScale : drawingPageScale,
-			isInvertCoords: isInvertCoords
+			isInvertCoords: isInvertCoords,
+			isShapeDeleted: isShapeDeleted,
+			id: this.id
 		});
 
-		if (isShapeDeleted) {
-			cShape.setBDeleted(true);
+
+		// set shadow
+		// ShdwPattern = 1 means shadow is visible
+		let isShadowVisible = this.getCellNumberValue("ShdwPattern") === 1;
+		let isShadowTypeSupported = this.getCellNumberValue("ShapeShdwType") === 1 ||
+				this.getCellNumberValue("ShapeShdwType") === 2;
+		if (isShadowVisible && isShadowTypeSupported) {
+			let shadow = new AscFormat.COuterShdw();
+			// shadow.sx = 200;
+			// shadow.sy = 200
+			// shadow.color = new AscFormat.CUniColor();
+			// shadow.algn = 7;
+			// shadow.blurRad = 50800 * 10;
+
+			// get color for shadow
+			// Calculate fillForegnd without gradient anyway for handleQuickStyleVariation
+			let shadowForegndCell = this.getCell("ShdwForegnd");
+			let shadowColor;
+			if (shadowForegndCell) {
+				// AscCommon.consoleLog("FillForegnd was found:", fillForegndCell);
+				let shadowUniFill = shadowForegndCell.calculateValue(this, pageInfo,
+						visioDocument.themes, undefined, false);
+
+				shadowColor = shadowUniFill.fill.color;
+
+				let shadowTransValue = this.getCellNumberValue("ShdwForegndTrans");
+
+				let oMod = new AscFormat.CColorMod("alpha", (1 - shadowTransValue) * 100 * 1000 + 0.5 >> 0);
+
+				shadowColor.addColorMod(oMod);
+			} else {
+				AscCommon.consoleLog("shadow foreground cell not found for", this);
+				// try to get from theme
+				// uniFillForegnd = AscVisio.themeval(null, this, pageInfo, visioDocument.themes, "FillColor",
+				// 	undefined, fillGradientEnabled);
+				// just use white
+				uniFillForegndNoGradient = AscFormat.CreateUnfilFromRGB(255, 255, 255);
+			}
+			// shadow.color = AscFormat.CreateUniColorRGB(100,100,100);
+			// shadow.color.color = new AscFormat.CPrstColor();
+			// shadow.color.color.id = "black";
+			// shadow.putTransparency(60);
+			shadow.color = shadowColor;
+
+			let shadowOffsetX = this.getCellNumberValue("ShapeShdwOffsetX") * g_dKoef_in_to_mm;
+			let shadowOffsetY = this.getCellNumberValue("ShapeShdwOffsetY") * g_dKoef_in_to_mm;
+			let atan = Math.atan2(shadowOffsetY, shadowOffsetX);
+			shadow.dist = Math.hypot(shadowOffsetX, shadowOffsetY) * 36000;
+			shadow.dir =  -atan * AscFormat.radToDeg * AscFormat.degToC;
+
+			shadow.rotWithShape = this;
+			// cShape.spPr.changeShadow(shadow);
+			cShape.spPr.effectProps = new AscFormat.CEffectProperties();
+			cShape.spPr.effectProps.EffectLst = new AscFormat.CEffectLst();
+			cShape.spPr.effectProps.EffectLst.outerShdw = shadow;
+
+			// cShape.spPr.effectProps.EffectLst.prstShdw = new AscFormat.CPrstShdw();
+			// cShape.spPr.effectProps.EffectLst.prstShdw.dir = 300 * 3600;
 		}
 
-		cShape.Id = String(this.id); // it was string in cShape
 
 		// not scaling fontSize
 		let textCShape = getTextCShape(visioDocument.themes[0], this, cShape,
@@ -2408,7 +2469,8 @@
 
 	/**
 	 * @memberOf Shape_Type
-	 * @param {{x_mm, y_mm, w_mm, h_mm, rot, oFill, oStroke, flipHorizontally, flipVertically, cVisioDocument, drawingPageScale, isInvertCoords}} paramsObj
+	 * @param {{x_mm, y_mm, w_mm, h_mm, rot, oFill, oStroke, flipHorizontally, flipVertically, cVisioDocument,
+	 * drawingPageScale, isInvertCoords, isShapeDeleted, id}} paramsObj
 	 * @return {CShape} CShape
 	 */
 	Shape_Type.prototype.convertToCShapeUsingParamsObj = function(paramsObj) {
@@ -2424,6 +2486,8 @@
 		let flipVertically = paramsObj.flipVertically;
 		let drawingPageScale = paramsObj.drawingPageScale;
 		let isInvertCoords = paramsObj.isInvertCoords;
+		let isShapeDeleted = paramsObj.isShapeDeleted;
+		let id = paramsObj.id;
 
 		let shapeGeom = AscVisio.getGeometryFromShape(this, drawingPageScale, isInvertCoords);
 
@@ -2440,6 +2504,13 @@
 		shape.spPr.xfrm.setFlipV(flipVertically);
 
 		shape.spPr.setGeometry(shapeGeom);
+
+		if (isShapeDeleted) {
+			shape.setBDeleted(true);
+		}
+
+		shape.Id = String(id); // it was string in cShape
+
 		return shape;
 	};
 
