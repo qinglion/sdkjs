@@ -1620,7 +1620,12 @@
             }
         }
 
+        this.SetImage('');
         AscCommon.History.EndNoHistoryMode();
+
+        this.SetImageRasterId('', AscPDF.APPEARANCE_TYPES.normal);
+        this.SetImageRasterId('', AscPDF.APPEARANCE_TYPES.rollover);
+        this.SetImageRasterId('', AscPDF.APPEARANCE_TYPES.mouseDown);
 
         this.SetWasChanged(true);
         this.SetNeedRecalc(true);
