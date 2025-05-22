@@ -3826,8 +3826,24 @@ ParaRun.prototype.Recalculate_Range = function(PRS, ParaPr, Depth)
 						}
 					}
 
+					let isBreakBefore = Item.IsSpaceBefore();
+					if (isBreakBefore
+						&& Word
+						&& PRS.LastItem.CanBeAtEndOfLine()
+						&& Item.CanBeAtBeginOfLine())
+					{
+						PRS.Set_LineBreakPos(Pos, FirstItemOnLine);
+						
+						X += SpaceLen + WordLen;
+						Word = false;
+						EmptyLine = false;
+						TextOnLine = true;
+						FirstItemOnLine = false;
+						SpaceLen = 0;
+						WordLen = 0;
+					}
+					
                     // При проверке, убирается ли слово, мы должны учитывать ширину предшествующих пробелов
-
 					let LetterLen   = Item.GetWidth();
 					let isLigature  = Item.IsLigature();
 					let GraphemeLen = isLigature ? Item.GetLigatureWidth() : LetterLen;

@@ -255,6 +255,14 @@
 		return false;
 	};
 	/**
+	 * Можно ли ставить разрыв слова перед данным элементом
+	 * @returns {boolean}
+	 */
+	CRunElementBase.prototype.IsSpaceBefore = function()
+	{
+		return false;
+	};
+	/**
 	 * Нужно ли ставить дефис для автоматического переноса
 	 * @returns {boolean}
 	 */
