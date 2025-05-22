@@ -6252,7 +6252,7 @@
 	 * @returns {string} The absolute XPath of the current node.
 	 * @see office-js-api/Examples/{Editor}/ApiCustomXmlNode/Methods/GetXPath.js
 	 */
-	ApiCustomXmlNode.prototype.GetXPath = function ()
+	ApiCustomXmlNode.prototype.GetXPath = function()
 	{
 		let parent		= this.GetParent();
 		let parentText	= parent ? parent.GetXPath() + "/" : "/";
@@ -6267,7 +6267,7 @@
 	 * @returns {string} The name of the current node.
 	 * @see office-js-api/Examples/{Editor}/ApiCustomXmlNode/Methods/GetNodeName.js
 	 */
-	ApiCustomXmlNode.prototype.GetNodeName = function ()
+	ApiCustomXmlNode.prototype.GetNodeName = function()
 	{
 		return this.CustomXmlContent.getNodeName();
 	};
@@ -6352,7 +6352,7 @@
 	 * @returns {boolean} Returns `true` if the XML was successfully set.
 	 * @see office-js-api/Examples/{Editor}/ApiCustomXmlNode/Methods/SetXml.js
 	 */
-	ApiCustomXmlNode.prototype.SetXml = function (strXml)
+	ApiCustomXmlNode.prototype.SetXml = function(strXml)
 	{
 		return this.CustomXmlPart.customXml.Change(function () {
 			this.CustomXmlContent.setXml(strXml);
@@ -20101,12 +20101,12 @@
 	 * @returns {boolean} Returns `true` if the date format was successfully set, otherwise `false`.
 	 * @see office-js-api/Examples/{Editor}/ApiInlineLvlSdt/Methods/SetDateFormat.js
 	 */
-	ApiInlineLvlSdt.prototype.SetDateFormat = function(dateFromat)
+	ApiInlineLvlSdt.prototype.SetDateFormat = function(dateFormat)
 	{
 		if (this.Sdt.Pr.Date)
 		{
 			let dateTimePr = this.Sdt.Pr.Date.Copy();
-			dateTimePr.SetDateFormat(dateFromat);
+			dateTimePr.SetDateFormat(dateFormat);
 			this.Sdt.ApplyDatePickerPr(dateTimePr, true);
 			return true;
 		}
