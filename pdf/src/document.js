@@ -2721,7 +2721,8 @@ var CPresentation = CPresentation || function(){};
             });
 
             aLowerIndexes.forEach(function(oldIndex, i) {
-                _t.MovePage(oldIndex, nNewPos - i);
+                let oPage = _t.RemovePage(oldIndex);
+                _t.AddPage(nNewPos - i, oPage);
             });
         }
         // insert back
