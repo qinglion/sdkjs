@@ -142,6 +142,10 @@
                 }
     
                 field.SetImage(sTargetSrc);
+                if (undefined == nAPType) {
+                    field.SetImageRasterId('', AscPDF.APPEARANCE_TYPES.rollover);
+                    field.SetImageRasterId('', AscPDF.APPEARANCE_TYPES.mouseDown);
+                }            
             });
             
             if (oViewer.IsOpenFormsInProgress == false) {
@@ -1398,10 +1402,11 @@
             return;
         }
         
-        let Api             = editor;
-        let oThis           = this;
-        let oDoc            = this.GetDocument();
-        let oActionsQueue   = oDoc.GetActionsQueue();
+        let Api                 = Asc.editor;
+        let oThis               = this;
+        let oDoc                = this.GetDocument();
+        let oActionsQueue       = oDoc.GetActionsQueue();
+        this.asc_curImageState  = undefined;
 
         if (oActionsQueue.curAction) {
             oActionsQueue.curAction.bContinueAfterEval = false;
