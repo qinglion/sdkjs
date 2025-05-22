@@ -7631,7 +7631,7 @@ var CPresentation = CPresentation || function(){};
         oCommonProps.asc_putName(field.GetFullName());
         oCommonProps.asc_putRequired(field.IsRequired());
         oCommonProps.asc_putReadOnly(field.IsReadOnly());
-        // oCommonProps.asc_putRot(field.GetRot());
+        oCommonProps.asc_putRot(field.GetRotate());
         oCommonProps.asc_putDisplay(field.GetDisplay());
         oCommonProps.asc_putPropLocked(field.IsLocked());
         oCommonProps.put_Locked(field.IsCoEditLocked());

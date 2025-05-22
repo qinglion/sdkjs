@@ -2726,6 +2726,9 @@
         AscCommon.History.Add(new CChangesPDFFormRotate(this, this._rotate, nAngle));
 
         this._rotate = nAngle;
+        this.SetWasChanged(true);
+        this.SetNeedRecalc(true);
+        
         this.RecalcTextTransform();
     };
     CBaseField.prototype.GetRotate = function() {

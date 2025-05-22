@@ -1993,6 +1993,24 @@
 			return true;
         }, AscDFH.historydescription_Pdf_ChangeField);
 	};
+	PDFEditorApi.prototype.SetFieldRotate = function(nAngle) {
+		let oDoc = this.getPDFDoc();
+		let oController = oDoc.GetController();
+		let oForm = oDoc.activeForm;
+
+		if (!oForm) {
+			return false;
+		}
+
+		return oDoc.DoAction(function() {
+			oController.selectedObjects.forEach(function(shape) {
+				let field = shape.GetEditField();
+				field.SetRotate(nAngle);
+			});
+
+			return true;
+        }, AscDFH.historydescription_Pdf_ChangeField);
+	};
 	// text field
 	PDFEditorApi.prototype.SetTextFieldMultiline = function(bValue) {
 		let oDoc = this.getPDFDoc();
@@ -4619,6 +4637,7 @@
 	PDFEditorApi.prototype['SetFieldReadOnly']			= PDFEditorApi.prototype.SetFieldReadOnly;
 	PDFEditorApi.prototype['SetFieldDefaultValue']		= PDFEditorApi.prototype.SetFieldDefaultValue;
 	PDFEditorApi.prototype['SetFieldLocked']			= PDFEditorApi.prototype.SetFieldLocked;
+	PDFEditorApi.prototype['SetFieldRotate']			= PDFEditorApi.prototype.SetFieldRotate;
 	// text field
 	PDFEditorApi.prototype['SetTextFieldMultiline']		= PDFEditorApi.prototype.SetTextFieldMultiline;
 	PDFEditorApi.prototype['SetTextFieldCharLimit']		= PDFEditorApi.prototype.SetTextFieldCharLimit;
