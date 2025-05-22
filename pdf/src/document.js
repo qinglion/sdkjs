@@ -4123,6 +4123,8 @@ var CPresentation = CPresentation || function(){};
         this.Api.sendEvent('asc_onCanEditPage', oCurPage.IsEditPageLock() || oCurPage.IsRecognized());
     };
     CPDFDoc.prototype.UpdateInterfaceTracks = function() {
+        this.DrawingObjects.updateSelectionState();
+        
         this.UpdateCommentPos();
         this.UpdateMathTrackPos();
         this.UpdateAnnotTrackPos();
