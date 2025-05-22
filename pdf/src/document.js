@@ -1534,6 +1534,7 @@ var CPresentation = CPresentation || function(){};
             oCopy.Drawings.push({
                 Drawing: oCopyDrawingObj,
                 ExtX: this.Drawings[i].ExtX,
+                ExtY: this.Drawings[i].ExtY,
                 X: this.Drawings[i].X,
                 Y: this.Drawings[i].Y,
                 base64: this.Drawings[i].base64
@@ -1570,6 +1571,7 @@ var CPresentation = CPresentation || function(){};
                 aCopyPageDrawings.push({
                     Drawing: oCopyDrawingObj,
                     ExtX: aDrawings[j].ExtX,
+                    ExtY: aDrawings[j].ExtY,
                     X: aDrawings[j].X,
                     Y: aDrawings[j].Y,
                     base64: aDrawings[j].base64
