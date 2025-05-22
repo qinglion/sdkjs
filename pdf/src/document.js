@@ -1531,14 +1531,14 @@ var CPresentation = CPresentation || function(){};
         for (let i = 0; i < this.Drawings.length; i++) {
             let oCopyDrawingObj = this.Drawings[i].Drawing.copy(oCopyPr);
             oIdMap[this.Drawings[i].Drawing.GetId()] = oCopyDrawingObj.GetId();
-            oCopy.Drawings.push({
-                Drawing: oCopyDrawingObj,
-                ExtX: this.Drawings[i].ExtX,
-                ExtY: this.Drawings[i].ExtY,
-                X: this.Drawings[i].X,
-                Y: this.Drawings[i].Y,
-                base64: this.Drawings[i].base64
-            });
+            oCopy.Drawings.push(new DrawingCopyObject(
+                oCopyDrawingObj,
+                this.Drawings[i].ExtX,
+                this.Drawings[i].ExtY,
+                this.Drawings[i].X,
+                this.Drawings[i].Y,
+                this.Drawings[i].base64
+            ));
         }
 
         AscFormat.fResetConnectorsIds(oCopy.Drawings.map(function(drawing) {
@@ -1568,14 +1568,14 @@ var CPresentation = CPresentation || function(){};
             for (let j = 0; j < aDrawings.length; j++) {
                 let oCopyDrawingObj = aDrawings[j].Drawing.copy(oCopyPr);
                 oIdMap[aDrawings[j].Drawing.GetId()] = oCopyDrawingObj.GetId();
-                aCopyPageDrawings.push({
-                    Drawing: oCopyDrawingObj,
-                    ExtX: aDrawings[j].ExtX,
-                    ExtY: aDrawings[j].ExtY,
-                    X: aDrawings[j].X,
-                    Y: aDrawings[j].Y,
-                    base64: aDrawings[j].base64
-                });
+                aCopyPageDrawings.push(new DrawingCopyObject(
+                    oCopyDrawingObj,
+                    aDrawings[j].ExtX,
+                    aDrawings[j].ExtY,
+                    aDrawings[j].X,
+                    aDrawings[j].Y,
+                    aDrawings[j].base64
+                ));
             }
             
             oCopy.MergePagesInfo.pagesDrawings.push(aCopyPageDrawings);
