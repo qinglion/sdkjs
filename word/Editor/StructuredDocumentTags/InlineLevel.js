@@ -844,17 +844,14 @@ CInlineLevelSdt.prototype.Remove = function(nDirection, bOnAddText)
 		if (!this.CanBeDeleted() && (!bOnAddText || !this.CanBeEdited()))
 			return true;
 		
-		if (!this.CanBeEdited())
-		{
-			this.RemoveThisFromParent(true);
-			return true;
-		}
-
 		if (!bOnAddText && !this.IsSelectionUse())
 		{
 			this.SelectAll(1);
 			this.SelectThisElement();
-			return true;
+		}
+		else if (!this.CanBeEdited())
+		{
+			this.RemoveThisFromParent(true);
 		}
 		else if (bOnAddText || !logicDocument || !logicDocument.IsFillingFormMode())
 		{
