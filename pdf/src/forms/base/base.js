@@ -2729,6 +2729,10 @@
         this.SetWasChanged(true);
         this.SetNeedRecalc(true);
         
+        if (this.GetType() == AscPDF.FIELD_TYPES.button) {
+            this.SetNeedUpdateImage(true);
+        }
+        
         this.RecalcTextTransform();
     };
     CBaseField.prototype.GetRotate = function() {
