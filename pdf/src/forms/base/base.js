@@ -3153,7 +3153,10 @@
         memory.Skip(4);
 
         let oContentToDraw = this.GetTrigger(AscPDF.FORMS_TRIGGERS_TYPES.Format) ? this.contentFormat : this.content;
+        let oldTrMatrix = oContentToDraw.transform;
+        oContentToDraw.transform = new AscCommon.CMatrix();
         oContentToDraw.Draw(0, memory.docRenderer);
+        oContentToDraw.transform = oldTrMatrix;
 
         // запись длины комманд
         let nEndPos = memory.GetCurPosition();
