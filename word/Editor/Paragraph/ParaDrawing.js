@@ -1828,6 +1828,10 @@ ParaDrawing.prototype.Get_DrawingType = function()
 };
 ParaDrawing.prototype.Is_Inline = function()
 {
+	if (Asc.editor.isPdfEditor()) {
+		return drawing_Inline === this.DrawingType;
+	}
+
 	if(this.Parent &&
 		this.Parent.Get_ParentTextTransform &&
 		this.Parent.Get_ParentTextTransform())

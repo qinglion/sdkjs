@@ -251,6 +251,8 @@
 			return false;
 		
 		this._RemoveImage();
+        this.CheckTextFont();
+        this.CheckTextColor();
 
         let oHTMLImg = oImgData.Image;
 
@@ -475,8 +477,17 @@
      */
     CPushButtonField.prototype.Internal_CorrectContentPos = function() {
         const oRect = this.IsButtonFitBounds() ? this.getFormRect() : this.getFormRelRect();
-        let nButtonPos  = this.GetLayout();
+        let dFrmW = oRect.W;
+        let dFrmH = oRect.H;
+        
+        let nRotAngle = this.GetRotate();
+        if (nRotAngle === 90 || nRotAngle === 270) {
+            let tmp = dFrmW;
+            dFrmW = dFrmH;
+            dFrmH = tmp;
+        }
 
+        let nButtonPos = this.GetLayout();
         let oDrawing = this.GetDrawing();
 
         // положение текста с картинкой в одном параграфе
@@ -496,7 +507,7 @@
                 else if (nButtonPos == position["textIconH"])
                     this.content.SetAlign(AscPDF.ALIGN_TYPE.left);
 
-                let nFreeHorSpace = oRect.W - (oContentBounds.Right - oContentBounds.Left);
+                let nFreeHorSpace = dFrmW - (oContentBounds.Right - oContentBounds.Left);
                 if (nFreeHorSpace > 0) {
                     let oTabs = new CParaTabs();
                     oTabs.Add(new CParaTab(Asc.c_oAscTabType.Left, this.content.X + oRun.GetContentWidthInRange() + nFreeHorSpace / 2, undefined));
@@ -520,7 +531,7 @@
                 let oContentBounds  = this.content.GetContentBounds(0);
                 let nContentH       = oContentBounds.Bottom - oContentBounds.Top;
 
-                oPara.Pr.Spacing.Before = (oRect.H - nContentH) / 2;
+                oPara.Pr.Spacing.Before = (dFrmH - nContentH) / 2;
                 this.content.SetAlign(AscPDF.ALIGN_TYPE.center);
                 oPara.CompiledPr.NeedRecalc = true;
             }
@@ -544,9 +555,9 @@
         let nContentH       = oContentBounds.Bottom - oContentBounds.Top;
 
         if (this.content.GetElementsCount() == 1)
-            oPara.Pr.Spacing.Before = (oRect.H - nContentH) / 2;
+            oPara.Pr.Spacing.Before = (dFrmH - nContentH) / 2;
         else if (this.content.GetElementsCount() == 2)
-            oPara.Pr.Spacing.Before = (oRect.H - nContentH/2) / 2;
+            oPara.Pr.Spacing.Before = (dFrmH - nContentH/2) / 2;
         this.content.SetAlign(AscPDF.ALIGN_TYPE.center);
         oPara.CompiledPr.NeedRecalc = true;
     };
@@ -586,7 +597,7 @@
         if (nFace == null)
             nFace = 0;
 
-        if (cCaption == "" || typeof(cCaption) != "string")
+        if (typeof(cCaption) != "string")
             return false;
         
         AscFonts.FontPickerByCharacter.getFontsByString(cCaption);
@@ -594,7 +605,7 @@
         let sPrevCaption;
         switch (nFace) {
             case 0:
-                sPrevCaption = this._buttonCaption;
+                sPrevCaption = this.GetCaption();
                 this._buttonCaption = cCaption;
                 let oCaptionRun;
                 let oPara = this.content.GetElement(0);
@@ -655,6 +666,7 @@
         AscCommon.History.Add(new CChangesPDFPushbuttonCaption(this, sPrevCaption, cCaption, nFace));
 
         this.SetWasChanged(true);
+        this.SetNeedUpdateImage(true);
         this.SetNeedRecalc(true);
     };
     CPushButtonField.prototype.SetValue = function() {
@@ -1061,9 +1073,6 @@
         if (this.IsNeedRecalc() == false)
             return;
 
-        this.CheckTextFont();
-        this.CheckTextColor();
-        
         if (false == this.RecalculateContentRect()) {
             this.Internal_CorrectContentPos();
             this.content.Recalculate_Page(0, false);
@@ -1185,14 +1194,12 @@
 		
 		AscCommon.ExecuteNoHistory(function(){
 			let sFont = this.GetTextFontActual();
-			if (oCaptionRun.Pr.GetFontFamily() === sFont || !this.content)
-				return;
-			
 			this.content.SetFont(sFont);
 			let oStyle = this.GetFontStyle();
 			this.content.SetBold(oStyle.bold);
 			this.content.SetItalic(oStyle.italic);
-		}, undefined, this);
+            this.content.SetFontSize(this.GetTextSize());
+        }, undefined, this);
     };
     CPushButtonField.prototype.GetCaptionRun = function() {
         return this._captionRun;
@@ -1614,8 +1621,9 @@
             let oTargetRun = oPara.GetElement(0);
             oTargetRun.ClearContent();
 
-            if (this._buttonCaption) {
-                oTargetRun.AddText(this._buttonCaption);
+            let sCaption = this.GetCaption();
+            if (sCaption) {
+                oTargetRun.AddText(sCaption);
                 this.SetCaptionRun(oTargetRun);
             }
         }
@@ -1679,6 +1687,8 @@
         }
 
         AscCommon.History.EndNoHistoryMode();
+
+        this.SetNeedUpdateImage(true);
         this.SetNeedRecalc(true);
     };
     CPushButtonField.prototype.SetIconTextV = function() {
@@ -1696,7 +1706,9 @@
             oPara2 = this.content.GetElement(1);
 
             if (oPara2.GetAllDrawingObjects().length != 0) {
-                [this.content.Content[0], this.content.Content[1]] = [this.content.Content[1], this.content.Content[0]];
+                let temp = this.content.Content[0];
+                this.content.Content[0] = this.content.Content[1];
+                this.content.Content[1] = temp;
                 oPara1.Set_DocumentIndex(1);
                 oPara2.Set_DocumentIndex(0);
             }
@@ -1733,14 +1745,17 @@
                 this.SetCaptionRun(null);
             }
 
-            if (this._buttonCaption) {
+            let sCaption = this.GetCaption();
+            if (sCaption) {
                 oCaptionRun = oNewPara.GetElement(0);
-                oCaptionRun.AddText(this._buttonCaption);
+                oCaptionRun.AddText(sCaption);
                 this.SetCaptionRun(oCaptionRun);
             }
         }
 
         AscCommon.History.EndNoHistoryMode();
+
+        this.SetNeedUpdateImage(true);
         this.SetNeedRecalc(true);
     };
     CPushButtonField.prototype.SetTextIconV = function() {
@@ -1758,7 +1773,9 @@
             oPara2 = this.content.GetElement(1);
 
             if (oPara1.GetAllDrawingObjects().length != 0) {
-                [this.content.Content[0], this.content.Content[1]] = [this.content.Content[1], this.content.Content[0]];
+                let temp = this.content.Content[0];
+                this.content.Content[0] = this.content.Content[1];
+                this.content.Content[1] = temp;
                 oPara1.Set_DocumentIndex(1);
                 oPara2.Set_DocumentIndex(0);
             }
@@ -1795,14 +1812,17 @@
                 this.SetCaptionRun(null);
             }
 
-            if (oCaptionRun) {
+            let sCaption = this.GetCaption();
+            if (sCaption) {
                 oCaptionRun = oNewPara.GetElement(0);
-                oCaptionRun.AddText(oCaptionRun);
+                oCaptionRun.AddText(sCaption);
                 this.SetCaptionRun(oCaptionRun);
             }
         }
 
         AscCommon.History.EndNoHistoryMode();
+
+        this.SetNeedUpdateImage(true);
         this.SetNeedRecalc(true);
     };
     CPushButtonField.prototype.SetIconTextH = function() {
@@ -1851,15 +1871,18 @@
             this.SetCaptionRun(null);
         }
 
-        if (this._buttonCaption) {
+        let sCaption = this.GetCaption();
+        if (sCaption) {
             oTmpRun = new ParaRun(oPara, false);
-            oTmpRun.AddText(this._buttonCaption);
+            oTmpRun.AddText(sCaption);
             this.SetCaptionRun(oTmpRun);
 
             oPara.Add_ToContent(oPara.Content.length - 1, oTmpRun);
         }
 
         AscCommon.History.EndNoHistoryMode();
+
+        this.SetNeedUpdateImage(true);
         this.SetNeedRecalc(true);
     };
     CPushButtonField.prototype.SetTextIconH = function() {
@@ -1908,15 +1931,18 @@
             this.SetCaptionRun(null);
         }
 
-        if (this._buttonCaption) {
+        let sCaption = this.GetCaption();
+        if (sCaption) {
             oTmpRun = new ParaRun(oPara, false);
-            oTmpRun.AddText(this._buttonCaption);
+            oTmpRun.AddText(sCaption);
             oPara.Add_ToContent(0, oTmpRun);
 
             this.SetCaptionRun(oTmpRun);
         }
         
         AscCommon.History.EndNoHistoryMode();
+
+        this.SetNeedUpdateImage(true);
         this.SetNeedRecalc(true);
     };
     CPushButtonField.prototype.SetOverlay = function() {
@@ -1965,13 +1991,16 @@
         }
         oPara.CorrectContent();
 
-        if (this._buttonCaption) {
+        let sCaption = this.GetCaption();
+        if (sCaption) {
             oCaptionRun = oPara.GetElement(0);
             this.SetCaptionRun(oCaptionRun);
-            oCaptionRun.AddText(this._buttonCaption);
+            oCaptionRun.AddText(sCaption);
         }
 
         AscCommon.History.EndNoHistoryMode();
+
+        this.SetNeedUpdateImage(true);
         this.SetNeedRecalc(true);
     };
 	CPushButtonField.prototype._isCenterAlign = function() {

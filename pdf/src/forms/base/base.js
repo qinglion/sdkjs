@@ -2371,6 +2371,10 @@
             }
         }
         
+        if (this.GetType() == AscPDF.FIELD_TYPES.button) {
+            this.SetNeedUpdateImage(true);
+        }
+
         this.SetWasChanged(true);
         this.SetNeedRecalc();
     };
