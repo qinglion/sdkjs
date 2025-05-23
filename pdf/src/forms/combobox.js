@@ -216,7 +216,10 @@
 
         // 4. Swap width/height if rotated 90° or 270°
         if (angleDeg === 90 || angleDeg === 270) {
-            [Wf, Hf] = [Hf, Wf];
+            let temp = Wf;
+            Wf = Hf;
+            Hf = temp;
+
             X -= (Wf - Hf) / 2;
             Y -= (Hf - Wf) / 2;
         }

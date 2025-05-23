@@ -2371,6 +2371,10 @@
             }
         }
         
+        if (this.GetType() == AscPDF.FIELD_TYPES.button) {
+            this.SetNeedUpdateImage(true);
+        }
+
         this.SetWasChanged(true);
         this.SetNeedRecalc();
     };
@@ -2729,6 +2733,10 @@
         this.SetWasChanged(true);
         this.SetNeedRecalc(true);
         
+        if (this.GetType() == AscPDF.FIELD_TYPES.button) {
+            this.SetNeedUpdateImage(true);
+        }
+        
         this.RecalcTextTransform();
     };
     CBaseField.prototype.GetRotate = function() {
@@ -2926,6 +2934,8 @@
         //
         // rotate
         //
+        memory.fieldDataFlags |= (1 <<6);
+        memory.WriteLong(this.GetRotate());
 
         let aBgColor = this.GetBackgroundColor();
         if (aBgColor && aBgColor.length != 0) {
@@ -3143,7 +3153,10 @@
         memory.Skip(4);
 
         let oContentToDraw = this.GetTrigger(AscPDF.FORMS_TRIGGERS_TYPES.Format) ? this.contentFormat : this.content;
+        let oldTrMatrix = oContentToDraw.transform;
+        oContentToDraw.transform = new AscCommon.CMatrix();
         oContentToDraw.Draw(0, memory.docRenderer);
+        oContentToDraw.transform = oldTrMatrix;
 
         // запись длины комманд
         let nEndPos = memory.GetCurPosition();
