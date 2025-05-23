@@ -2930,6 +2930,8 @@
         //
         // rotate
         //
+        memory.fieldDataFlags |= (1 <<6);
+        memory.WriteLong(this.GetRotate());
 
         let aBgColor = this.GetBackgroundColor();
         if (aBgColor && aBgColor.length != 0) {
