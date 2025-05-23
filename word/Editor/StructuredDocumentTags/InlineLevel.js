@@ -841,8 +841,14 @@ CInlineLevelSdt.prototype.Remove = function(nDirection, bOnAddText)
 			return true;
 		}
 		
-		if (!this.CanBeDeleted() && !bOnAddText)
+		if (!this.CanBeDeleted() && (!bOnAddText || !this.CanBeEdited()))
 			return true;
+		
+		if (!this.CanBeEdited())
+		{
+			this.RemoveThisFromParent(true);
+			return true;
+		}
 
 		if (!bOnAddText && !this.IsSelectionUse())
 		{
@@ -2606,7 +2612,7 @@ CInlineLevelSdt.prototype.Document_Is_SelectionLocked = function(CheckType)
 
 		if (c_oAscSdtLockType.SdtContentLocked === nContentControlLock
 			|| (c_oAscSdtLockType.SdtLocked === nContentControlLock && true !== bSelectedOnlyThis)
-			|| (!this.CanBeEdited() && true === bSelectedOnlyThis && (AscCommon.changestype_Paragraph_AddText !== CheckType || !this.CanBeDeleted())))
+			|| (!this.CanBeEdited() && true === bSelectedOnlyThis && (AscCommon.changestype_Paragraph_AddText !== CheckType || !this.CanBeDeleted() || this.IsForm())))
 		{
 			return AscCommon.CollaborativeEditing.Add_CheckLock(true);
 		}
