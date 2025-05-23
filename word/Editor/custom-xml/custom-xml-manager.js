@@ -55,7 +55,7 @@
 	CustomXmlManager.prototype.add = function(oCustomXml)
 	{
 		let sId = oCustomXml.GetId();
-		AscCommon.History.Add(new CChangesCustomXmlAdd(this, sId, oCustomXml));
+		AscCommon.History.Add(new AscDFH.CChangesCustomXmlManagerAdd(this, sId, oCustomXml));
 
 		this.m_arrXmlById[sId] = oCustomXml;
 		this.xml.push(oCustomXml);
@@ -97,7 +97,7 @@
 			let oCustomXml = this.getCustomXml(nXmlCounter);
 			if (uId === oCustomXml.itemId || oCustomXml.checkUrl(prefix))
 			{
-				AscCommon.History.Add(new CChangesCustomXmlRemove(this, oCustomXml.Id, oCustomXml));
+				AscCommon.History.Add(new AscDFH.CChangesCustomXmlManagerRemove(this, oCustomXml.Id, oCustomXml));
 				this.xml.splice(nXmlCounter, 1);
 				return true;
 			}

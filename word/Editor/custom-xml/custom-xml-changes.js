@@ -32,203 +32,247 @@
 
 "use strict";
 
-AscDFH.changesFactory[AscDFH.historyitem_type_CustomXML_Add]			= CChangesCustomXmlAdd;
-AscDFH.changesFactory[AscDFH.historyitem_type_CustomXML_Remove]			= CChangesCustomXmlRemove;
-
-AscDFH.changesFactory[AscDFH.historyitem_type_ChangeCustomXMLStart]			= CChangesStartCustomXml;
-AscDFH.changesFactory[AscDFH.historyitem_type_ChangeCustomXMLPart]			= CChangesPartCustomXml;
-AscDFH.changesFactory[AscDFH.historyitem_type_ChangeCustomXMLEnd]			= CChangesEndCustomXml;
-
-AscDFH.changesRelationMap[AscDFH.historyitem_type_CustomXML_Add]		= [
-	AscDFH.historyitem_type_CustomXML_Add,
-	AscDFH.historyitem_type_CustomXML_Remove
-];
-
-AscDFH.changesRelationMap[AscDFH.historyitem_type_CustomXML_Remove]		= [
-	AscDFH.historyitem_type_CustomXML_Add,
-	AscDFH.historyitem_type_CustomXML_Remove
-];
-
-function CChangesStartCustomXml(Class, Old, New, Color) {
-	AscDFH.CChangesBaseProperty.call(this, Class, Old, New, Color);
-}
-CChangesStartCustomXml.prototype = Object.create(AscDFH.CChangesBaseProperty.prototype);
-CChangesStartCustomXml.prototype.constructor = CChangesStartCustomXml;
-CChangesStartCustomXml.prototype.Type = AscDFH.historyitem_type_ChangeCustomXMLStart;
-CChangesStartCustomXml.prototype.Undo = function () {
-	if (!this.Class.partsOfCustomXml) {
-		return this.Redo();
-	}
-
-	this.Class.m_aCustomXmlData = this.Class.partsOfCustomXml.reverse().join("");
-	this.Class.addContentByXMLString(this.Class.m_aCustomXmlData);
-	delete this.Class.partsOfCustomXml;
-};
-CChangesStartCustomXml.prototype.Redo = function () {
-	if (this.Class.partsOfCustomXml) {
-		return this.Undo();
-	}
-	this.Class.partsOfCustomXml = [];
-};
-
-function CChangesPartCustomXml(Class, Old, New, Color) {
-	AscDFH.CChangesBaseProperty.call(this, Class, Old, New, Color);
-}
-CChangesPartCustomXml.prototype = Object.create(AscDFH.CChangesBaseProperty.prototype);
-CChangesPartCustomXml.prototype.constructor = CChangesPartCustomXml;
-CChangesPartCustomXml.prototype.Type = AscDFH.historyitem_type_ChangeCustomXMLPart;
-CChangesPartCustomXml.prototype.private_SetValue = function (oPr) {
-	if (oPr.length) {
-		this.Class.partsOfCustomXml.push(oPr);
-	}
-};
-CChangesPartCustomXml.prototype.WriteToBinary = function (Writer) {
-	Writer.WriteString2(this.Old);
-	Writer.WriteString2(this.New);
-};
-CChangesPartCustomXml.prototype.ReadFromBinary = function (Reader) {
-	this.Old = Reader.GetString2();
-	this.New = Reader.GetString2();
-};
-
-function CChangesEndCustomXml(Class, Old, New, Color) {
-	AscDFH.CChangesBaseProperty.call(this, Class, Old, New, Color);
-}
-CChangesEndCustomXml.prototype = Object.create(AscDFH.CChangesBaseProperty.prototype);
-CChangesEndCustomXml.prototype.constructor = CChangesEndCustomXml;
-CChangesEndCustomXml.prototype.Type = AscDFH.historyitem_type_ChangeCustomXMLEnd;
-CChangesEndCustomXml.prototype.Undo = function () {
-	if (this.Class.partsOfCustomXml) {
-		return this.Redo();
-	}
-	this.Class.partsOfCustomXml = [];
-};
-CChangesEndCustomXml.prototype.Redo = function () {
-	if (!this.Class.partsOfCustomXml) {
-		return this.Undo();
-	}
-
-	this.Class.m_aCustomXmlData = this.Class.partsOfCustomXml.join("");
-	this.Class.addContentByXMLString(this.Class.m_aCustomXmlData);
-	delete this.Class.partsOfCustomXml;
-};
-
-/**
- * @constructor
- * @extends {AscDFH.CChangesBase}
- */
-function CChangesCustomXmlAdd(Class, Id, xml)
+(function()
 {
-	AscDFH.CChangesBase.call(this, Class);
-
-	this.Id		= Id;
-	this.xml	= xml;
-}
-CChangesCustomXmlAdd.prototype = Object.create(AscDFH.CChangesBase.prototype);
-CChangesCustomXmlAdd.prototype.constructor = CChangesCustomXmlAdd;
-CChangesCustomXmlAdd.prototype.Type = AscDFH.historyitem_type_CustomXML_Add;
-CChangesCustomXmlAdd.prototype.Undo = function()
-{
-	let oXml = this.Class.m_arrXmlById[this.Id];
-	if (oXml)
+	//------------------------------------------------------------------------------------------------------------------
+	// CustomXmlManager
+	//------------------------------------------------------------------------------------------------------------------
+	AscDFH.historyitem_CustomXmlManager_Add    = AscDFH.historyitem_type_CustomXmlManager | 1;
+	AscDFH.historyitem_CustomXmlManager_Remove = AscDFH.historyitem_type_CustomXmlManager | 2;
+	
+	/**
+	 * @constructor
+	 * @extends {AscDFH.CChangesBase}
+	 */
+	function CChangesCustomXmlManagerAdd(Class, Id, xml)
 	{
-		delete this.Class.m_arrXmlById[this.Id];
-		for (let i = 0; i < this.Class.xml.length; i++)
+		AscDFH.CChangesBase.call(this, Class);
+		
+		this.Id		= Id;
+		this.xml	= xml;
+	}
+	AscDFH.InheritBaseChange(
+		CChangesCustomXmlManagerAdd,
+		AscDFH.CChangesBase,
+		AscDFH.historyitem_CustomXmlManager_Add
+	);
+	AscDFH.CChangesCustomXmlManagerAdd = CChangesCustomXmlManagerAdd;
+	CChangesCustomXmlManagerAdd.prototype.Undo = function()
+	{
+		let oXml = this.Class.m_arrXmlById[this.Id];
+		if (oXml)
 		{
-			if (this.Class.xml[i] === oXml)
+			delete this.Class.m_arrXmlById[this.Id];
+			for (let i = 0; i < this.Class.xml.length; i++)
 			{
-				this.Class.xml.splice(i, 1);
+				if (this.Class.xml[i] === oXml)
+				{
+					this.Class.xml.splice(i, 1);
+				}
 			}
 		}
-	}
-};
-CChangesCustomXmlAdd.prototype.Redo = function()
-{
-	this.Class.m_arrXmlById[this.Id] = this.xml;
-	this.Class.xml.push(this.xml);
-};
-CChangesCustomXmlAdd.prototype.WriteToBinary = function(Writer)
-{
-	// String : Id customXML
-	Writer.WriteString2(this.Id);
-};
-CChangesCustomXmlAdd.prototype.ReadFromBinary = function(Reader)
-{
-	// String : Id customXML
-	this.Id      = Reader.GetString2();
-	this.xml = AscCommon.g_oTableId.Get_ById(this.Id);
-};
-CChangesCustomXmlAdd.prototype.CreateReverseChange = function()
-{
-	return new CChangesCustomXmlRemove(this.Class, this.Id, this.xml);
-};
-CChangesCustomXmlAdd.prototype.Merge = function(oChange)
-{
-	if (this.Class !== oChange.Class)
-		return true;
-
-	if ((AscDFH.historyitem_type_CustomXML_Add === oChange.Type || AscDFH.historyitem_type_CustomXML_Remove === oChange.Type) && this.Id === oChange.Id)
-		return false;
-
-	return true;
-};
-
-/**
- * @constructor
- * @extends {AscDFH.CChangesBase}
- */
-function CChangesCustomXmlRemove(Class, Id, xml)
-{
-	AscDFH.CChangesBase.call(this, Class);
-
-	this.Id		= Id;
-	this.xml	= xml;
-}
-CChangesCustomXmlRemove.prototype = Object.create(AscDFH.CChangesBase.prototype);
-CChangesCustomXmlRemove.prototype.constructor = CChangesCustomXmlRemove;
-CChangesCustomXmlRemove.prototype.Type = AscDFH.historyitem_type_CustomXML_Remove;
-CChangesCustomXmlRemove.prototype.Undo = function()
-{
-	this.Class.m_arrXmlById[this.Id] = this.xml;
-	this.Class.xml.push(this.xml);
-};
-CChangesCustomXmlRemove.prototype.Redo = function()
-{
-	let xml = this.Class.m_arrXmlById[this.Id];
-	if (xml)
+	};
+	CChangesCustomXmlManagerAdd.prototype.Redo = function()
 	{
-		delete this.Class.m_arrXmlById[this.Id];
-		for (let i = 0; i < this.Class.xml.length; i++)
+		this.Class.m_arrXmlById[this.Id] = this.xml;
+		this.Class.xml.push(this.xml);
+	};
+	CChangesCustomXmlManagerAdd.prototype.WriteToBinary = function(Writer)
+	{
+		// String : Id customXML
+		Writer.WriteString2(this.Id);
+	};
+	CChangesCustomXmlManagerAdd.prototype.ReadFromBinary = function(Reader)
+	{
+		// String : Id customXML
+		this.Id      = Reader.GetString2();
+		this.xml = AscCommon.g_oTableId.Get_ById(this.Id);
+	};
+	CChangesCustomXmlManagerAdd.prototype.CreateReverseChange = function()
+	{
+		return new CChangesCustomXmlManagerRemove(this.Class, this.Id, this.xml);
+	};
+	CChangesCustomXmlManagerAdd.prototype.Merge = function(oChange)
+	{
+		if (this.Class !== oChange.Class)
+			return true;
+		
+		if ((AscDFH.historyitem_CustomXmlManager_Add === oChange.Type || AscDFH.historyitem_CustomXmlManager_Remove === oChange.Type) && this.Id === oChange.Id)
+			return false;
+		
+		return true;
+	};
+	/**
+	 * @constructor
+	 * @extends {AscDFH.CChangesBase}
+	 */
+	function CChangesCustomXmlManagerRemove(Class, Id, xml)
+	{
+		AscDFH.CChangesBase.call(this, Class);
+		
+		this.Id		= Id;
+		this.xml	= xml;
+	}
+	AscDFH.InheritBaseChange(
+		CChangesCustomXmlManagerRemove,
+		AscDFH.CChangesBase,
+		AscDFH.historyitem_CustomXmlManager_Remove
+	);
+	AscDFH.CChangesCustomXmlManagerRemove = CChangesCustomXmlManagerRemove;
+	CChangesCustomXmlManagerRemove.prototype.Undo = function()
+	{
+		this.Class.m_arrXmlById[this.Id] = this.xml;
+		this.Class.xml.push(this.xml);
+	};
+	CChangesCustomXmlManagerRemove.prototype.Redo = function()
+	{
+		let xml = this.Class.m_arrXmlById[this.Id];
+		if (xml)
 		{
-			if (this.Class.xml[i] === xml)
+			delete this.Class.m_arrXmlById[this.Id];
+			for (let i = 0; i < this.Class.xml.length; i++)
 			{
-				this.Class.xml.splice(i, 1);
+				if (this.Class.xml[i] === xml)
+				{
+					this.Class.xml.splice(i, 1);
+				}
 			}
 		}
-	}
-};
-CChangesCustomXmlRemove.prototype.WriteToBinary = function(Writer)
-{
-	// String : Id customXML
-	Writer.WriteString2(this.Id);
-};
-CChangesCustomXmlRemove.prototype.ReadFromBinary = function(Reader)
-{
-	// String : Id customXML
-	this.Id		= Reader.GetString2();
-	this.xml	= AscCommon.g_oTableId.Get_ById(this.Id);
-};
-CChangesCustomXmlRemove.prototype.CreateReverseChange = function()
-{
-	return new CChangesCustomXmlAdd(this.Class, this.Id, this.xml);
-};
-CChangesCustomXmlRemove.prototype.Merge = function(oChange)
-{
-	if (this.Class !== oChange.Class)
+	};
+	CChangesCustomXmlManagerRemove.prototype.WriteToBinary = function(Writer)
+	{
+		// String : Id customXML
+		Writer.WriteString2(this.Id);
+	};
+	CChangesCustomXmlManagerRemove.prototype.ReadFromBinary = function(Reader)
+	{
+		// String : Id customXML
+		this.Id		= Reader.GetString2();
+		this.xml	= AscCommon.g_oTableId.Get_ById(this.Id);
+	};
+	CChangesCustomXmlManagerRemove.prototype.CreateReverseChange = function()
+	{
+		return new CChangesCustomXmlManagerAdd(this.Class, this.Id, this.xml);
+	};
+	CChangesCustomXmlManagerRemove.prototype.Merge = function(oChange)
+	{
+		if (this.Class !== oChange.Class)
+			return true;
+		
+		if ((AscDFH.historyitem_CustomXmlManager_Add === oChange.Type || AscDFH.historyitem_CustomXmlManager_Remove === oChange.Type) && this.Id === oChange.Id)
+			return false;
+		
 		return true;
+	};
+	
+	
+	
+	//------------------------------------------------------------------------------------------------------------------
+	// CustomXml
+	//------------------------------------------------------------------------------------------------------------------
+	AscDFH.historyitem_CustomXmlManager_Content_Start = AscDFH.historyitem_type_CustomXml | 1;
+	AscDFH.historyitem_CustomXmlManager_Content_Part  = AscDFH.historyitem_type_CustomXml | 2;
+	AscDFH.historyitem_CustomXmlManager_Content_End   = AscDFH.historyitem_type_CustomXml | 2;
+	
+	/**
+	 * @constructor
+	 * @extends {AscDFH.CChangesBaseProperty}
+	 */
+	function CChangesCustomXmlContentStart(Class, Old, New, Color)
+	{
+		AscDFH.CChangesBaseProperty.call(this, Class, Old, New, Color);
+	}
+	AscDFH.InheritBaseChange(
+		CChangesCustomXmlContentStart,
+		AscDFH.CChangesBaseProperty,
+		AscDFH.historyitem_CustomXmlManager_Content_Start
+	);
+	AscDFH.CChangesCustomXmlContentStart = CChangesCustomXmlContentStart;
+	CChangesCustomXmlContentStart.prototype.Undo = function()
+	{
+		if (!this.Class.partsOfCustomXml)
+		{
+			return this.Redo();
+		}
+		
+		this.Class.m_aCustomXmlData = this.Class.partsOfCustomXml.reverse().join("");
+		this.Class.addContentByXMLString(this.Class.m_aCustomXmlData);
+		delete this.Class.partsOfCustomXml;
+	};
+	CChangesCustomXmlContentStart.prototype.Redo = function()
+	{
+		if (this.Class.partsOfCustomXml)
+		{
+			return this.Undo();
+		}
+		this.Class.partsOfCustomXml = [];
+	};
+	/**
+	 * @constructor
+	 * @extends {AscDFH.CChangesBaseProperty}
+	 */
+	function CChangesCustomXmlContentPart(Class, Old, New, Color)
+	{
+		AscDFH.CChangesBaseProperty.call(this, Class, Old, New, Color);
+	}
+	
+	AscDFH.InheritBaseChange(
+		CChangesCustomXmlContentPart,
+		AscDFH.CChangesBaseProperty,
+		AscDFH.historyitem_CustomXmlManager_Content_Part
+	);
+	AscDFH.CChangesCustomXmlContentPart = CChangesCustomXmlContentPart;
+	CChangesCustomXmlContentPart.prototype.private_SetValue = function(oPr)
+	{
+		if (oPr.length)
+		{
+			this.Class.partsOfCustomXml.push(oPr);
+		}
+	};
+	CChangesCustomXmlContentPart.prototype.WriteToBinary    = function(Writer)
+	{
+		Writer.WriteString2(this.Old);
+		Writer.WriteString2(this.New);
+	};
+	CChangesCustomXmlContentPart.prototype.ReadFromBinary   = function(Reader)
+	{
+		this.Old = Reader.GetString2();
+		this.New = Reader.GetString2();
+	};
+	/**
+	 * @constructor
+	 * @extends {AscDFH.CChangesBaseProperty}
+	 */
+	function CChangesCustomXmlContentEnd(Class, Old, New, Color)
+	{
+		AscDFH.CChangesBaseProperty.call(this, Class, Old, New, Color);
+	}
+	
+	AscDFH.InheritBaseChange(
+		CChangesCustomXmlContentEnd,
+		AscDFH.CChangesBaseProperty,
+		AscDFH.historyitem_CustomXmlManager_Content_End
+	);
+	AscDFH.CChangesCustomXmlContentPart = CChangesCustomXmlContentEnd;
+	CChangesCustomXmlContentEnd.prototype.Undo = function()
+	{
+		if (this.Class.partsOfCustomXml)
+		{
+			return this.Redo();
+		}
+		this.Class.partsOfCustomXml = [];
+	};
+	CChangesCustomXmlContentEnd.prototype.Redo = function()
+	{
+		if (!this.Class.partsOfCustomXml)
+		{
+			return this.Undo();
+		}
+		
+		this.Class.m_aCustomXmlData = this.Class.partsOfCustomXml.join("");
+		this.Class.addContentByXMLString(this.Class.m_aCustomXmlData);
+		delete this.Class.partsOfCustomXml;
+	};
+})();
 
-	if ((AscDFH.historyitem_type_CustomXML_Add === oChange.Type || AscDFH.historyitem_type_CustomXML_Remove === oChange.Type) && this.Id === oChange.Id)
-		return false;
 
-	return true;
-};

@@ -1438,12 +1438,8 @@
 	window['AscDFH'].historyitem_type_Endnotes           = 69 << 16;
 	window['AscDFH'].historyitem_type_ParagraphPermStart = 70 << 16;
 	window['AscDFH'].historyitem_type_ParagraphPermEnd   = 71 << 16;
-	window['AscDFH'].historyitem_type_CustomXML_Add      = 72 << 16;
-	window['AscDFH'].historyitem_type_ChangeCustomXML    = 73 << 16;
-	window['AscDFH'].historyitem_type_CustomXML_Remove   = 74 << 16;
-	window['AscDFH'].historyitem_type_ChangeCustomXMLStart= 76 << 16;
-	window['AscDFH'].historyitem_type_ChangeCustomXMLPart = 77 << 16;
-	window['AscDFH'].historyitem_type_ChangeCustomXMLEnd  = 78 << 16;
+	window['AscDFH'].historyitem_type_CustomXmlManager   = 72 << 16;
+	window['AscDFH'].historyitem_type_CustomXml          = 73 << 16;
 
 	window['AscDFH'].historyitem_type_CommonShape            = 1000 << 16; // Этот класс добавлен для элементов, у которых нет конкретного класса
 
@@ -3336,8 +3332,6 @@
 	// Типы изменений класса CDocumentMacros
 	//------------------------------------------------------------------------------------------------------------------
 	window['AscDFH'].historyitem_DocumentMacros_Data = window['AscDFH'].historyitem_type_DocumentMacros | 1;
-
-
 
 	//------------------------------------------------------------------------------------------------------------------
 	// Типы изменений класса CCore
@@ -5716,6 +5710,14 @@
 	{
 		return false;
 	}
+	window['AscDFH'].InheritBaseChange = function(changeClass, baseChange, type)
+	{
+		window['AscDFH'].changesFactory[type] = changeClass;
+		
+		changeClass.prototype             = Object.create(baseChange.prototype);
+		changeClass.prototype.constructor = changeClass;
+		changeClass.prototype.Type        = type;
+	};
 	window['AscDFH'].InheritPropertyChange = function(changeClass, baseChange, type, setFunction, needRecalculate)
 	{
 		window['AscDFH'].changesFactory[type]   = changeClass;
@@ -5727,7 +5729,6 @@
 
 		if (undefined !== needRecalculate && !needRecalculate)
 			changeClass.prototype.IsNeedRecalculate = DoNotRecalculate;
-
 	};
 
 })(window);

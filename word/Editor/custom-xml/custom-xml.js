@@ -93,7 +93,7 @@
 	};
 	CustomXml.prototype.Write_ToBinary2 = function(Writer)
 	{
-		Writer.WriteLong(AscDFH.historyitem_type_CustomXML_Add);
+		Writer.WriteLong(AscDFH.historyitem_type_CustomXml);
 
 		// String : Id
 		// Long   : Количество элементов
@@ -133,9 +133,9 @@
 			newParts.push(strCustomXml.slice(i * BINARY_PART_HISTORY_LIMIT, (i + 1) * BINARY_PART_HISTORY_LIMIT));
 		}
 
-		AscCommon.History.Add(new CChangesStartCustomXml(this, null, null, false));
+		AscCommon.History.Add(new AscDFH.CChangesCustomXmlContentStart(this, null, null, false));
 		for (let i = 0; i < amountOfParts; i += 1) {
-			AscCommon.History.Add(new CChangesPartCustomXml(this, oldParts[i], newParts[i], false));
+			AscCommon.History.Add(new AscDFH.CChangesCustomXmlContentPart(this, oldParts[i], newParts[i], false));
 		}
 		AscCommon.History.Add(new CChangesEndCustomXml(this, null, null, false));
 		this.m_aBinaryData = strCustomXml;
