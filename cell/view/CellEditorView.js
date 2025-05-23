@@ -2513,15 +2513,17 @@ function (window, undefined) {
 
 	CellEditor.prototype._tryCloseEditor = function (event) {
 		var t = this;
+		let nRetValue = keydownresult_PreventNothing;
 		var callback = function (success) {
 			// for the case when the user presses ctrl+shift+enter/crtl+enter the transition to a new line is not performed
 			var applyByArray = t.textFlags && t.textFlags.ctrlKey;
 			if (!applyByArray && success) {
-				t.handlers.trigger("applyCloseEvent", event);
+				nRetValue = t.handlers.trigger("applyCloseEvent", event);
 				AscCommon.StartIntervalDrawText(false);
 			}
 		};
 		this.close(true, callback);
+		return nRetValue;
 	};
 
 	CellEditor.prototype._getAutoComplete = function (str) {
@@ -2737,7 +2739,7 @@ function (window, undefined) {
 					}
 
 					if (false === oThis.handlers.trigger("isGlobalLockEditCell")) {
-						oThis._tryCloseEditor(oEvent);
+						nRetValue = oThis._tryCloseEditor(oEvent);
 					}
 					break;
 				}
