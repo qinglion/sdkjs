@@ -2619,7 +2619,7 @@ var CPresentation = CPresentation || function(){};
      * @param {number} [nPos = 0] 
 	 * @returns {boolean}
 	 */
-    CPDFDoc.prototype.RemovePage = function(nPos) {
+    CPDFDoc.prototype.RemovePage = function(nPos, isOnMove) {
         let oThis       = this;
         let oViewer     = editor.getDocumentRenderer();
         let oFile       = oViewer.file;
@@ -2632,23 +2632,25 @@ var CPresentation = CPresentation || function(){};
 
         oFile.removeSelection();
         
-        // сначала удаляем все объекты со страницы
-        if (oViewer.pagesInfo.pages[nPos].fields) {
-            oViewer.pagesInfo.pages[nPos].fields.slice().forEach(function(field) {
-                oThis.RemoveField(field.GetId());
-            });
+        if (true !== isOnMove) {
+            // сначала удаляем все объекты со страницы
+            if (oViewer.pagesInfo.pages[nPos].fields) {
+                oViewer.pagesInfo.pages[nPos].fields.slice().forEach(function(field) {
+                    oThis.RemoveField(field.GetId());
+                });
+            }
+            if (oViewer.pagesInfo.pages[nPos].annots) {
+                oViewer.pagesInfo.pages[nPos].annots.slice().forEach(function(annot) {
+                    oThis.RemoveAnnot(annot.GetId());
+                });
+            }
+            if (oViewer.pagesInfo.pages[nPos].drawings) {
+                oViewer.pagesInfo.pages[nPos].drawings.slice().forEach(function(drawing) {
+                    oThis.RemoveDrawing(drawing.GetId());
+                });
+            }
         }
-        if (oViewer.pagesInfo.pages[nPos].annots) {
-            oViewer.pagesInfo.pages[nPos].annots.slice().forEach(function(annot) {
-                oThis.RemoveAnnot(annot.GetId());
-            });
-        }
-        if (oViewer.pagesInfo.pages[nPos].drawings) {
-            oViewer.pagesInfo.pages[nPos].drawings.slice().forEach(function(drawing) {
-                oThis.RemoveDrawing(drawing.GetId());
-            });
-        }
-
+        
         // убираем информацию о странице
         let aPages = oFile.removePage(nPos);
 		oViewer.drawingPages.splice(nPos, 1);
@@ -2723,7 +2725,7 @@ var CPresentation = CPresentation || function(){};
             });
 
             aLowerIndexes.forEach(function(oldIndex, i) {
-                let oPage = _t.RemovePage(oldIndex);
+                let oPage = _t.RemovePage(oldIndex, true);
                 _t.AddPage(nNewPos - i, oPage);
             });
         }
@@ -2736,7 +2738,7 @@ var CPresentation = CPresentation || function(){};
             let nOffset = aLowerIndexes.length > 0 ? 1 : 0;
             
             aHigherIndexes.forEach(function(oldIndex, i) {
-                let oPage = _t.RemovePage(oldIndex);
+                let oPage = _t.RemovePage(oldIndex, true);
                 _t.AddPage(nNewPos + nOffset + i, oPage);
             });
         }
