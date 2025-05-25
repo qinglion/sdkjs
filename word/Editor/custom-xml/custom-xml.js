@@ -137,7 +137,7 @@
 		for (let i = 0; i < amountOfParts; i += 1) {
 			AscCommon.History.Add(new AscDFH.CChangesCustomXmlContentPart(this, oldParts[i], newParts[i], false));
 		}
-		AscCommon.History.Add(new CChangesEndCustomXml(this, null, null, false));
+		AscCommon.History.Add(new AscDFH.CChangesCustomXmlContentEnd(this, null, null, false));
 		this.m_aBinaryData = strCustomXml;
 	};
 	/**

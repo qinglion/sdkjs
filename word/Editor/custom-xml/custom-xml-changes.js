@@ -253,7 +253,7 @@
 		AscDFH.CChangesBaseProperty,
 		AscDFH.historyitem_CustomXmlManager_Content_End
 	);
-	AscDFH.CChangesCustomXmlContentPart = CChangesCustomXmlContentEnd;
+	AscDFH.CChangesCustomXmlContentEnd = CChangesCustomXmlContentEnd;
 	CChangesCustomXmlContentEnd.prototype.Undo = function()
 	{
 		if (this.Class.partsOfCustomXml)
