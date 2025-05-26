@@ -27617,11 +27617,11 @@
 						ws._cleanCache(updateRanges);
 					}
 
-					if (pastedRangeMaxCol < maxCol && pastedRangeMaxCol > ws.visibleRange.c2) {
-						maxCol = pastedRangeMaxCol;
+					if (pastedRangeMaxCol < maxCol) {
+						maxCol = Math.max(ws.visibleRange.c2, pastedRangeMaxCol);
 					}
-					if (pastedRangeMaxRow < maxRow && pastedRangeMaxRow > ws.visibleRange.r2) {
-						maxRow = pastedRangeMaxRow;
+					if (pastedRangeMaxRow < maxRow) {
+						maxRow = Math.max(ws.visibleRange.r2, pastedRangeMaxRow);
 					}
 					//update only max defined previous data
 					ws._updateRange(Asc.Range(0, 0, maxCol, maxRow));

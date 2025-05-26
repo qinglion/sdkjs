@@ -1143,7 +1143,7 @@
 			return false;
 		},
 
-		Button_Copy : function()
+		Button_Copy : function(oldCopy)
 		{
 			if (window["AscDesktopEditor"])
 			{
@@ -1154,7 +1154,7 @@
 			if (window["NATIVE_EDITOR_ENJINE"])
 				return false;
 			
-			if (this.isUseNewCopy())
+			if (this.isUseNewCopy() && !oldCopy)
 			{
 				if (this.Button_Copy_New()) {
 					return true;
@@ -1303,24 +1303,32 @@
 			return _ret;
 		},
 
-		ClearBuffer : function()
-		{
-
-			if (this.isUseNewCopy()) {
-				navigator.clipboard.writeText('');
+		ClearBuffer: function() {
+			let oThis = this;
+			if (this.isUseNewCopy() && navigator.clipboard && navigator.clipboard.writeText) {
+				navigator.clipboard.writeText('')
+					.then(function() {
+						oThis.LastCopyBinary = null;
+					})
+					.catch(function(err) {
+						oThis.ClearBufferOld();
+					});
 			} else {
-				if (-1 != this.clearBufferTimerId)
-				{
-					// clear old timer (restart interval)
-					clearTimeout(this.clearBufferTimerId);
-				}
-				this.clearBufferTimerId = setTimeout(function(){
-					if (AscCommon.g_clipboardBase)
-						AscCommon.g_clipboardBase.clearBufferTimerId = -1;
-				}, 500);
-
-				this.Button_Copy();
+				this.ClearBufferOld();
 			}
+		},
+
+		ClearBufferOld: function() {
+			if (-1 != this.clearBufferTimerId) {
+				clearTimeout(this.clearBufferTimerId);
+			}
+			this.clearBufferTimerId = setTimeout(function(){
+				if (AscCommon.g_clipboardBase) {
+					AscCommon.g_clipboardBase.clearBufferTimerId = -1;
+				}
+			}, 500);
+
+			this.Button_Copy(true);
 		},
 
 		isCopyOutEnabled : function()
