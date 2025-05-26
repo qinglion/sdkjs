@@ -1321,6 +1321,29 @@ $(function () {
 			assert.strictEqual(arg.CurPos, 0, 'Cursor selected first paraRun in func argument');
 		})
 
+		QUnit.test('Check auto-correction of frac and content after it', function (assert)
+		{
+			Clear();
+			logicDocument.SetMathInputType(0);
+
+			AddText('12/cx');
+			assert.ok(true, "Add 12/cx");
+			AscTest.MoveCursorLeft(false, false, 1);
+			assert.ok(true, "Move cursor to left - 1");
+			AddText(' ');
+			assert.ok(true, "Trigger auto-correction");
+
+			let cont = MathContent.Root;
+			let frac = cont.Content[1];
+			let fracText = frac.GetTextOfElement().GetText();
+
+			let runAfterFrac = cont.Content[2];
+			let run = runAfterFrac.GetTextOfElement().GetText();
+
+			assert.strictEqual(fracText, '12/c', 'Check content of frac');
+			assert.strictEqual(run, 'x', 'Content of run after frac');
+		})
+
 		QUnit.test('Check cursor position after convert empty big nary', function (assert)
 		{
 			Clear();
