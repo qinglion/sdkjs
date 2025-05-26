@@ -112,17 +112,15 @@
 
 		CImageShape.prototype.setBlipFill = function (pr) {
 			if(!Asc.editor.evalCommand) {
-				const prNoRaster = Object.assign({}, pr);
-				prNoRaster.RasterImageId = null;
-				const currentNoRaster = Object.assign({}, this.blipFill);
-				currentNoRaster.RasterImageId = null;
-
+				AscCommon.History.Add(new AscDFH.CChangesImageIdStart(this));
+				const prNoRaster = pr && pr.createDuplicateNoRaster();
+				const currentNoRaster = this.blipFill && this.blipFill.createDuplicateNoRaster();
 				AscCommon.History.Add(new AscDFH.CChangesDrawingsObjectNoId(this, AscDFH.historyitem_ImageShapeSetBlipFill, currentNoRaster, prNoRaster));
-
 				const rasterChunks = createRasterImageHistoryChunks(this, this.blipFill ? this.blipFill.RasterImageId : "", pr.RasterImageId, 1048576);
 				for (const chunk of rasterChunks) {
 					AscCommon.History.Add(chunk);
 				}
+				AscCommon.History.Add(new AscDFH.CChangesImageIdEnd(this));
 			}
 
 			this.blipFill = pr;
@@ -135,7 +133,7 @@
 			for (let i = 0; i < total; i++) {
 				const newChunk = newStr.substr(i * chunkSize, chunkSize);
 				const oldChunk = oldStr.substr(i * chunkSize, chunkSize);
-				const change = new AscDFH.CChangesDrawingsImageRasterImageIdPart(obj, i, total, newChunk, oldChunk);
+				const change = new AscDFH.CChangesDrawingsImageRasterImageIdPart(obj, newChunk, oldChunk);
 				changes.push(change);
 			}
 
