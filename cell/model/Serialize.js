@@ -290,8 +290,7 @@
         Text: 3
     };
     /** @enum */
-    var c_oSerWorkbookTypes =
-    {
+    var c_oSerWorkbookTypes = {
         WorkbookPr: 0,
         BookViews: 1,
         WorkbookView: 2,
@@ -302,14 +301,14 @@
         PivotCaches: 7,
         PivotCache: 8,
         ExternalBook: 9,
-        OleLink:10,
+        OleLink: 10,
         DdeLink: 11,
         VbaProject: 12,
         JsaProject: 13,
         Comments: 14,
         CalcPr: 15,
         Connections: 16,
-        SlicerCaches: 18,
+        AppName: 17,
         SlicerCachesExt: 19,
         SlicerCache: 20,
         WorkbookProtection: 21,
@@ -320,7 +319,8 @@
         ExternalLinksAutoRefresh: 26,
         TimelineCaches: 27,
         TimelineCache: 28,
-        Metadata: 29
+        Metadata: 29,
+        XmlMap: 30
     };
     /** @enum */
     var c_oSerWorkbookPrTypes =
@@ -425,7 +425,8 @@
         UserProtectedRanges: 47,
         TimelinesList: 48,
         Timelines: 49,
-        Timeline: 50
+        Timeline: 50,
+        TableSingleCells: 51
     };
     /** @enum */
     var c_oSerWorksheetPropTypes =
@@ -646,14 +647,19 @@
         TotalsRowFunction:4,
         TotalsRowFormula:5,
         CalculatedColumnFormula:6,
-		DataCellStyle: 7,
-		HeaderRowCellStyle: 8,
-		HeaderRowDxfId: 9,
-		Id: 10,
-		QueryTableFieldId: 11,
-		TotalsRowCellStyle: 12,
-		TotalsRowDxfId: 13,
-		UniqueName: 14
+        DataCellStyle: 7,
+        HeaderRowCellStyle: 8,
+        HeaderRowDxfId: 9,
+        Id: 10,
+        QueryTableFieldId: 11,
+        TotalsRowCellStyle: 12,
+        TotalsRowDxfId: 13,
+        UniqueName: 14,
+        XmlColumnPr: 15,
+        MapId: 16,
+        Xpath: 17,
+        Denormalized: 18,
+        XmlDataType: 19
     };
     /** @enum */
     var c_oSer_SortState =
@@ -2436,6 +2442,28 @@
             for(var i = 0, length = tableColumns.length; i < length; ++i)
                 this.bs.WriteItem(c_oSer_TableColumns.TableColumn, function(){oThis.WriteTableColumn(tableColumns[i]);});
         };
+        this.WriteTableXmlColumnPr = function (xmlColumnPr) {
+            if (xmlColumnPr.mapId != null) {
+                this.memory.WriteByte(c_oSer_TableColumns.MapId);
+                this.memory.WriteByte(c_oSerPropLenType.Long);
+                this.memory.WriteLong(xmlColumnPr.mapId);
+            }
+            if (xmlColumnPr.xpath != null) {
+                this.memory.WriteByte(c_oSer_TableColumns.Xpath);
+                this.memory.WriteByte(c_oSerPropLenType.Variable);
+                this.memory.WriteString2(xmlColumnPr.xpath);
+            }
+            if (xmlColumnPr.denormalized != null) {
+                this.memory.WriteByte(c_oSer_TableColumns.Denormalized);
+                this.memory.WriteByte(c_oSerPropLenType.Byte);
+                this.memory.WriteBool(xmlColumnPr.denormalized);
+            }
+            if (xmlColumnPr.xmlDataType != null) {
+                this.memory.WriteByte(c_oSer_TableColumns.XmlDataType);
+                this.memory.WriteByte(c_oSerPropLenType.Byte);
+                this.memory.WriteByte(xmlColumnPr.xmlDataType);
+            }
+        };
         this.WriteTableColumn = function(tableColumn)
         {
             var oThis = this;
@@ -2479,6 +2507,12 @@
 					oThis.memory.WriteLong(tableColumn.queryTableFieldId);
 				});
 			}
+            if(null != tableColumn.xmlColumnPr)
+            {
+                this.bs.WriteItem(c_oSer_TableColumns.XmlColumnPr, function () {
+                    oThis.WriteTableXmlColumnPr(tableColumn.xmlColumnPr);
+                });
+            }
         };
         this.WriteTableStyleInfo = function(tableStyleInfo)
         {
@@ -3723,6 +3757,26 @@
 			if (this.wb.metadata) {
 				this.bs.WriteItem(c_oSerWorkbookTypes.Metadata, function () {oThis.WriteMetadata(oThis.wb.metadata);});
 			}
+            var xmlMaps =  this.wb.xmlMaps;
+            if (xmlMaps) {
+                let stream = pptx_content_writer.BinaryFileWriter;
+                for (let i = 0; i < xmlMaps.length; i++) {
+                    this.bs.WriteItem(c_oSerWorkbookTypes.XmlMap, function() {
+                        var old = new AscCommon.CMemory(true);
+                        stream.ExportToMemory(old);
+                        stream.ImportFromMemory(oThis.memory);
+
+                        stream.StartRecord(0);
+                        stream.WriteRecord2(0, stream, function(){
+                            xmlMaps[i].toPPTY(stream);
+                        });
+                        stream.EndRecord();
+
+                        stream.ExportToMemory(oThis.memory);
+                        stream.ImportFromMemory(old);
+                    });
+                }
+            }
 
         };
         this.WriteWorkbookPr = function()
@@ -5074,6 +5128,27 @@
 
             if (ws.timelines && ws.timelines.length > 0) {
                 this.bs.WriteItem(c_oSerWorksheetsTypes.TimelinesList, function(){oThis.WriteTimelines(ws.timelines);});
+            }
+
+            let pTableSingleCells = ws.oTableSingleCells;
+            if (pTableSingleCells) {
+                let stream = pptx_content_writer.BinaryFileWriter;
+                for (let i = 0; i < pTableSingleCells.length; i++) {
+                    this.bs.WriteItem(c_oSerWorksheetsTypes.TableSingleCells, function () {
+                        var old = new AscCommon.CMemory(true);
+                        stream.ExportToMemory(old);
+                        stream.ImportFromMemory(oThis.memory);
+
+                        stream.StartRecord(0);
+                        stream.WriteRecord2(0, stream, function () {
+                            pTableSingleCells[i].toPPTY(stream);
+                        });
+                        stream.EndRecord();
+
+                        stream.ExportToMemory(oThis.memory);
+                        stream.ImportFromMemory(old);
+                    });
+                }
             }
         };
 		this.WriteDataValidations = function(dataValidations)
@@ -7605,6 +7680,7 @@
         };
         this.ReadTableColumn = function (type, length, oTableColumn) {
             var res = c_oSerConstants.ReadOk;
+            const oThis = this;
             if (c_oSer_TableColumns.Name === type) {
                 //replace only _x000a_ for fix bug(other spec. symbols didn't see in table columns)
                 var columnName = this.stream.GetString2LE(length);
@@ -7629,9 +7705,40 @@
                 oTableColumn.uniqueName = this.stream.GetString2LE(length);
             } else if (c_oSer_TableColumns.Id === type) {
                 oTableColumn.id = this.stream.GetULongLE();
+            } else if (c_oSer_TableColumns.XmlColumnPr === type) {
+                if (!oTableColumn.xmlColumnPr) {
+                    oTableColumn.xmlColumnPr = new AscCommonExcel.CXmlColumnPr();
+                }
+                this.bcr.Read2Spreadsheet(length, function(t, l) {
+                    return oThis.ReadTableXmlColumnPr(t, l, oTableColumn.xmlColumnPr);
+                }, this);
             } else {
                 res = c_oSerConstants.ReadUnknown;
             }
+            return res;
+        };
+        this.ReadTableXmlColumnPr = function(type, length, oXmlColumnPr) {
+            var res = c_oSerConstants.ReadOk;
+
+            if (c_oSer_TableColumns.MapId === type) {
+                oXmlColumnPr.mapId = this.stream.GetLong();
+            }
+            else if (c_oSer_TableColumns.Xpath === type) {
+                oXmlColumnPr.xpath = this.stream.GetString2LE(length);
+            }
+            else if (c_oSer_TableColumns.Denormalized === type) {
+                oXmlColumnPr.denormalized = this.stream.GetBool();
+            }
+            else if (c_oSer_TableColumns.XmlDataType === type) {
+                if (!oXmlColumnPr.xmlDataType) {
+                    oXmlColumnPr.xmlDataType = {};
+                }
+                oXmlColumnPr.xmlDataType.val = this.stream.GetUChar();
+            }
+            else {
+                res = c_oSerConstants.ReadUnknown;
+            }
+
             return res;
         };
         this.ReadTableColumns = function(type, length, aTableColumns)
@@ -8897,6 +9004,64 @@
                     return oThis.ReadMetadata(t, l, oThis.oWorkbook.metadata);
                 });
             }*/
+            else if (c_oSerWorkbookTypes.XmlMap === type) {
+                //this.stream.Skip(1); //skip type
+
+
+
+
+
+                /*LONG end = pReader->GetPos() + pReader->GetRecordSize() + 4;
+
+                while (pReader->GetPos() < end)
+                {
+                    BYTE _rec = pReader->GetUChar();
+
+                    switch (_rec)
+                    {
+                        case 0:
+                        {
+                            m_MapInfo.Init();
+                            m_MapInfo->fromPPTY(pReader);
+                        }break;
+                        default:
+                        {
+                            pReader->SkipRecord();
+                        }break;
+                    }
+                }
+                pReader->Seek(end);*/
+
+                this.stream.GetUChar()
+                var _len = this.stream.GetULong();
+                var _start_pos = this.stream.cur;
+                var end = _len + _start_pos;
+
+                let oXmlMap;
+                while (this.stream.cur < end) {
+                    let _rec = this.stream.GetUChar();
+
+                    switch (_rec) {
+                        case 0: {
+                            oXmlMap = new AscCommonExcel.CMapInfo();
+                            oXmlMap.fromPPTY(this.stream);
+                            break;
+                        }
+                        default: {
+                            this.stream.SkipRecord();
+                            break;
+                        }
+                    }
+                }
+
+                this.stream.Seek(end);
+
+                // Add to workbook
+                if (this.oWorkbook.xmlMaps == null) {
+                    this.oWorkbook.xmlMaps = [];
+                }
+                this.oWorkbook.xmlMaps.push(oXmlMap);
+            }
             else
                 res = c_oSerConstants.ReadUnknown;
             return res;
@@ -10137,6 +10302,40 @@
                 res = this.bcr.Read1(length, function(t, l) {
                     return oThis.ReadTimelinesList(t, l, oWorksheet.timelines);
                 });
+            } else if (c_oSerWorksheetsTypes.TableSingleCells === type) {
+                //this.stream.Skip(1); //skip type
+
+                this.stream.GetUChar();
+
+                var _len = this.stream.GetULong();
+                var _start_pos = this.stream.cur;
+                var end = _len + _start_pos;
+
+                let oTableSingleCells;
+                while (this.stream.cur < end) {
+                    let _rec = this.stream.GetUChar();
+
+                    switch (_rec) {
+                        case 0: {
+                            oTableSingleCells = new AscCommonExcel.CSingleXmlCells();
+                            oTableSingleCells.fromPPTY(this.stream);
+                            break;
+                        }
+                        default: {
+                            this.stream.SkipRecord();
+                            break;
+                        }
+                    }
+                }
+
+                this.stream.Seek(end);
+
+                if (oTableSingleCells) {
+                    if (oWorksheet.oTableSingleCells == null) {
+                        oWorksheet.oTableSingleCells = [];
+                    }
+                    oWorksheet.oTableSingleCells.push(oTableSingleCells);
+                }
             } else
 				res = c_oSerConstants.ReadUnknown;
 			return res;
