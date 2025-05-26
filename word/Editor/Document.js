@@ -16608,19 +16608,19 @@ CDocument.prototype.private_CorrectDocumentPosition = function()
 		}
 	}
 };
-CDocument.prototype.private_ToggleParagraphAlignByHotkey = function(Align)
+CDocument.prototype.private_ToggleParagraphAlignByHotkey = function(align)
 {
 	var SelectedInfo = this.GetSelectedElementsInfo();
 	var Math         = SelectedInfo.GetMath();
 	if (null !== Math && true !== Math.Is_Inline())
 	{
 		var MathAlign = Math.Get_Align();
-		if (Align !== MathAlign)
+		if (align !== MathAlign)
 		{
 			if (false === this.Document_Is_SelectionLocked(changestype_Paragraph_Content))
 			{
 				this.StartAction(AscDFH.historydescription_Document_SetParagraphAlignHotKey);
-				Math.Set_Align(Align);
+				Math.Set_Align(align);
 				this.Recalculate();
 				this.UpdateInterface();
 				this.FinalizeAction();
@@ -16629,16 +16629,28 @@ CDocument.prototype.private_ToggleParagraphAlignByHotkey = function(Align)
 	}
 	else
 	{
-		var ParaPr = this.GetCalculatedParaPr();
-		if (null != ParaPr)
+		let paraPr = this.GetCalculatedParaPr();
+		if (!paraPr)
+			return;
+		
+		
+		if (!this.IsSelectionLocked(AscCommon.changestype_Paragraph_Properties))
 		{
-			if (false === this.Document_Is_SelectionLocked(AscCommon.changestype_Paragraph_Properties))
+			if (paraPr.Bidi)
 			{
-				this.StartAction(AscDFH.historydescription_Document_SetParagraphAlignHotKey);
-				this.SetParagraphAlign(ParaPr.Jc === Align ? (Align === align_Left ? AscCommon.align_Justify : align_Left) : Align);
-				this.UpdateInterface();
-				this.FinalizeAction();
+				let currAlign = paraPr.Jc === AscCommon.align_Right ? AscCommon.align_Left : (paraPr.Jc === AscCommon.align_Left ? AscCommon.align_Right : paraPr.Jc);
+				align = currAlign === align ? (align === AscCommon.align_Right ? AscCommon.align_Justify : AscCommon.align_Right) : align;
 			}
+			else
+			{
+				let currAlign = paraPr.Jc;
+				align = currAlign === align ? (align === AscCommon.align_Left ? AscCommon.align_Justify : AscCommon.align_Left) : align;
+			}
+			
+			this.StartAction(AscDFH.historydescription_Document_SetParagraphAlignHotKey);
+			this.SetParagraphAlign(align);
+			this.UpdateInterface();
+			this.FinalizeAction();
 		}
 	}
 };
