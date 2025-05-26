@@ -172,7 +172,14 @@ function CSpellchecker(settings)
 		_port.onmessage = function(message) {
 			_worker.oncommand && _worker.oncommand(message.data);
 		};
-		_port.postMessage({ "type" : "init", "dictionaries_path" : dictionariesPath, "languages" : this.languages });
+		let langs = {};
+		for (let i in this.languages)
+		{
+			if (!this.languages.hasOwnProperty(i))
+				continue;
+			langs[i] = this.languages[i]["name"];
+		}
+		_port.postMessage({ "type" : "init", "dictionaries_path" : dictionariesPath, "languages" : langs });
 
 		this.command = function(message)
 		{
