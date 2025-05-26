@@ -214,7 +214,6 @@ CChangesPDFDocumentAnnotsContent.prototype.Undo = function()
         {
             let oItem = this.Items[nIndex];
             oItem.AddToRedraw();
-            oDocument.annots.splice(oDocument.annots.indexOf(oItem), 1);
             oPage.annots.splice(this.Pos, 1);
 
             oItem.parentPage = null;
@@ -231,7 +230,6 @@ CChangesPDFDocumentAnnotsContent.prototype.Undo = function()
         {
             let oItem = this.Items[nIndex];
             oItem.AddToRedraw();
-            oDocument.annots.push(oItem);
             oPage.annots.splice(this.Pos, 0, oItem);
 
             oItem.parentPage = oPage;
@@ -260,7 +258,6 @@ CChangesPDFDocumentAnnotsContent.prototype.Redo = function()
         {
             let oItem = this.Items[nIndex];
             oItem.AddToRedraw();
-            oDocument.annots.push(oItem);
             oPage.annots.splice(this.Pos, 0, oItem);
 
             oItem.parentPage = oPage;
@@ -278,7 +275,6 @@ CChangesPDFDocumentAnnotsContent.prototype.Redo = function()
         {
             let oItem = this.Items[nIndex];
             oItem.AddToRedraw();
-            oDocument.annots.splice(oDocument.annots.indexOf(oItem), 1);
             oPage.annots.splice(this.Pos, 1);
 
             oItem.parentPage = null;
@@ -319,12 +315,6 @@ CChangesPDFDocumentAnnotsContent.prototype.private_InsertInArrayLoad = function(
         let nPos = oContentChanges.Check(AscCommon.contentchanges_Add, true !== this.UseArray ? this.Pos + i : this.PosArray[i]);
         if (nPos === false) continue;
 
-        // Ensure position is within bounds
-        nPos = Math.min(nPos, oDocument.annots.length);
-
-        // Insert into document annots array
-        oDocument.annots.splice(nPos, 0, oItem);
-
         // Insert into viewer annots array
         let annotsArray = oPage.annots;
         nPos = Math.min(nPos, annotsArray.length);
@@ -363,10 +353,6 @@ CChangesPDFDocumentAnnotsContent.prototype.private_RemoveInArrayLoad = function(
         if (nPos === false) continue;
 
         oItem.AddToRedraw();
-        // Remove from document annots array
-        let indexInAnnots = oDocument.annots.indexOf(oItem);
-        if (indexInAnnots !== -1)
-            oDocument.annots.splice(indexInAnnots, 1);
 
         // Remove from viewer annots array
         let annotsArray = oPage.annots;
@@ -453,7 +439,6 @@ CChangesPDFDocumentFieldsContent.prototype.Undo = function()
         for (let nIndex = 0, nCount = this.Items.length; nIndex < nCount; ++nIndex) {
             let oItem = this.Items[nIndex];
             oItem.AddToRedraw();
-            oDocument.widgets.splice(oDocument.widgets.indexOf(oItem), 1);
             oPage.fields.splice(this.Pos, 1);
 
             oItem.parentPage = null;
@@ -469,7 +454,6 @@ CChangesPDFDocumentFieldsContent.prototype.Undo = function()
             let oItem = this.Items[nIndex];
             oItem.AddToRedraw();
             oPage.fields.splice(this.Pos, 0, oItem);
-            oDocument.widgets.push(oItem);
 
             oItem.parentPage = oPage;
             oItem._page = oPage.GetIndex();
@@ -492,7 +476,6 @@ CChangesPDFDocumentFieldsContent.prototype.Redo = function()
         {
             let oItem = this.Items[nIndex];
             oItem.AddToRedraw();
-            oDocument.widgets.push(oItem);
             oPage.fields.splice(this.Pos, 0, oItem);
 
             oItem.parentPage = oPage;
@@ -508,7 +491,6 @@ CChangesPDFDocumentFieldsContent.prototype.Redo = function()
         {
             let oItem = this.Items[nIndex];
             oItem.AddToRedraw();
-            oDocument.widgets.splice(oDocument.widgets.indexOf(oItem), 1);
             oPage.fields.splice(this.Pos, 1);
 
             oItem.parentPage = null;
@@ -544,10 +526,6 @@ CChangesPDFDocumentFieldsContent.prototype.private_InsertInArrayLoad = function(
         let nPos = oContentChanges.Check(AscCommon.contentchanges_Add, true !== this.UseArray ? this.Pos + i : this.PosArray[i]);
         if (nPos === false) continue;
 
-        // Insert into document widgets array
-        nPos = Math.min(nPos, oDocument.widgets.length);
-        oDocument.widgets.splice(nPos, 0, oItem);
-
         // Insert into viewer fields array
         let fieldsArray = oPage.fields;
         nPos = Math.min(nPos, fieldsArray.length);
@@ -579,11 +557,6 @@ CChangesPDFDocumentFieldsContent.prototype.private_RemoveInArrayLoad = function(
         if (nPos === false) continue;
 
         oItem.AddToRedraw();
-
-        // Remove from document widgets array
-        let indexInWidgets = oDocument.widgets.indexOf(oItem);
-        if (indexInWidgets !== -1)
-            oDocument.widgets.splice(indexInWidgets, 1);
 
         // Remove from viewer fields array
         let fieldsArray = oPage.fields;
@@ -664,7 +637,6 @@ CChangesPDFDocumentDrawingsContent.prototype.Undo = function()
         {
             let oItem = this.Items[nIndex];
             oItem.AddToRedraw();
-            oDocument.drawings.splice(oDocument.drawings.indexOf(oItem), 1);
             oPage.drawings.splice(this.Pos, 1);
 
             oItem.parent = oPage;
@@ -679,7 +651,6 @@ CChangesPDFDocumentDrawingsContent.prototype.Undo = function()
         {
             let oItem = this.Items[nIndex];
             oItem.AddToRedraw();
-            oDocument.drawings.push(oItem);
             oPage.drawings.splice(this.Pos, 0, oItem);
 
             oItem.parent = oPage;
@@ -706,7 +677,6 @@ CChangesPDFDocumentDrawingsContent.prototype.Redo = function()
             let oItem = this.Items[nIndex];
 
             oItem.AddToRedraw();
-            oDocument.drawings.push(oItem);
             oPage.drawings.splice(this.Pos, 0, oItem);
 
             oItem.parent = oPage;
@@ -722,7 +692,6 @@ CChangesPDFDocumentDrawingsContent.prototype.Redo = function()
             let oItem = this.Items[nIndex];
             
             oItem.AddToRedraw();
-            oDocument.drawings.splice(oDocument.drawings.indexOf(oItem), 1);
             oPage.drawings.splice(this.Pos, 1);
 
             oItem.parent = null;
@@ -761,12 +730,6 @@ CChangesPDFDocumentDrawingsContent.prototype.private_InsertInArrayLoad = functio
         let nPos = oContentChanges.Check(AscCommon.contentchanges_Add, true !== this.UseArray ? this.Pos + i : this.PosArray[i]);
         if (nPos === false) continue;
 
-        // Ensure position is within bounds
-        nPos = Math.min(nPos, oDocument.drawings.length);
-
-        // Insert into document drawings array
-        oDocument.drawings.splice(nPos, 0, oItem);
-
         // Insert into viewer drawings array
         let drawingsArray = oPage.drawings;
         nPos = Math.min(nPos, drawingsArray.length);
@@ -800,10 +763,6 @@ CChangesPDFDocumentDrawingsContent.prototype.private_RemoveInArrayLoad = functio
         if (nPos === false) continue;
 
         oItem.AddToRedraw();
-        // Remove from document drawings array
-        let indexInDrawings = oDocument.drawings.indexOf(oItem);
-        if (indexInDrawings !== -1)
-            oDocument.drawings.splice(indexInDrawings, 1);
 
         // Remove from viewer drawings array
         let drawingsArray = oPage.drawings;
