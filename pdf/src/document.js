@@ -5030,7 +5030,8 @@ var CPresentation = CPresentation || function(){};
         let oPageInfo = this.GetPageInfo(nPage);
         oPageInfo.SetRecognized(true);
         
-        if (!aSpsXmls)
+        // force binary use
+        if (!aSpsXmls && false)
             aSpsXmls = oFile.nativeFile["scanPage"](nOriginIndex, 1);
 
         let oParserContext  = new AscCommon.XmlParserContext();
@@ -5043,65 +5044,86 @@ var CPresentation = CPresentation || function(){};
         
         oParserContext.DrawingDocument = oDrDoc;
 
-        for (let i = 0; i < aSpsXmls.length; i++) {
-            oXmlReader = new AscCommon.StaxParser(aSpsXmls[i], undefined, oParserContext);
-            oXmlReader.parseNode(0);
+        // for (let i = 0; i < aSpsXmls.length; i++) {
+        //     oXmlReader = new AscCommon.StaxParser(aSpsXmls[i], undefined, oParserContext);
+        //     oXmlReader.parseNode(0);
 
-            let _t = this;
-            let oDrawing;
-            oXmlReader.rels = {
-                getRelationship : function(rId) {
-                    let url =  _t.Viewer.file.nativeFile["getImageBase64"](parseInt(rId.substring(3)));
-                    if ("data:" === url.substring(0, 5)) {
-                        return {
-                            targetMode : "InternalBase64",
-                            base64 : url,
-                            drawing: oDrawing
-                        }
-                    } else {
-                        return {
-                            targetMode: "InternalLoaded",
-                            targetFullName: url,
-                            drawing: oDrawing
-                        }
-                    }
-                }
-            };
+        //     let _t = this;
+        //     let oDrawing;
+        //     oXmlReader.rels = {
+        //         getRelationship : function(rId) {
+        //             let url =  _t.Viewer.file.nativeFile["getImageBase64"](parseInt(rId.substring(3)));
+        //             if ("data:" === url.substring(0, 5)) {
+        //                 return {
+        //                     targetMode : "InternalBase64",
+        //                     base64 : url,
+        //                     drawing: oDrawing
+        //                 }
+        //             } else {
+        //                 return {
+        //                     targetMode: "InternalLoaded",
+        //                     targetFullName: url,
+        //                     drawing: oDrawing
+        //                 }
+        //             }
+        //         }
+        //     };
 
-            switch (oXmlReader.GetName()) {
-                case 'p:sp': {
-                    oDrawing = new AscPDF.CPdfShape();
-                    break;
-                }
-                case 'p:graphicFrame': {
-                    oDrawing = new AscPDF.CPdfGraphicFrame();
-                    break;
-                }
-                case 'p:pic': {
-                    oDrawing = new AscPDF.CPdfImage();
-                    break;
-                }
-            }
+        //     switch (oXmlReader.GetName()) {
+        //         case 'p:sp': {
+        //             oDrawing = new AscPDF.CPdfShape();
+        //             break;
+        //         }
+        //         case 'p:graphicFrame': {
+        //             oDrawing = new AscPDF.CPdfGraphicFrame();
+        //             break;
+        //         }
+        //         case 'p:pic': {
+        //             oDrawing = new AscPDF.CPdfImage();
+        //             break;
+        //         }
+        //     }
             
-            if (oDrawing) {
-                oDrawing.fromXml(oXmlReader);
-                if (oDrawing.IsShape()) {
-                    let new_body_pr = oDrawing.getBodyPr();
-                    if (new_body_pr) {
-                        new_body_pr = new_body_pr.createDuplicate();
-                        new_body_pr.textFit = new AscFormat.CTextFit();
-                        new_body_pr.textFit.type = AscFormat.text_fit_Auto;
+        //     if (oDrawing) {
+        //         oDrawing.fromXml(oXmlReader);
+        //         if (oDrawing.IsShape()) {
+        //             let new_body_pr = oDrawing.getBodyPr();
+        //             if (new_body_pr) {
+        //                 new_body_pr = new_body_pr.createDuplicate();
+        //                 new_body_pr.textFit = new AscFormat.CTextFit();
+        //                 new_body_pr.textFit.type = AscFormat.text_fit_Auto;
 
-                        if (oDrawing.txBody) {
-                            oDrawing.txBody.setBodyPr(new_body_pr);
-                        }
-                    }
-                }
+        //                 if (oDrawing.txBody) {
+        //                     oDrawing.txBody.setBodyPr(new_body_pr);
+        //                 }
+        //             }
+        //         }
                 
-                oDrawing.setBDeleted(false);
-                aPageDrawings.push(oDrawing);
-                oDrawing.CheckTextOnOpen();
-            }
+        //         oDrawing.setBDeleted(false);
+        //         aPageDrawings.push(oDrawing);
+        //         oDrawing.CheckTextOnOpen();
+        //     }
+        // }
+
+        let loader = new AscCommon.BinaryPPTYLoader();
+        loader.Start_UseFullUrl();
+        loader.ClearConnectedObjects();
+        AscCommon.pptx_content_loader.Reader.Start_UseFullUrl();
+        
+        // code just for test binary
+        binShapesData = oFile.nativeFile["scanPage"](nOriginIndex, 2);
+        binShapesStream = new AscCommon.FileStream(binShapesData, binShapesData.length);
+        binShapesLen = binShapesStream.GetULong();
+
+        loader.stream = binShapesStream;
+        loader.presentation = Asc.editor.getLogicDocument();
+        loader.DrawingDocument = Asc.editor.getDrawingDocument();
+
+        for (let i = 0; i < binShapesLen; i++) {
+            let oDrawing = loader.ReadGraphicObject();
+            oDrawing.setBDeleted(false);
+            aPageDrawings.push(oDrawing);
+            oDrawing.CheckTextOnOpen();
         }
 
         let _t = this;
