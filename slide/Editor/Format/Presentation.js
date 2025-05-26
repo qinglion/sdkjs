@@ -682,6 +682,8 @@ function CPresentation(DrawingDocument) {
 
 	this.cachedGridCanvas = null;
 	this.cachedGridSpacing = null;
+
+	this.cachedAnimationLabelText = {};
 }
 
 AscFormat.InitClass(CPresentation, AscFormat.CBaseFormatObject, AscDFH.historyitem_type_Presentation);
