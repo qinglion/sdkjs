@@ -204,6 +204,51 @@ var CPresentation = CPresentation || function(){};
         this.checkDefaultFonts();
     }
 
+    Object.defineProperties(CPDFDoc.prototype, {
+		widgets: {
+			get: function () {
+                let aWidgets = [];
+
+                let nPages = this.GetPagesCount();
+                for (let i = 0; i < nPages; i++) {
+                    let oPageInfo = this.GetPageInfo(i);
+
+                    aWidgets = aWidgets.concat(oPageInfo.fields);
+                }
+
+				return aWidgets;
+			}
+		},
+        annots: {
+			get: function () {
+                let aAnnots = [];
+
+                let nPages = this.GetPagesCount();
+                for (let i = 0; i < nPages; i++) {
+                    let oPageInfo = this.GetPageInfo(i);
+
+                    aAnnots = aAnnots.concat(oPageInfo.annots);
+                }
+
+				return aAnnots;
+			}
+		},
+        drawings: {
+			get: function () {
+                let aDrawings = [];
+
+                let nPages = this.GetPagesCount();
+                for (let i = 0; i < nPages; i++) {
+                    let oPageInfo = this.GetPageInfo(i);
+
+                    aDrawings = aDrawings.concat(oPageInfo.drawings);
+                }
+
+				return aDrawings;
+			}
+		}
+	});
+
 	CPDFDoc.prototype.RecalculateAll = function() {
 		let fontMap = {};
 		
@@ -2619,7 +2664,7 @@ var CPresentation = CPresentation || function(){};
      * @param {number} [nPos = 0] 
 	 * @returns {boolean}
 	 */
-    CPDFDoc.prototype.RemovePage = function(nPos, isOnMove) {
+    CPDFDoc.prototype.RemovePage = function(nPos) {
         let oThis       = this;
         let oViewer     = editor.getDocumentRenderer();
         let oFile       = oViewer.file;
@@ -2632,23 +2677,21 @@ var CPresentation = CPresentation || function(){};
 
         oFile.removeSelection();
         
-        if (true !== isOnMove) {
-            // сначала удаляем все объекты со страницы
-            if (oViewer.pagesInfo.pages[nPos].fields) {
-                oViewer.pagesInfo.pages[nPos].fields.slice().forEach(function(field) {
-                    oThis.RemoveField(field.GetId());
-                });
-            }
-            if (oViewer.pagesInfo.pages[nPos].annots) {
-                oViewer.pagesInfo.pages[nPos].annots.slice().forEach(function(annot) {
-                    oThis.RemoveAnnot(annot.GetId());
-                });
-            }
-            if (oViewer.pagesInfo.pages[nPos].drawings) {
-                oViewer.pagesInfo.pages[nPos].drawings.slice().forEach(function(drawing) {
-                    oThis.RemoveDrawing(drawing.GetId());
-                });
-            }
+        // сначала удаляем все объекты со страницы
+        if (oViewer.pagesInfo.pages[nPos].fields) {
+            oViewer.pagesInfo.pages[nPos].fields.slice().forEach(function(field) {
+                oThis.RemoveField(field.GetId());
+            });
+        }
+        if (oViewer.pagesInfo.pages[nPos].annots) {
+            oViewer.pagesInfo.pages[nPos].annots.slice().forEach(function(annot) {
+                oThis.RemoveAnnot(annot.GetId());
+            });
+        }
+        if (oViewer.pagesInfo.pages[nPos].drawings) {
+            oViewer.pagesInfo.pages[nPos].drawings.slice().forEach(function(drawing) {
+                oThis.RemoveDrawing(drawing.GetId());
+            });
         }
         
         // убираем информацию о странице
@@ -2725,7 +2768,7 @@ var CPresentation = CPresentation || function(){};
             });
 
             aLowerIndexes.forEach(function(oldIndex, i) {
-                let oPage = _t.RemovePage(oldIndex, true);
+                let oPage = _t.RemovePage(oldIndex);
                 _t.AddPage(nNewPos - i, oPage);
             });
         }
@@ -2738,7 +2781,7 @@ var CPresentation = CPresentation || function(){};
             let nOffset = aLowerIndexes.length > 0 ? 1 : 0;
             
             aHigherIndexes.forEach(function(oldIndex, i) {
-                let oPage = _t.RemovePage(oldIndex, true);
+                let oPage = _t.RemovePage(oldIndex);
                 _t.AddPage(nNewPos + nOffset + i, oPage);
             });
         }
@@ -2819,7 +2862,6 @@ var CPresentation = CPresentation || function(){};
 
         oField._origRect = aCoords;
 
-        this.widgets.push(oField);
         oField.SetNeedRecalc(true);
 
         oPageInfo.fields.push(oField);
@@ -2910,8 +2952,6 @@ var CPresentation = CPresentation || function(){};
             oField.SetPosition(oPos.x, oPos.y)
         }
 
-        this.widgets.push(oField);
-
         oField.SetDocument(this);
         oPagesInfo.AddField(oField);
 
@@ -2950,7 +2990,6 @@ var CPresentation = CPresentation || function(){};
         oAnnot.SetNeedRecalc(true);
         oAnnot.SetDisplay(this.IsAnnotsHidden() ? window["AscPDF"].Api.Types.display["hidden"] : window["AscPDF"].Api.Types.display["visible"]);
         
-        this.annots.push(oAnnot);
         oPageInfo.AddAnnot(oAnnot);
         
         return oAnnot;
@@ -2959,8 +2998,6 @@ var CPresentation = CPresentation || function(){};
         let oPagesInfo = this.GetPageInfo(nPage);
         if (!oPagesInfo)
             return;
-
-        this.annots.push(oAnnot);
 
         oAnnot.SetDocument(this);
         oPagesInfo.AddAnnot(oAnnot);
@@ -3564,9 +3601,6 @@ var CPresentation = CPresentation || function(){};
         if (!oAnnot)
             return;
 
-        let nPos = this.annots.indexOf(oAnnot);
-        this.annots.splice(nPos, 1);
-        
         let oPage = oAnnot.GetParentPage();
         oPage.RemoveAnnot(Id);
         
@@ -3592,9 +3626,6 @@ var CPresentation = CPresentation || function(){};
         if (!oDrawing)
             return;
 
-        let nPos = this.drawings.indexOf(oDrawing);
-        this.drawings.splice(nPos, 1);
-
         let oPage = oDrawing.GetParentPage();
         oPage.RemoveDrawing(Id);
 
@@ -3619,10 +3650,6 @@ var CPresentation = CPresentation || function(){};
 
         if (!oForm || !oForm.IsWidget())
             return;
-
-        // удаляем поле из виджетов и со страницы
-        let nPos = this.widgets.indexOf(oForm);
-        this.widgets.splice(nPos, 1);
 
         let oPage = oForm.GetParentPage();
         oPage.RemoveField(oForm.GetId());
@@ -5341,8 +5368,6 @@ var CPresentation = CPresentation || function(){};
         if (!oPagesInfo)
             return;
 
-        this.drawings.push(oDrawing);
-
         oDrawing.SetDocument(this);
         oPagesInfo.AddDrawing(oDrawing, nPosInTree);
         this.ClearSearch();
@@ -5374,7 +5399,6 @@ var CPresentation = CPresentation || function(){};
         oXfrm.setOffX(oPos.x);
         oXfrm.setOffY(oPos.y);
 
-        this.drawings.push(oTextArt);
         oPagesInfo.AddDrawing(oTextArt);
         oTextArt.SetNeedRecalc(true);
         

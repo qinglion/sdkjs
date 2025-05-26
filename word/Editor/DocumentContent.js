@@ -7264,6 +7264,10 @@ CDocumentContent.prototype.Internal_GetContentPosByXY = function(X, Y, PageNum)
 	if (!this.IsRecalculated())
 		return;
 	
+	let point = this.TransformPoint(X, Y);
+	X = point.x;
+	Y = point.y;
+	
     if (undefined === PageNum || null === PageNum)
         PageNum = this.CurPage;
 
