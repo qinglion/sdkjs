@@ -15385,6 +15385,16 @@ $(function () {
 		assert.strictEqual(array.getElementRowCol(1, 0).getValue(), '');
 		assert.strictEqual(array.getElementRowCol(2, 0).getValue(), 'test');
 
+		oParser = new parserFormula("TAKE({1,2,3},2,1)", "A1", ws);
+		assert.ok(oParser.parse(), "TAKE({1,2,3},2,1)");
+		array = oParser.calculate();
+		assert.strictEqual(array.getElementRowCol(0, 0).getValue(), 1, "Result of TAKE({1,2,3},2,1)");
+
+		oParser = new parserFormula("TAKE({1;2;3},1,2)", "A1", ws);
+		assert.ok(oParser.parse(), "TAKE({1;2;3},1,2)");
+		array = oParser.calculate();
+		assert.strictEqual(array.getElementRowCol(0, 0).getValue(), 1, "Result of TAKE({1;2;3},1,2)");
+
 		//2.2 аргумент - string
 		oParser = new parserFormula("TAKE(1,\"test\")", "A1", ws);
 		assert.ok(oParser.parse());

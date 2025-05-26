@@ -2582,7 +2582,10 @@ function (window, undefined) {
 
 		let arg1 = arg[0];
 		let matrix;
-		if (arg1.type === cElementType.cellsRange || arg1.type === cElementType.array || arg1.type === cElementType.cell || arg1.type === cElementType.cell3D) {
+		if (arg1.type === cElementType.array) {
+			// array.getMatrix() doesn't make an independent copy and leaves a link to the original array
+			matrix = arg1.getMatrixCopy();
+		} else if (arg1.type === cElementType.cellsRange || arg1.type === cElementType.cell || arg1.type === cElementType.cell3D) {		
 			matrix = arg1.getMatrix();
 		} else if (arg1.type === cElementType.cellsRange3D) {
 			if (arg1.isSingleSheet()) {

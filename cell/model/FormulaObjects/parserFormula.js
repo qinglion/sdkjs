@@ -3110,10 +3110,12 @@ parserHelp.setDigitSeparator(AscCommon.g_oDefaultCultureInfo.NumberDecimalSepara
 			 ir++, ret += digitDelim ? FormulaSeparators.arrayRowSeparator : FormulaSeparators.arrayRowSeparatorDef) {
 			for (var ic = 0; ic < this.countElementInRow[ir]; ic++, ret +=
 				digitDelim ? FormulaSeparators.arrayColSeparator : FormulaSeparators.arrayColSeparatorDef) {
-				if (this.array[ir][ic] instanceof cString) {
-					ret += '"' + this.array[ir][ic].toLocaleString(digitDelim) + '"';
-				} else {
-					ret += this.array[ir][ic].toLocaleString(digitDelim) + "";
+			if (this.array[ir] && this.array[ir][ic]) {
+					if (this.array[ir][ic] instanceof cString) {
+						ret += '"' + this.array[ir][ic].toLocaleString(digitDelim) + '"';
+					} else {
+						ret += this.array[ir][ic].toLocaleString(digitDelim) + "";
+					}
 				}
 			}
 			if (ret[ret.length - 1] === digitDelim ? FormulaSeparators.arrayColSeparator :
@@ -3163,6 +3165,22 @@ parserHelp.setDigitSeparator(AscCommon.g_oDefaultCultureInfo.NumberDecimalSepara
 		}
 
 		return this.array;
+	};
+	cArray.prototype.getMatrixCopy = function () {
+		let retArrCopy = [];
+		for (let ir = 0; ir < this.array.length; ir++) {
+			retArrCopy[ir] = [];
+			for (let ic = 0; ic < this.array[ir].length; ic++) {
+				// let elem = this.array[ir][ic];
+				retArrCopy[ir].push(this.array[ir][ic]);
+			}
+			if (ir === this.rowCount - 1) {
+				break;
+			}
+		}
+
+		return retArrCopy;
+
 	};
 	cArray.prototype.fillFromArray = function (arr, fChangeElems) {
 		if (arr && arr.length !== undefined) {
