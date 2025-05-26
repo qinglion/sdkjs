@@ -2950,9 +2950,13 @@ function (window, undefined) {
 		if (cElementType.error === arg0Val.type) {
 			return arg0Val;
 		}
-		//TODO не тестировал на hlookup/x - поэтому поставил условия
-		if (!opt_xlookup && false === this.bHor && cElementType.empty === arg0Val.type) {
-			return new cError(cErrorType.not_available);
+		if (cElementType.empty === arg0.type) {
+			if (opt_xlookup) {
+				// TODO Empty for XLOOKUP
+				return new cError(cErrorType.not_available);
+			} else {
+				arg0Val = arg0.tocNumber();
+			}
 		}
 
 		let found = false;

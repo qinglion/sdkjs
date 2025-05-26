@@ -22562,6 +22562,9 @@ $(function () {
 		ws.getRange2("A1107").setValue("#DIV/0!");
 		ws.getRange2("A1108").setValue("TRUE");
 		ws.getRange2("A1109").setValue("Sandra");
+		ws.getRange2("A1110").setValue("");
+		ws.getRange2("A1111").setValue("Sandra");
+		ws.getRange2("A1112").setValue("0");
 		ws.getRange2("A1113").setValue("5,2");
 		ws.getRange2("B1101").setValue("1");
 		ws.getRange2("B1102").setValue("2");
@@ -22585,6 +22588,22 @@ $(function () {
 		oParser = new parserFormula('VLOOKUP("AnyStringValue2",A1101:B1113,2,FALSE)', "A2", ws);
 		assert.ok(oParser.parse(), 'VLOOKUP("AnyStringValue2",A1101:B1113,2,FALSE)');
 		assert.strictEqual(oParser.calculate().getValue(), 1, 'Result of VLOOKUP("AnyStringValue2",A1101:B1113,2,FALSE)');
+
+		oParser = new parserFormula('VLOOKUP("Sandra",A1101:B1113,2,FALSE)', "A2", ws);
+		assert.ok(oParser.parse(), 'VLOOKUP("Sandra",A1101:B1113,2,FALSE)');
+		assert.strictEqual(oParser.calculate().getValue(), 9, 'Result of VLOOKUP("Sandra",A1101:B1113,2,FALSE)');
+
+		oParser = new parserFormula('VLOOKUP(,A1101:B1113,2,FALSE)', "A2", ws);
+		assert.ok(oParser.parse(), 'VLOOKUP(,A1101:B1113,2,FALSE)');
+		assert.strictEqual(oParser.calculate().getValue(), 12, 'Result of VLOOKUP(,A1101:B1113,2,FALSE)');
+
+		oParser = new parserFormula('VLOOKUP(#DIV/0!,A1101:B1113,2,FALSE)', "A2", ws);
+		assert.ok(oParser.parse(), 'VLOOKUP(#DIV/0!,A1101:B1113,2,FALSE)');
+		assert.strictEqual(oParser.calculate().getValue(), "#DIV/0!", 'Result of VLOOKUP(#DIV/0!,A1101:B1113,2,FALSE)');
+
+		oParser = new parserFormula('VLOOKUP("",A1101:B1113,2,FALSE)', "A2", ws);
+		assert.ok(oParser.parse(), 'VLOOKUP("",A1101:B1113,2,FALSE)');
+		assert.strictEqual(oParser.calculate().getValue(), "#N/A", 'Result of VLOOKUP("",A1101:B1113,2,FALSE)');
 
 		// for bug 65016 - error tests when simpleSearch
 		ws.getRange2("A101:B120").cleanAll();
@@ -23642,10 +23661,10 @@ $(function () {
 		assert.strictEqual(_getValue(oParser.calculate()), "#DIV/0!", 'Result of XLOOKUP(A306,A300:A311,B300:B311,-2,0,1)');
 
 		// for bug 70550
-		AscCommonExcel.g_oVLOOKUPCache.clean();
 		ws.getRange2("A100:G110").setValue("1");
 		ws.getRange2("A101").setValue("2");
 		ws.getRange2("B101:G101").setValue("3");
+		AscCommonExcel.g_oVLOOKUPCache.clean();
 
 		oParser = new parserFormula('XLOOKUP(2,A100:A110,A100:G110,"",1)', "A2", ws);
 		assert.ok(oParser.parse(), 'XLOOKUP(2,A100:A110,A100:G110,"",1)');
