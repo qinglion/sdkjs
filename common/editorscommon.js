@@ -11035,7 +11035,7 @@
 		for (var oIterator = sWord.getUnicodeIterator(); oIterator.check(); oIterator.next())
 		{
 			var nCharCode = oIterator.value();
-			if (IsHangul(nCharCode) || IsCJKIdeographs(nCharCode))
+			if (IsHangul(nCharCode) || IsCJKIdeographs(nCharCode) || IsComplexScript(nCharCode))
 				return false;
 
 			if (0x73 === nCharCode)
