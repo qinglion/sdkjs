@@ -6154,7 +6154,7 @@
 					continue;
 				}
 
-				let nMinPosContent	= Math.min(oLastElem.Content.length - 1, oLastElem.State.ContentPos);
+				let nMinPosContent	= oLastElem.State.ContentPos - 1;
 				let oLastElement	= oLastElem.Content[nMinPosContent];
 				let strValue		= String.fromCharCode(oLastElement.value);
 				return GetTokenType(strValue, TokenSearch_Everything);
@@ -6304,7 +6304,7 @@
 		let oAbsolutePLastId	= this.GetAbsolutePreLast();
 		let oFuncNamePos		= CheckFunctionOnCursor(this.oCMathContent);
 
-		if (this.oAbsoluteLastId === oAbsolutePLastId) // подряд два пробела, не начинам коррекцию
+		if (this.oAbsoluteLastId === oAbsolutePLastId && this.oAbsoluteLastId === MathLiterals.space.id) // подряд два пробела, не начинам коррекцию
 			return false;
 
 		// если нажали пробел после названия функции (cos, sin, lim, log, ...), то
@@ -6577,7 +6577,7 @@
 	}
 	ProceedTokens.prototype.ProceedBeforeDivide = function (oRuleLast)
 	{
-		if (undefined === oRuleLast)
+		if (!(oRuleLast instanceof PositionIsCMathContent))
 			return false;
 
 		let oMathContentTemp = AscFormat.ExecuteNoHistory(
@@ -6599,6 +6599,7 @@
 	ProceedTokens.prototype.CompareMathContent = function (oMathContentCopy, isCheckStr)
 	{
 		let isSame = true;
+		oMathContentCopy.Correct_Content(true);
 
 		for (let i = this.oCMathContent.Content.length; i >= 0;i--)
 		{
@@ -7352,6 +7353,9 @@
 				{
 					if (intMathContent === nPosCMathContent && nPosCMathContent === nEndMathContent)
 					{
+						let isContentAfter = (nEndRunContent - intRunContent) < oCurrentElement.Content.length
+							&& intRunContent === 0;
+
 						for (let nRunPos = intRunContent; nRunPos < nEndRunContent; nRunPos++)
 						{
 							let oEl = oCurrentElement.Content[nRunPos];
@@ -7369,7 +7373,14 @@
 							nEndMathContent--;
 						}
 
-						oContent.CurPos = nPosCMathContent + 1;
+						if (!isContentAfter && nEndRunContent - intRunContent > 1)
+						{
+							oCurrentElement.Split2(intRunContent, oContent, nPosCMathContent);
+							oContent.CurPos = nPosCMathContent + 1;
+							continue;
+						}
+
+						oContent.CurPos = nPosCMathContent;
 					}
 					else if (nPosCMathContent === nEndMathContent)
 					{
