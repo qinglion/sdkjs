@@ -681,7 +681,7 @@
 			let startPos = paragraph.getCurrentPos();
 			let endPos   = startPos;
 
-			let paraSearchPos = new CParagraphSearchPos();
+			let paraSearchPos = new AscWord.CParagraphSearchPos();
 
 			let maxShifts = oldCodePoints.length;
 			let selectedText;
