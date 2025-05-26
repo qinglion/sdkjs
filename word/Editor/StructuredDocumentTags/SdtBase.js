@@ -109,6 +109,13 @@ CSdtBase.prototype.SetPlaceholderText = function(sText)
 	else
 		oDocPart.AddText(sText);
 
+	if (this.Pr && this.Pr.TextPr)
+	{
+		oDocPart.SelectAll();
+		oParagraph = oDocPart.GetFirstParagraph();
+		oParagraph.ApplyTextPr(this.Pr.TextPr.Copy());
+	}
+	
 	oDocPart.RemoveSelection();
 
 	var isPlaceHolder = this.IsPlaceHolder();
