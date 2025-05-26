@@ -6154,7 +6154,7 @@
 					continue;
 				}
 
-				let nMinPosContent	= oLastElem.State.ContentPos - 1;
+				let nMinPosContent	= Math.max(0, oLastElem.State.ContentPos - 1);
 				let oLastElement	= oLastElem.Content[nMinPosContent];
 				let strValue		= String.fromCharCode(oLastElement.value);
 				return GetTokenType(strValue, TokenSearch_Everything);
