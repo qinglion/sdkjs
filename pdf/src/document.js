@@ -5162,6 +5162,7 @@ var CPresentation = CPresentation || function(){};
         loader.AssignConnectedObjects();
         let allBuilderImages = aReaderImages.concat(aLoaderImages);
         let allImages = [];
+        let aResetBuilderImages = [];
         for(let imgIdx = 0; imgIdx < allBuilderImages.length; ++imgIdx) {
             let embed = null;
             let builderImage = allBuilderImages[imgIdx];
@@ -5169,16 +5170,19 @@ var CPresentation = CPresentation || function(){};
             if(blipFill && blipFill.embed) {
                 embed = blipFill.embed;
                 let url =  _t.Viewer.file.nativeFile["getImageBase64"](parseInt(embed.substring(3)));
-                allImages.push(url);
                 builderImage.BlipFill.RasterImageId = url;
                 delete builderImage.BlipFill.embed;
+                if(url.indexOf("data:") === 0) {
+                    aResetBuilderImages.push(builderImage);
+                    allImages.push(url);
+                }
             }
 
         }
         let oImageMap = {};
         if(allImages.length > 0) {
             AscCommon.sendImgUrls(Asc.editor, allImages, function (data) {
-                let oObjectsForDownload = AscCommon.GetObjectsForImageDownload(allBuilderImages);
+                let oObjectsForDownload = AscCommon.GetObjectsForImageDownload(aResetBuilderImages);
                 AscCommon.ResetNewUrls(data, allImages, oObjectsForDownload.aBuilderImagesByUrl, oImageMap);
                 let aLoadUrls = [];
                 for(let nIdx = 0; nIdx < data.length; ++nIdx) {
