@@ -20112,6 +20112,44 @@
 		}
 		return false;
 	};
+	
+	/**
+	 * Sets the visualization of the content control.
+	 *
+	 * @memberof ApiInlineLvlSdt
+	 * @typeofeditors ["CDE"]
+	 * @since 9.0.0
+	 * @param {"boundingBox"|"hidden"} type - The desired type of visualization.
+	 * @see office-js-api/Examples/{Editor}/ApiInlineLvlSdt/Methods/SetAppearance.js
+	 */
+	ApiInlineLvlSdt.prototype.SetAppearance = function(type)
+	{
+		type = GetStringParameter(type, "boundingBox");
+		this.Sdt.SetAppearance();
+		
+		if (type === "hidden")
+			this.Sdt.SetAppearance(Asc.c_oAscSdtAppearance.Hidden);
+		else
+			this.Sdt.SetAppearance(Asc.c_oAscSdtAppearance.Frame);
+	};
+	
+	/**
+	 * Gets the visualization of the content control.
+	 *
+	 * @memberof ApiInlineLvlSdt
+	 * @typeofeditors ["CDE"]
+	 * @since 9.0.0
+	 * @returns {"boundingBox"|"hidden"} type - The type of visualization.
+	 * @see office-js-api/Examples/{Editor}/ApiInlineLvlSdt/Methods/GetAppearance.js
+	 */
+	ApiInlineLvlSdt.prototype.GetAppearance = function()
+	{
+		let type = this.Sdt.GetAppearance();
+		if (Asc.c_oAscSdtAppearance.Hidden === type)
+			return "hidden";
+		
+		return "boundingBox";
+	};
 
 	//------------------------------------------------------------------------------------------------------------------
 	//
@@ -21487,6 +21525,28 @@
 	 * @see office-js-api/Examples/{Editor}/ApiBlockLvlSdt/Methods/GetBackgroundColor.js
 	 */
 	ApiBlockLvlSdt.prototype.GetBackgroundColor = ApiInlineLvlSdt.prototype.GetBackgroundColor;
+	
+	/**
+	 * Sets the visualization of the content control.
+	 *
+	 * @memberof ApiInlineLvlSdt
+	 * @typeofeditors ["CDE"]
+	 * @since 9.0.0
+	 * @param {"boundingBox"|"hidden"} type - The desired type of visualization.
+	 * @see office-js-api/Examples/{Editor}/ApiBlockLvlSdt/Methods/SetAppearance.js
+	 */
+	ApiBlockLvlSdt.prototype.SetAppearance = ApiInlineLvlSdt.prototype.SetAppearance;
+	
+	/**
+	 * Gets the visualization of the content control.
+	 *
+	 * @memberof ApiInlineLvlSdt
+	 * @typeofeditors ["CDE"]
+	 * @since 9.0.0
+	 * @returns {"boundingBox"|"hidden"} type - The type of visualization.
+	 * @see office-js-api/Examples/{Editor}/ApiBlockLvlSdt/Methods/GetAppearance.js
+	 */
+	ApiBlockLvlSdt.prototype.GetAppearance = ApiInlineLvlSdt.prototype.GetAppearance;
 	
 	//------------------------------------------------------------------------------------------------------------------
 	//
@@ -25005,7 +25065,6 @@
 	ApiInlineLvlSdt.prototype["ToJSON"]                 = ApiInlineLvlSdt.prototype.ToJSON;
 	ApiInlineLvlSdt.prototype["AddComment"]             = ApiInlineLvlSdt.prototype.AddComment;
 	ApiInlineLvlSdt.prototype["MoveCursorOutside"]      = ApiInlineLvlSdt.prototype.MoveCursorOutside;
-	
 	ApiInlineLvlSdt.prototype["GetPlaceholderText"]     = ApiInlineLvlSdt.prototype.GetPlaceholderText;
 	ApiInlineLvlSdt.prototype["SetPlaceholderText"]     = ApiInlineLvlSdt.prototype.SetPlaceholderText;
 	ApiInlineLvlSdt.prototype["IsForm"]                 = ApiInlineLvlSdt.prototype.IsForm;
@@ -25033,6 +25092,8 @@
 	ApiInlineLvlSdt.prototype["SetDateFormat"]          = ApiInlineLvlSdt.prototype.SetDateFormat;
 	ApiInlineLvlSdt.prototype["SetPicture"]             = ApiInlineLvlSdt.prototype.SetPicture;
 	ApiInlineLvlSdt.prototype["SetPictureSize"]         = ApiInlineLvlSdt.prototype.SetPictureSize;
+	ApiInlineLvlSdt.prototype["SetAppearance"]          = ApiInlineLvlSdt.prototype.SetAppearance;
+	ApiInlineLvlSdt.prototype["GetAppearance"]          = ApiInlineLvlSdt.prototype.GetAppearance;
 
 	ApiContentControlList.prototype["GetClassType"]		= ApiContentControlList.prototype.GetClassType;
 	ApiContentControlList.prototype["GetAllItems"]		= ApiContentControlList.prototype.GetAllItems;
@@ -25102,6 +25163,9 @@
 	ApiBlockLvlSdt.prototype["SetDataBinding"]          = ApiBlockLvlSdt.prototype.SetDataBinding;
 	ApiBlockLvlSdt.prototype["UpdateFromXmlMapping"]    = ApiBlockLvlSdt.prototype.UpdateFromXmlMapping;
 	ApiBlockLvlSdt.prototype["GetDataForXmlMapping"]    = ApiBlockLvlSdt.prototype.GetDataForXmlMapping;
+	ApiBlockLvlSdt.prototype["SetAppearance"]           = ApiBlockLvlSdt.prototype.SetAppearance;
+	ApiBlockLvlSdt.prototype["GetAppearance"]           = ApiBlockLvlSdt.prototype.GetAppearance;
+	
 	
 	ApiFormBase.prototype["GetClassType"]        = ApiFormBase.prototype.GetClassType;
 	ApiFormBase.prototype["GetFormType"]         = ApiFormBase.prototype.GetFormType;
