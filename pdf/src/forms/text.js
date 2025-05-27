@@ -1951,17 +1951,10 @@
 	 * @typeofeditors ["PDF"]
 	 */
     CTextField.prototype.SyncValue = function() {
-        let aFields = this.GetDocument().GetAllWidgets(this.GetFullName());
+        this.SetValue(this.GetValue());
+        this.SetFormatValue(this.GetFormatValue());
         
-        for (let i = 0; i < aFields.length; i++) {
-            if (aFields[i] != this) {
-                this.SetValue(aFields[i].GetValue());
-                this.SetFormatValue(aFields[i].GetFormatValue());
-                
-                this.SetNeedRecalc(true);
-                break;
-            }
-        }
+        this.SetNeedRecalc(true);
     };
     CTextField.prototype.CheckFormViewWindow = function()
     {

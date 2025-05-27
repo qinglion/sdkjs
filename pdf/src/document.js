@@ -2959,8 +2959,6 @@ var CPresentation = CPresentation || function(){};
             oField.SetEditMode(true);
         }
 
-        oField.SyncValue();
-
         if (isFromUI) {
             let oController = this.GetController();
             this.SetMouseDownObject(oField);

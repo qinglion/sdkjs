@@ -637,21 +637,13 @@
 	 * @typeofeditors ["PDF"]
 	 */
     CBaseCheckBoxField.prototype.SyncValue = function() {
-        let aFields = this.GetDocument().GetAllWidgets(this.GetFullName());
-        
-        for (let i = 0; i < aFields.length; i++) {
-            if (aFields[i] != this) {
-                if (this.GetExportValue() == aFields[i].GetParentValue()) {
-                    this.SetChecked(true);
-                    this.AddToRedraw();
-                }
-                else {
-                    this.SetChecked(false);
-                    this.AddToRedraw();
-                }
-
-                break;
-            }
+        if (this.GetExportValue() == this.GetParentValue()) {
+            this.SetChecked(true);
+            this.AddToRedraw();
+        }
+        else {
+            this.SetChecked(false);
+            this.AddToRedraw();
         }
     };
     CBaseCheckBoxField.prototype.DrainLogicFrom = function(oFieldToInherit, bClearFrom) {

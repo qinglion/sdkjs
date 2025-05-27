@@ -4066,8 +4066,9 @@
 	AscDFH.historyitem_Pdf_List_Form_Parent_Cur_Idxs		= AscDFH.historyitem_type_Pdf_Listbox_Field | 2;
 	AscDFH.historyitem_Pdf_List_Form_Top_Idx				= AscDFH.historyitem_type_Pdf_Listbox_Field | 3;
 	AscDFH.historyitem_Pdf_List_Form_Option					= AscDFH.historyitem_type_Pdf_Listbox_Field | 4;
-	AscDFH.historyitem_Pdf_List_Form_Commit_On_Sel_Change	= AscDFH.historyitem_type_Pdf_Listbox_Field | 5;
-	AscDFH.historyitem_Pdf_List_Form_Multiple_Selection		= AscDFH.historyitem_type_Pdf_Listbox_Field | 6;
+	AscDFH.historyitem_Pdf_List_Form_Content_Option			= AscDFH.historyitem_type_Pdf_Listbox_Field | 5;
+	AscDFH.historyitem_Pdf_List_Form_Commit_On_Sel_Change	= AscDFH.historyitem_type_Pdf_Listbox_Field | 6;
+	AscDFH.historyitem_Pdf_List_Form_Multiple_Selection		= AscDFH.historyitem_type_Pdf_Listbox_Field | 7;
 
 	// button
 	AscDFH.historyitem_Pdf_Pushbutton_Image				= AscDFH.historyitem_type_Pdf_Pushbutton | 1;

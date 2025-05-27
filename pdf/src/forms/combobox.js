@@ -798,17 +798,10 @@
         return [];
     };
     CComboBoxField.prototype.SyncValue = function() {
-        let aFields = this.GetDocument().GetAllWidgets(this.GetFullName());
+        this.SetCurIdxs(this.GetParentCurIdxs());
+        this.SetFormatValue(this.GetFormatValue());
         
-        for (let i = 0; i < aFields.length; i++) {
-            if (aFields[i] != this) {
-                this.SetCurIdxs(aFields[i].GetParentCurIdxs());
-                this.SetFormatValue(aFields[i].GetFormatValue());
-                
-                this.SetNeedRecalc(true);
-                break;
-            }
-        }
+        this.SetNeedRecalc(true);
     };
 
     CComboBoxField.prototype.ProcessAutoFitContent = function(oContent) {
