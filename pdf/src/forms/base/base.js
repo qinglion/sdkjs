@@ -1472,12 +1472,12 @@
 
             if (bParentInherit) {
                 oParentField.DrainLogicFrom(oExistsField);
+                
+                aWidgetForms.forEach(function(widget) {
+                    oParentField.AddKid(widget);
+                    widget.SetPartialName(undefined);
+                });
             }
-
-            aWidgetForms.forEach(function(widget) {
-                oParentField.AddKid(widget);
-                widget.SetPartialName(undefined);
-            });
 
             oParentField.AddKid(this);
             this.SetPartialName(undefined);
