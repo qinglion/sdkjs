@@ -3119,7 +3119,7 @@ function (window, undefined) {
 		var cacheElem = this.cacheId[sRangeName];
 		if (!cacheElem) {
 			cacheElem = {elements: [], results: {}};
-			if (Math.abs(opt_arg5) === 2 || (opt_arg5 === undefined && arg3Value) || opt_arg4 === 2) {
+			if (Math.abs(opt_arg5) === 2 || arg3Value || opt_arg4) {
 				this.generateElements(range, cacheElem);
 				this.cacheId[sRangeName] = cacheElem;
 				var cacheRange = this.cacheRanges[wsId];
@@ -3264,15 +3264,14 @@ function (window, undefined) {
 			} else if (this._compareValues(val, valueForSearching, ">", opt_arg4)) {
 				j = k - 1;
 				if (array[k] <= endIndex && array[k] >= startIndex) {
-					this._updateNextOptVal(val, array[k], valueForSearching, opt_arg4)
+					this._updateNextOptVal(val, array[k], valueForSearching, opt_arg4);
 				}
 			} else {
 				i = k + 1;
 				if (array[k] <= endIndex && array[k] >= startIndex) {
-					this._updateNextOptVal(val, array[k], valueForSearching, opt_arg4)
+					this._updateNextOptVal(val, array[k], valueForSearching, opt_arg4);
 				}
 			}
-
 		}
 		return resultIndex;
 	};
@@ -3400,7 +3399,7 @@ function (window, undefined) {
 		//TODO opt_arg5 - пока не обрабатываю результат == 2( A wildcard match where *, ?, and ~ have)
 		if (xlookup) {
 			if (Math.abs(opt_arg5) === 1) {
-				if (sorted && opt_arg4 !== 2) {
+				if (sorted && opt_arg4 === 0) {
 					res = this._indexedBinarySearch(sorted, valueForSearching, revert, ws, rowCol, startIndex, endIndex, opt_arg4);
 				} else if (cacheArray) {
 					res = this._simpleSearch(cacheArray, valueForSearching,  revert, opt_arg4);
