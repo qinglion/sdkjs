@@ -1799,17 +1799,19 @@
 				uniFillBkgnd = fillBkgndCell.calculateValue(this, pageInfo,
 					visioDocument.themes, themeValWasUsedFor);
 
-				let fillBkgndTransValue = this.getCellNumberValue("FillBkgndTrans");
-				if (!isNaN(fillBkgndTransValue)) {
-					let fillObj = uniFillBkgnd.fill;
-					if (fillObj.type === Asc.c_oAscFill.FILL_TYPE_PATT) {
-						// pattern fill
-						fillObj.bgClr.color.RGBA.A = fillObj.fgClr.color.RGBA.A * (1 - fillBkgndTransValue);
+				if (!(uniFillBkgnd.fill.type === Asc.c_oAscFill.FILL_TYPE_GRAD)) {
+					let fillBkgndTransValue = this.getCellNumberValue("FillBkgndTrans");
+					if (!isNaN(fillBkgndTransValue)) {
+						let fillObj = uniFillBkgnd.fill;
+						if (fillObj.type === Asc.c_oAscFill.FILL_TYPE_PATT) {
+							// pattern fill
+							fillObj.bgClr.color.RGBA.A = fillObj.fgClr.color.RGBA.A * (1 - fillBkgndTransValue);
+						} else {
+							fillObj.color.color.RGBA.A = fillObj.color.color.RGBA.A * (1 - fillBkgndTransValue);
+						}
 					} else {
-						fillObj.color.color.RGBA.A = fillObj.color.color.RGBA.A * (1 - fillBkgndTransValue);
+						// AscCommon.consoleLog("fillBkgndTrans value is themed or something. Not calculated for", this);
 					}
-				} else {
-					// AscCommon.consoleLog("fillBkgndTrans value is themed or something. Not calculated for", this);
 				}
 			}
 
