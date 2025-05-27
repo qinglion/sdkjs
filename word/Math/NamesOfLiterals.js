@@ -2536,6 +2536,7 @@
 							chr: oTokens.value.value.charCodeAt(0),
 							subHide: oTokens.down === undefined,
 							supHide: oTokens.up === undefined,
+							limLoc: oTokens.value.style.metaData.getIsLimitNary() === true ? NARY_UndOvr : NARY_SubSup
 						}
 
 						let oNary = oContext.Add_NAry(Pr, null, null, null);
@@ -5431,12 +5432,27 @@
 			return this.isEscapedSlash;
 		}
 
+		this.setIsLimitNary = function()
+		{
+			this.isLimitNary = true;
+		}
+		this.getIsLimitNary = function()
+		{
+			return this.isLimitNary;
+		}
+
 		this.Copy = function ()
 		{
 			let oCopy = new MathMetaData();
 
-			oCopy.setIsLinearFraction(this.isLinearFraction);
-			oCopy.setIsEscapedSlash(this.isEscapedSlash);
+			if (this.isLinearFraction)
+				oCopy.setIsLinearFraction();
+
+			if (this.isEscapedSlash)
+				oCopy.setIsEscapedSlash();
+
+			if (this.isLimitNary)
+				oCopy.setIsLimitNary();
 
 			return oCopy;
 		}

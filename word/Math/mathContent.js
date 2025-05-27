@@ -3636,6 +3636,8 @@ CMathContent.prototype.Add_Text = function(text, paragraph, mathStyle, oAddition
 	AscWord.TextToMathRunElements(text, function(item)
 	{
 		oMathRun.private_AddItemToRun(oMathRun.State.ContentPos, item);
+		if (oAdditionalData)
+			oMathRun.math_autocorrection = oAdditionalData.metaData;
 	});
 
 	if (this.Content[this.Content.length - 1] === oMathRun)

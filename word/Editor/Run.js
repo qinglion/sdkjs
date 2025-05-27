@@ -629,7 +629,13 @@ ParaRun.prototype.GetTextOfElement = function(oMathText, isSelectedText)
 				// }
 				// else
 				// {
-					oMathText.AddText(new AscMath.MathText(strCurrentElement, this));
+					let mathText = new AscMath.MathText(strCurrentElement, this);
+					let additionalData = mathText.GetAdditionalData();
+
+					if (this.math_autocorrection)
+						additionalData.metaData = this.math_autocorrection.Copy();
+
+					oMathText.AddText(mathText);
 				//}
 			}
 		}
