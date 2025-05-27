@@ -60,6 +60,9 @@
         return;
     };
     CSignatureField.prototype.Recalculate = function() {
+        if (this.IsNeedUpdateEditShape()) {
+            this.UpdateEditShape();
+        }
     };
 
     CSignatureField.prototype.SetPressed = function(bValue) {

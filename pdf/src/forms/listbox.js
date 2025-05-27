@@ -96,6 +96,10 @@
 		return false;
 	};
     CListBoxField.prototype.Recalculate = function() {
+        if (this.IsNeedUpdateEditShape()) {
+            this.UpdateEditShape();
+        }
+        
         if (this.IsNeedRecalc() == false)
             return;
 
@@ -183,16 +187,9 @@
 	 * @typeofeditors ["PDF"]
 	 */
     CListBoxField.prototype.SyncValue = function() {
-        let aFields = this.GetDocument().GetAllWidgets(this.GetFullName());
-        
-        for (let i = 0; i < aFields.length; i++) {
-            if (aFields[i] != this) {
-                this.SetOptions(aFields[i].GetOptions().slice());
-                this.SetCurIdxs(aFields[i].GetParentCurIdxs());
-                this.SetNeedRecalc(true);
-                break;
-            }
-        }
+        this.private_SetOptionsToContent(this.GetOptions().slice());
+        this.SetCurIdxs(this.GetParentCurIdxs());
+        this.SetNeedRecalc(true);
     };
     CListBoxField.prototype.DrainLogicFrom = function(oFieldToInherit, bClearFrom) {
         AscPDF.CBaseField.prototype.DrainLogicFrom.call(this, oFieldToInherit, bClearFrom);
@@ -444,6 +441,98 @@
         }
         for (let i = 0; i < aOpt.length; i++) {
             this.AddOption(aOpt[i]);
+        }
+    };
+    CListBoxField.prototype.private_SetOptionsToContent = function(aOpt) {
+        let nCount = this.content.GetElementsCount();
+
+        while (nCount > 0) {
+            this.private_RemoveOptionFromContent(0);
+            nCount--;
+        }
+        for (let i = 0; i < aOpt.length; i++) {
+            this.private_AddOptionToContent(aOpt[i]);
+        }
+    };
+    CListBoxField.prototype.private_AddOptionToContent = function(option, nPos) {
+        if (option == null) return;
+        
+        let formattedOption;
+        let sCaption = "";
+        let aInnerColor = this.GetTextColor();
+        let oRGB = this.GetRGBColor(aInnerColor);
+        let oDocColor = new AscCommonWord.CDocumentColor(oRGB.r, oRGB.g, oRGB.b, false);
+
+        if (typeof option === "string" && option !== "") {
+            formattedOption = option;
+            sCaption = option;
+        }
+        else if (Array.isArray(option) && option[0] !== undefined && option[1] !== undefined) {
+            if (option[0].toString && option[1].toString) {
+                formattedOption = [option[0].toString(), option[1].toString()];
+                sCaption = option[0].toString();
+            }
+        }
+        else if (option.toString) {
+            formattedOption = option.toString();
+            sCaption = option.toString();
+        }
+        
+        if (formattedOption !== undefined) {
+            if (nPos == undefined) {
+                nPos = this.content.GetElementsCount();
+            }
+
+            AscCommon.History.Add(new CChangesPDFListContentOption(this, nPos, [formattedOption], true));
+            if (sCaption !== "") {
+                let aFields = this.IsWidget() ? [this] : this.GetAllWidgets();
+
+                aFields.forEach(function(field) {
+                    AscCommon.History.StartNoHistoryMode();
+
+                    AscFonts.FontPickerByCharacter.getFontsByString(sCaption);
+                    let oPara = new AscWord.Paragraph(this.content, false);
+                    let oRun = new AscWord.ParaRun(oPara, false);
+                    field.content.Internal_Content_Add(nPos, oPara);
+                    oPara.Add(oRun);
+                    oRun.AddText(sCaption);
+
+                    oPara.SetApplyToAll(true);
+                    oPara.Add(new ParaTextPr({Color: oDocColor}));
+                    oPara.RecalcCompiledPr(true);
+                    oPara.SetApplyToAll(false);
+
+                    AscCommon.History.EndNoHistoryMode();
+
+                    field.SetWasChanged(true);
+                    field.SetNeedRecalc(true);
+                });
+            }
+
+            this.SetWasChanged(true);
+        }
+    };
+    CListBoxField.prototype.private_RemoveOptionFromContent = function(nPos) {
+        function updateContent(widget) {
+            AscCommon.History.StartNoHistoryMode();
+            widget.content.Internal_Content_Remove(nPos, 1, false);
+            AscCommon.History.EndNoHistoryMode();
+
+            widget.SetNeedRecalc(true);
+            widget.SetWasChanged(true);
+        };
+    
+        if (Number.isInteger(nPos) && nPos >= 0 && nPos < this.content.GetElementsCount()) {
+            let option = this.content.GetElement(nPos).GetText({ParaSeparator: ""});
+            AscCommon.History.Add(new CChangesPDFListContentOption(this, nPos, [option], false));
+
+            if (this.IsWidget()) {
+                updateContent(this);
+            } else {
+                this.GetAllWidgets().forEach(updateContent);
+            }
+
+            return option;
         }
     };
     CListBoxField.prototype.SetValue = function(value) {

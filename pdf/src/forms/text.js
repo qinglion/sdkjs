@@ -263,7 +263,7 @@
         this._multiline = bMultiline;
     
         function updateWidget(widget) {
-            let useXLimit = bMultiline && !this.fileSelect;
+            let useXLimit = bMultiline && !widget.IsFileSelect();
             widget.content.SetUseXLimit(useXLimit);
             widget.contentFormat.SetUseXLimit(useXLimit);
 
@@ -311,7 +311,7 @@
         }
 
         AscCommon.History.Add(new CChangesPDFTextFormPassword(this, this._password, bPassword));
-        if (bPassword === true && this.fileSelect != true) {
+        if (bPassword === true && this.IsFileSelect() != true) {
             this._password = true;
         }
         else if (bPassword === false) {
@@ -339,7 +339,7 @@
             let oDoc        = this.GetDocument();
             let isOnOpen    = oDoc.Viewer.IsOpenFormsInProgress;
 
-            oDoc.History.Add(new CChangesPDFFormValue(this, this.GetParentValue(), sValue));
+            oDoc.History.Add(new CChangesPDFFormValue(this, this.GetValue(), sValue));
 
 			if (isOnOpen != true)
 				this.SetWasChanged(true);
@@ -513,89 +513,137 @@
         this.DrawLocks(oGraphicsPDF);
         this.DrawEdit(oGraphicsWord);
     };
-    CTextField.prototype.DrawDateMarker = function(oCtx) {
-        if (this.IsHidden())
-            return;
+    CTextField.prototype.DrawMarker = function(oCtx) {
+        if (this.IsHidden()) return;  // don't draw if field is hidden
 
-        let oViewer     = editor.getDocumentRenderer();
-        let nPage       = this.GetPage();
-        let nScale      = AscCommon.AscBrowser.retinaPixelRatio * oViewer.zoom * oViewer.getDrawingPageScale(nPage);
-        let aOrigRect   = this.GetOrigRect();
+        // 1. Base parameters
+        let oViewer   = editor.getDocumentRenderer();
+        let nPage     = this.GetPage();
+        let scale     = AscCommon.AscBrowser.retinaPixelRatio
+                        * oViewer.zoom
+                        * oViewer.getDrawingPageScale(nPage);  // overall scale factor
+        let rect      = this.GetOrigRect();           // [x1, y1, x2, y2] in document coords
+        let borders   = this.GetBordersWidth();       // border widths
+        let angleDeg  = this.GetRotate() || 0;        // rotation angle in degrees
+        let angleRad  = angleDeg * Math.PI / 180;     // convert to radians
 
-        let xCenter = oViewer.width >> 1;
-        if (oViewer.documentWidth > oViewer.width)
-		{
-			xCenter = (oViewer.documentWidth >> 1) - (oViewer.scrollX) >> 0;
-		}
-		let yPos    = oViewer.scrollY >> 0;
-        let page    = oViewer.drawingPages[nPage];
-        let w       = (page.W * AscCommon.AscBrowser.retinaPixelRatio) >> 0;
-        let h       = (page.H * AscCommon.AscBrowser.retinaPixelRatio) >> 0;
-        let indLeft = ((xCenter * AscCommon.AscBrowser.retinaPixelRatio) >> 0) - (w >> 1);
-        let indTop  = ((page.Y - yPos) * AscCommon.AscBrowser.retinaPixelRatio) >> 0;
-
-        let isLandscape = oViewer.isLandscapePage(nPage);
-        if (isLandscape) {
-            indLeft = indLeft + (w - h) / 2;
+        // 2. Compute page offset (indLeft, indTop)
+        let xCenter = (oViewer.documentWidth > oViewer.width
+            ? ((oViewer.documentWidth >> 1) - oViewer.scrollX)
+            : (oViewer.width >> 1)
+        ) * AscCommon.AscBrowser.retinaPixelRatio;
+        let page     = oViewer.drawingPages[nPage];
+        let w        = page.W * AscCommon.AscBrowser.retinaPixelRatio;
+        let h        = page.H * AscCommon.AscBrowser.retinaPixelRatio;
+        let indLeft    = xCenter - (w >> 1);
+        if (oViewer.isLandscapePage(nPage)) {
+            indLeft += (w - h) / 2;
         }
-        
-        let X       = aOrigRect[0] * nScale + indLeft;
-        let Y       = aOrigRect[1] * nScale + indTop;
-        let nWidth  = (aOrigRect[2] - aOrigRect[0]) * nScale;
-        let nHeight = (aOrigRect[3] - aOrigRect[1]) * nScale;
-        
-        let oMargins = this.GetBordersWidth();
-        
-        let nMarkWidth  = 18;
-        let nMarkX      = (X + nWidth) - oMargins.left * nScale - nMarkWidth;
-        let nMarkHeight = nHeight - 2 * oMargins.top * nScale;
-        let nMarkY      = Y + oMargins.top * nScale;
+        let indTop   = (page.Y - (oViewer.scrollY >> 0))
+                    * AscCommon.AscBrowser.retinaPixelRatio;
 
-        // marker rect
+        // 3. Field rectangle on the canvas
+        let X  = rect[0] * scale + indLeft;
+        let Y  = rect[1] * scale + indTop;
+        let Wf = (rect[2] - rect[0]) * scale;
+        let Hf = (rect[3] - rect[1]) * scale;
+
+        // 4. Swap width/height if rotated 90° or 270°
+        if (angleDeg === 90 || angleDeg === 270) {
+            let temp = Wf;
+            Wf = Hf;
+            Hf = temp;
+
+            X -= (Wf - Hf) / 2;
+            Y -= (Hf - Wf) / 2;
+        }
+
+        // 5. Marker dimensions and position inside the field
+        let markW = 18;
+        let markH = Hf - 2 * borders.top * scale;
+        let markX = X + Wf - borders.left * scale - markW;
+        let markY = Y + borders.top * scale;
+
+        let cx = X + Wf / 2, cy = Y + Hf / 2;
+
+        // 6. Apply rotation around field center if needed
+        if (angleRad !== 0) {
+            oCtx.save();
+            oCtx.translate(cx, cy);
+            oCtx.rotate(-angleRad);
+            oCtx.translate(-cx, -cy);
+        }
+
+        // 7. Draw marker background
         oCtx.setLineDash([]);
-        oCtx.beginPath();
         oCtx.globalAlpha = 1;
-        oCtx.fillStyle = "rgb(240, 240, 240)";
-        oCtx.fillRect(nMarkX, nMarkY, nMarkWidth, nMarkHeight);
+        oCtx.fillStyle   = "#f0f0f0";
+        oCtx.fillRect(markX, markY, markW, markH);
 
-        // marker border right part
+        // 8. Draw marker borders (bottom+right in gray, top+left in white)
+        oCtx.lineWidth   = 1;
+        oCtx.strokeStyle = "rgb(100,100,100)";
         oCtx.beginPath();
-        oCtx.strokeStyle = "rgb(100, 100, 100)";
-        oCtx.lineWidth = 1;
-        oCtx.moveTo(nMarkX, nMarkY + nMarkHeight);
-        oCtx.lineTo(nMarkX + nMarkWidth, nMarkY + nMarkHeight);
-        oCtx.lineTo(nMarkX + nMarkWidth, nMarkY);
+        oCtx.moveTo(markX,       markY + markH);
+        oCtx.lineTo(markX + markW, markY + markH);
+        oCtx.lineTo(markX + markW, markY);
         oCtx.stroke();
 
-        // marker border left part
+        oCtx.strokeStyle = "#fff";
         oCtx.beginPath();
-        oCtx.strokeStyle = "rgb(255, 255, 255)";
-        oCtx.moveTo(nMarkX, nMarkY + nMarkHeight);
-        oCtx.lineTo(nMarkX, nMarkY);
-        oCtx.lineTo(nMarkX + nMarkWidth, nMarkY);
+        oCtx.moveTo(markX, markY + markH);
+        oCtx.lineTo(markX, markY);
+        oCtx.lineTo(markX + markW, markY);
         oCtx.stroke();
 
-        // marker icon
-        let nIconW = 5 * 1.5;
-        let nIconH = 3 * 1.5;
-        let nStartIconX = nMarkX + nMarkWidth/2 - (nIconW)/2;
-        let nStartIconY = nMarkY + nMarkHeight/2 - (nIconH)/2;
-
+        // 9. Draw the downward arrow
+        let iw = 5 * 1.5, ih = 3 * 1.5;
+        let sx = markX + (markW - iw) / 2;
+        let sy = markY + (markH - ih) / 2;
+        oCtx.fillStyle = "#000";
         oCtx.beginPath();
-        oCtx.fillStyle = "rgb(0, 0, 0)";
-        
-        oCtx.moveTo(nStartIconX, nStartIconY);
-        oCtx.lineTo(nStartIconX + nIconW, nStartIconY);
-        oCtx.lineTo(nStartIconX + nIconW/2, nStartIconY + nIconH);
-        oCtx.lineTo(nStartIconX, nStartIconY);
+        oCtx.moveTo(sx, sy);
+        oCtx.lineTo(sx + iw, sy);
+        oCtx.lineTo(sx + iw / 2, sy + ih);
+        oCtx.closePath();
         oCtx.fill();
 
-        this._markRect = {
-            x1: (nMarkX - indLeft) / nScale,
-            y1: (nMarkY - indTop) / nScale,
-            x2: ((nMarkX - indLeft) + (nMarkWidth)) / nScale,
-            y2: ((nMarkY - indTop) + (nMarkHeight)) / nScale
+        // 10. Restore context if rotated
+        if (angleRad !== 0) {
+            oCtx.restore();
         }
+
+        // 11. Compute actual axis-aligned bounding box of marker
+        let x1 = markX, y1 = markY;
+        let x2 = markX + markW, y2 = markY + markH;
+        if (angleRad !== 0) {
+            let cos = Math.cos(-angleRad), sin = Math.sin(-angleRad);
+            let rot = (x, y) => {
+                let dx = x - cx, dy = y - cy;
+                return {
+                    x: dx * cos - dy * sin + cx,
+                    y: dx * sin + dy * cos + cy
+                };
+            };
+            let pts = [
+                rot(markX,           markY),
+                rot(markX + markW,   markY),
+                rot(markX + markW,   markY + markH),
+                rot(markX,           markY + markH)
+            ];
+            x1 = Math.min(...pts.map(p => p.x));
+            y1 = Math.min(...pts.map(p => p.y));
+            x2 = Math.max(...pts.map(p => p.x));
+            y2 = Math.max(...pts.map(p => p.y));
+        }
+
+        // 12. Save marker rect in document coordinates
+        this._markRect = {
+            x1: (x1 - indLeft) / scale,
+            y1: (y1 - indTop)  / scale,
+            x2: (x2 - indLeft) / scale,
+            y2: (y2 - indTop)  / scale
+        };
     };
     CTextField.prototype.IsDateFormat = function() {
         let oFormatTrigger      = this.GetTrigger(AscPDF.FORMS_TRIGGERS_TYPES.Format);
@@ -1013,6 +1061,10 @@
         return g_oTextMeasurer.GetHeight();
     };
     CTextField.prototype.Recalculate = function() {
+        if (this.IsNeedUpdateEditShape()) {
+            this.UpdateEditShape();
+        }
+        
         if (this.IsNeedRecalc() == false)
             return;
 
@@ -1074,6 +1126,12 @@
         }
         
         let contentYFormat = contentY;
+
+        let isMultiline = this.IsMultiline();
+        let useXLimit = isMultiline && !this.IsFileSelect();
+        this.content.SetUseXLimit(useXLimit);
+        this.contentFormat.SetUseXLimit(useXLimit);
+
         if (this.IsMultiline() == false) {
             let nContentH       = this.GetTextHeight(this.content);
             let nContentHFormat = this.GetTextHeight(this.contentFormat);
@@ -1941,17 +1999,10 @@
 	 * @typeofeditors ["PDF"]
 	 */
     CTextField.prototype.SyncValue = function() {
-        let aFields = this.GetDocument().GetAllWidgets(this.GetFullName());
+        this.SetValue(this.GetValue());
+        this.SetFormatValue(this.GetFormatValue());
         
-        for (let i = 0; i < aFields.length; i++) {
-            if (aFields[i] != this) {
-                this.SetValue(aFields[i].GetValue());
-                this.SetFormatValue(aFields[i].GetFormatValue());
-                
-                this.SetNeedRecalc(true);
-                break;
-            }
-        }
+        this.SetNeedRecalc(true);
     };
     CTextField.prototype.CheckFormViewWindow = function()
     {
