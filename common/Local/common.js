@@ -424,6 +424,13 @@ window["UpdateInstallPlugins"] = function()
 		var _plugin = _plugins["pluginsData"][i];
 		//_plugin["baseUrl"] = _plugins["url"] + _plugin["guid"].substring(4) + "/";
 
+		if (!_plugin["variations"])
+		{
+			_plugins["pluginsData"].splice(i, 1);
+			--i;
+			continue;
+		}
+
 		var isSystem = false;
 		for (var j = 0; j < _plugin["variations"].length; j++)
 		{
