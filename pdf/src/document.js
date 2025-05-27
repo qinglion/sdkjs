@@ -5111,9 +5111,9 @@ var CPresentation = CPresentation || function(){};
         AscCommon.pptx_content_loader.Reader.Start_UseFullUrl();
         
         // code just for test binary
-        binShapesData = oFile.nativeFile["scanPage"](nOriginIndex, 2);
-        binShapesStream = new AscCommon.FileStream(binShapesData, binShapesData.length);
-        binShapesLen = binShapesStream.GetULong();
+        let binShapesData = oFile.nativeFile["scanPage"](nOriginIndex, 2);
+        let binShapesStream = new AscCommon.FileStream(binShapesData, binShapesData.length);
+        let binShapesLen = binShapesStream.GetULong();
 
         loader.stream = binShapesStream;
         loader.presentation = Asc.editor.getLogicDocument();
@@ -5126,20 +5126,21 @@ var CPresentation = CPresentation || function(){};
             oDrawing.CheckTextOnOpen();
         }
 
+
         let _t = this;
-        let oImageMap = oParserContext.imageMap;
-        let aUrls = [];
-        let aBase64Img = []
-        for(let sImg in oImageMap) {
-            if(oImageMap.hasOwnProperty(sImg)) {
-                aUrls.push(sImg);
-                let aImg = oImageMap[sImg];
-                for(let nIdx = 0; nIdx < aImg.length; ++nIdx) {
-                    let oImg = aImg[nIdx];
-                    aBase64Img.push(new AscCommon.CBuilderImages(oImg.blipFill, sImg, oImg.drawing, null, null));
-                }
-            }
-        }
+        // let oImageMap = oParserContext.imageMap;
+        // let aUrls = [];
+        // let aBase64Img = []
+        // for(let sImg in oImageMap) {
+        //     if(oImageMap.hasOwnProperty(sImg)) {
+        //         aUrls.push(sImg);
+        //         let aImg = oImageMap[sImg];
+        //         for(let nIdx = 0; nIdx < aImg.length; ++nIdx) {
+        //             let oImg = aImg[nIdx];
+        //             aBase64Img.push(new AscCommon.CBuilderImages(oImg.blipFill, sImg, oImg.drawing, null, null));
+        //         }
+        //     }
+        // }
 
         let fEndCallback = function () {
             aPageDrawings.forEach(function(drawing, idx) {
@@ -5154,27 +5155,40 @@ var CPresentation = CPresentation || function(){};
             });
             Asc.editor.canSave = true;
         };
-        if(aUrls.length > 0) {
-            AscCommon.sendImgUrls(Asc.editor, aUrls, function (data) {
-                let oObjectsForDownload = AscCommon.GetObjectsForImageDownload(aBase64Img);
-                AscCommon.ResetNewUrls(data, aUrls, oObjectsForDownload.aBuilderImagesByUrl, oImageMap);
-                let aLoadUrls = [];
-                for(let nIdx = 0; nIdx < data.length; ++nIdx) {
-                    if(data[nIdx].url) {
-                        aLoadUrls.push(data[nIdx].url);
-                    }
-                }
-                Asc.editor.ImageLoader.LoadImagesWithCallback(aLoadUrls, fEndCallback, []);
 
-                let _file = _t.Viewer.file;
-                for (let url in aUrls) {
-                    _file.nativeFile["changeImageUrl"](aUrls[url], oImageMap[url]);
-                }
-            });
+
+        let aReaderImages = pptx_content_loader.Reader.End_UseFullUrl();
+        let aLoaderImages = loader.End_UseFullUrl();
+        loader.AssignConnectedObjects();
+        let allBuilderImages = aReaderImages.concat(aLoaderImages);
+        let allImages = [];
+        for(let imgIdx = 0; imgIdx < allBuilderImages.length; ++imgIdx) {
+            let url = allBuilderImages[imgIdx].Url;
+            allImages.push(AscCommon.getFullImageSrc2(url));
         }
-        else {
-            fEndCallback();
-        }
+        Asc.editor.ImageLoader.LoadImagesWithCallback(allImages, fEndCallback, []);
+
+        // if(aUrls.length > 0) {
+        //     AscCommon.sendImgUrls(Asc.editor, aUrls, function (data) {
+        //         let oObjectsForDownload = AscCommon.GetObjectsForImageDownload(aBase64Img);
+        //         AscCommon.ResetNewUrls(data, aUrls, oObjectsForDownload.aBuilderImagesByUrl, oImageMap);
+        //         let aLoadUrls = [];
+        //         for(let nIdx = 0; nIdx < data.length; ++nIdx) {
+        //             if(data[nIdx].url) {
+        //                 aLoadUrls.push(data[nIdx].url);
+        //             }
+        //         }
+        //         Asc.editor.ImageLoader.LoadImagesWithCallback(aLoadUrls, fEndCallback, []);
+        //
+        //         let _file = _t.Viewer.file;
+        //         for (let url in aUrls) {
+        //             _file.nativeFile["changeImageUrl"](aUrls[url], oImageMap[url]);
+        //         }
+        //     });
+        // }
+        // else {
+        //     fEndCallback();
+        // }
 
         return true;
     };
