@@ -3617,7 +3617,7 @@ CMathContent.prototype.Add_Text = function(text, paragraph, mathStyle, oAddition
 	}
 
 	let isEscapedSlash = oAdditionalData
-		?  oAdditionalData.GetMathMetaData().getIsEscapedSlash()
+		? oAdditionalData.GetMathMetaData().getIsEscapedSlash()
 		: false;
 	let oLastContent = oMathRun
 		? oMathRun.GetTextOfElement().GetLastContent()
@@ -3625,12 +3625,20 @@ CMathContent.prototype.Add_Text = function(text, paragraph, mathStyle, oAddition
 	let isPrevEscapedSlash = oLastContent
 		? oLastContent.GetAdditionalData().GetMathMetaData().getIsEscapedSlash()
 		: false;
+	let isMathRmInPrev = oLastContent
+		? oLastContent.GetAdditionalData().GetMathMetaData().getIsMathRm()
+		: false;
+	let isMathRm = oAdditionalData
+		? oAdditionalData.GetMathMetaData().getIsMathRm()
+		: false;
 
 	if (isEscapedSlash
 		|| isPrevEscapedSlash
 		|| !oMathRun
 		|| !(oMathRun instanceof AscWord.Run)
-		|| (oAdditionalData	&& !oAdditionalData.IsStyleEqual(oMathRun)))
+		|| (oAdditionalData	&& !oAdditionalData.IsStyleEqual(oMathRun))
+		|| (isMathRmInPrev !== isMathRm)
+		)
 		oMathRun = new AscWord.Run(undefined, true);
 
 	AscWord.TextToMathRunElements(text, function(item)

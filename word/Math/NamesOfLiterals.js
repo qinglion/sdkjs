@@ -5411,6 +5411,7 @@
 	// for store data without symbols and transfer data between autocorrection/correction sessions
 	function MathMetaData()
 	{
+		this.isMathRm			= false;
 		this.isLinearFraction	= false;
 		this.isEscapedSlash		= false;
 		this.isLimitNary		= false;
@@ -5422,6 +5423,15 @@
 		this.getIsLinearFraction = function ()
 		{
 			return this.isLinearFraction;
+		}
+
+		this.setIsMathRm = function()
+		{
+			this.isMathRm = true;
+		}
+		this.getIsMathRm = function()
+		{
+			return this.isMathRm;
 		}
 
 		this.setIsEscapedSlash = function ()
@@ -5445,6 +5455,9 @@
 		this.Copy = function ()
 		{
 			let oCopy = new MathMetaData();
+
+			if (this.isMathRm)
+				oCopy.setIsMathRm();
 
 			if (this.isLinearFraction)
 				oCopy.setIsLinearFraction();
@@ -5473,6 +5486,23 @@
 			this.SetAdditionalDataFromContent(oContent, isCtrPr);
 	}
 
+	MathTextAdditionalData.prototype.Copy = function()
+	{
+		let newAdditionalData = new MathTextAdditionalData();
+
+		if (this.style)
+			newAdditionalData.style = this.style.Copy();
+
+		newAdditionalData.reviewData = {
+			reviewType : this.reviewData.reviewType,
+			reviewInfo : this.reviewData.reviewInfo
+		}
+
+		newAdditionalData.mathPrp = this.mathPrp.Copy();
+		newAdditionalData.metaData = this.metaData.Copy();
+
+		return newAdditionalData;
+	}
 	/**
 	 *
 	 * @return {MathMetaData}

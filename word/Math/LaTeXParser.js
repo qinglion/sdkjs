@@ -81,7 +81,7 @@
 			{
 				let oCurrentItem	= this.oLookahead;
 				let strCurrent		= oCurrentItem.data;
-				let oStyle			= oCurrentItem.style;
+				let oStyle			= oCurrentItem.style.Copy();
 				this.EatToken(arrTypeOfLiteral.id);
 
 				if (GetMathFontChar[strCurrent] && GetMathFontChar[strCurrent][this.intMathFontType])
@@ -92,6 +92,11 @@
 				else
 				{
 					strLiteral += strCurrent;
+					if (this.isMathRm)
+					{
+						let metaData = oStyle.GetMathMetaData();
+						metaData.setIsMathRm();
+					}
 				}
 
 				styles.push(oStyle);
@@ -1196,10 +1201,12 @@
 	CLaTeXParser.prototype.GetMathFontLiteral = function ()
 	{
 		let intPrevType = this.intMathFontType;
+		this.isMathRm = this.oLookahead.data === "\\mathrm";
 		this.intMathFontType = GetTypeFont[this.oLookahead.data];
 
 		this.EatToken(this.oLookahead.class);
 		let oOutput = this.GetArguments(1);
+		this.isMathRm = null;
 
 		this.intMathFontType = intPrevType;
 		return oOutput;

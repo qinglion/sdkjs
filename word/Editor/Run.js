@@ -549,6 +549,18 @@ ParaRun.prototype.GetTextOfElement = function(oMathText, isSelectedText)
 	let nEndPos		= (isSelectedText == true ? Math.max(this.Selection.StartPos, this.Selection.EndPos) : this.Content.length);
 	let isStrFont	= false;
 
+	if (oMathText.IsLaTeX() && this.math_autocorrection && this.math_autocorrection.getIsMathRm())
+	{
+		let str = '';
+		for (let i = nStartPos; i < nEndPos; i++)
+		{
+			let oCurrentElement = this.Content[i];
+			str += oCurrentElement.GetTextOfElement().GetText();
+		}
+
+		oMathText.AddText(new AscMath.MathText('\\mathrm{' + str + '}', this));
+		return oMathText;
+	}
 	// [Unicode] Investigate the mechanism for converting an escaped backslash. Information about separating it
 	// into a separate Run is not enough.
 
