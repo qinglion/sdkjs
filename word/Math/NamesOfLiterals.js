@@ -5413,6 +5413,7 @@
 	{
 		this.isLinearFraction	= false;
 		this.isEscapedSlash		= false;
+		this.isLimitNary		= false;
 
 		this.setIsLinearFraction = function ()
 		{
