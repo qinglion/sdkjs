@@ -2950,12 +2950,12 @@ function (window, undefined) {
 		if (cElementType.error === arg0Val.type) {
 			return arg0Val;
 		}
-		if (cElementType.empty === arg0.type) {
+		if (cElementType.empty === arg0Val.type) {
 			if (opt_xlookup) {
 				// TODO Empty for XLOOKUP
 				return new cError(cErrorType.not_available);
 			} else {
-				arg0Val = arg0.tocNumber();
+				arg0Val = arg0Val.tocNumber();
 			}
 		}
 
@@ -3080,9 +3080,10 @@ function (window, undefined) {
 	SortedCache.prototype.saveRange = function (rowColIndex, data) {
 		const res = {};
 		for (let elementType in data) {
-			const typed = new Uint32Array(data[elementType].length);
-			for (let i = 0; i < data[elementType].length; i += 1) {
-				typed[i] = data[elementType][i].i;
+			const elements = data[elementType];
+			const typed = new Uint32Array(elements.length);
+			for (let i = 0; i < elements.length; i += 1) {
+				typed[i] = elements[i].i;
 			}
 			res[elementType] = typed;
 		}
@@ -3282,7 +3283,7 @@ function (window, undefined) {
 	 * @param {boolean} revert
 	 * @param {boolean} xlookup
 	 * @param {number} [opt_arg4]
-	 * @return {{found: number, nextVal: LookUpElement}}
+	 * @return {number}
 	 */
 	VHLOOKUPCache.prototype._defaultBinarySearch = function (array, valueForSearching, revert, xlookup, opt_arg4) {
 		let canCompare;
