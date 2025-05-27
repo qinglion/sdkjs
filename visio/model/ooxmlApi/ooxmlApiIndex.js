@@ -636,7 +636,7 @@
 	SheetStorage.prototype.getCellNumberValue = function (formula, defaultValue) {
 		let cell = this.getCell(formula);
 		let result;
-		if (cell !== undefined) {
+		if (cell !== undefined && cell.v !== "Themed") {
 			result = Number(cell.v);
 		} else {
 			result = undefined;
@@ -654,7 +654,7 @@
 	 */
 	SheetStorage.prototype.getCellNumberValueWithScale = function (formula, pageScale) {
 		let cell = this.getCell(formula);
-		if (cell !== undefined) {
+		if (cell !== undefined && cell.v !== "Themed") {
 			return Number(cell.v) / pageScale;
 		} else {
 			return undefined;
@@ -668,7 +668,7 @@
 	 */
 	SheetStorage.prototype.getCellStringValue = function (formula) {
 		let cell = this.getCell(formula);
-		if (cell !== undefined) {
+		if (cell !== undefined && cell.v !== "Themed") {
 			return String(cell.v);
 		} else {
 			return undefined;
@@ -945,6 +945,9 @@
 	Cell_Type.prototype.calculateValue = function calculateCellValue(shape, pageInfo,
 																		 themes, themeValWasUsedFor,
 																		 gradientEnabled, themedColorsRow) {
+		if (this === null || this === undefined) {
+			return undefined;
+		}
 		let cellValue = this.v;
 		let cellName = this.n;
 		let cellFunction = this.f;
