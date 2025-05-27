@@ -1799,7 +1799,7 @@
 				uniFillBkgnd = fillBkgndCell.calculateValue(this, pageInfo,
 					visioDocument.themes, themeValWasUsedFor);
 
-				if (!(uniFillBkgnd.fill instanceof AscFormat.CGradFill)) {
+				if (!(uniFillBkgnd.fill.type === Asc.c_oAscFill.FILL_TYPE_GRAD)) {
 					let fillBkgndTransValue = this.getCellNumberValue("FillBkgndTrans");
 					if (!isNaN(fillBkgndTransValue)) {
 						let fillObj = uniFillBkgnd.fill;
