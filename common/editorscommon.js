@@ -401,7 +401,7 @@
 			var prefix = this.mediaPrefix + filename + '.';
 			for (var i in this.urls) {
 				if (0 == i.indexOf(prefix) && !i.endsWith(imageLocal)) {
-					res.push(i.substring(prefix.length));
+					res.push(i.substring(this.mediaPrefix.length));
 				}
 			}
 			return res;
