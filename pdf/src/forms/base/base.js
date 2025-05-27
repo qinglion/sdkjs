@@ -297,6 +297,10 @@
 
         this._kids.push(oField);
         oField._parent = this;
+
+        if (oField.IsWidget()) {
+            oField.SyncValue();
+        }
     };
     CBaseField.prototype.GetKids = function() {
         return this._kids;
@@ -1468,16 +1472,15 @@
                 oParentField.DrainLogicFrom(oExistsField);
 
                 aWidgetForms.forEach(function(widget) {
-                    oParentField.AddKid(widget);
                     widget.SetPartialName(undefined);
+                    oParentField.AddKid(widget);
                 });
             }
 
-            oParentField.AddKid(this);
             this.SetPartialName(undefined);
+            oParentField.AddKid(this);
         }
 
-        this.SyncValue();
         return true;
     };
     CBaseField.prototype.IsNeedRecalc = function() {
