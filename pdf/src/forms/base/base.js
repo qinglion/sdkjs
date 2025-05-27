@@ -2387,32 +2387,7 @@
 		this.RecalcTextTransform();
 
         if (this.IsEditMode()) {
-            let oShape = this.GetEditShape();
-
-            if (aOrigRect) {
-                let offX = aOrigRect[0] * g_dKoef_pt_to_mm;
-                let offY = aOrigRect[1] * g_dKoef_pt_to_mm;
-                let extX = (aOrigRect[2] - aOrigRect[0]) * g_dKoef_pt_to_mm;
-                let extY = (aOrigRect[3] - aOrigRect[1]) * g_dKoef_pt_to_mm;
-
-                let oDoc = this.GetDocument();
-                let nPage = this.GetPage();
-                let nPageRotate = oDoc.Viewer.getPageRotate(nPage);
-                if (nPageRotate === 90 || nPageRotate === 270) {
-                    let tmp = extX;
-                    extX = extY;
-                    extY = tmp;
-
-                    offX -= (extX - extY) / 2;
-                    offY -= (extY - extX) / 2;
-                }
-
-                let oXfrm = oShape.getXfrm();
-                oXfrm.setExtX(extX);
-                oXfrm.setExtY(extY);
-                oXfrm.setOffX(offX);
-                oXfrm.setOffY(offY);
-            }
+            this.SetNeedUpdateEditShape(true);
         }
 
         if (this.GetType() == AscPDF.FIELD_TYPES.text && this.IsComb()) {
