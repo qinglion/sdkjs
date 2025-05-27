@@ -266,6 +266,11 @@
         let oPara = this.content.GetElement(0);
         let oRun = oPara.GetElement(0);
 
+        // use history only in local form history
+        if (oDoc.History == AscCommon.History) {
+            AscCommon.History.StartNoHistoryMode();
+        }
+
         oRun.ClearContent();
         let aOptions = this.GetOptions();
         if (aOptions[nIdx]) {
@@ -275,6 +280,10 @@
             else {
                 oRun.AddText(aOptions[nIdx]);
             }
+        }
+
+        if (oDoc.History == AscCommon.History) {
+            AscCommon.History.EndNoHistoryMode();
         }
 
         this.SetNeedRecalc(true);
@@ -293,7 +302,7 @@
     CComboBoxField.prototype.SetCurIdxs = function(aIdxs) {
         if (this.IsWidget()) {
             let oDoc = this.GetDocument();
-            oDoc.History.Add(new CChangesPDFListFormCurIdxs(this, this.GetParentCurIdxs(), aIdxs));
+            oDoc.History.Add(new CChangesPDFListFormCurIdxs(this, this.GetCurIdxs(), aIdxs));
 
             if (undefined !== aIdxs[0]) {
                 this.SelectOption(aIdxs[0]);
@@ -598,10 +607,13 @@
 
         if (Number.isInteger(nPos) && nPos >= 0 && nPos < this._options.length) {
             if (this.GetCurIdxs().includes(nPos)) {
+                AscCommon.History.StartNoHistoryMode();
+
                 let oPara = this.content.GetElement(0);
                 let oRun = oPara.GetElement(0);
-
                 oRun.ClearContent();
+
+                AscCommon.History.EndNoHistoryMode();
             }
 
             let option = this._options.splice(nPos, 1);
