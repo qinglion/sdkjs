@@ -7357,6 +7357,76 @@ $(function () {
 		assert.strictEqual(resCell.getValueWithFormat(), "3", "Value in C3 after workbook recalculate");
 		assert.strictEqual(resCell.getValueForEdit(), "=++3", "Formula in C3 after workbook recalculate");
 
+		// single value check
+		fragment[0].setFragmentText("-5");
+		fillRange = ws.getRange2("C3");
+		resCell = ws.getRange2("C3");
+		wsView._saveCellValueAfterEdit(fillRange, fragment, flags, null, null);
+		assert.strictEqual(resCell.getValueWithFormat(), "-5", "Value in C3 after -5 calculate");
+		assert.strictEqual(resCell.getValueForEdit(), "-5", "Formula in C3 after -5 calculate");
+
+		fragment[0].setFragmentText("--5");
+		fillRange = ws.getRange2("C3");
+		resCell = ws.getRange2("C3");
+		wsView._saveCellValueAfterEdit(fillRange, fragment, flags, null, null);
+		assert.strictEqual(resCell.getValueWithFormat(), "5", "Value in C3 after --5 calculate");
+		assert.strictEqual(resCell.getValueForEdit(), "=--5", "Formula in C3 after --5 calculate");
+
+		fragment[0].setFragmentText("+5");
+		fillRange = ws.getRange2("C3");
+		resCell = ws.getRange2("C3");
+		wsView._saveCellValueAfterEdit(fillRange, fragment, flags, null, null);
+		assert.strictEqual(resCell.getValueWithFormat(), "5", "Value in C3 after +5 calculate");
+		assert.strictEqual(resCell.getValueForEdit(), "5", "Formula in C3 after +5 calculate");
+
+		fragment[0].setFragmentText("++5");
+		fillRange = ws.getRange2("C3");
+		resCell = ws.getRange2("C3");
+		wsView._saveCellValueAfterEdit(fillRange, fragment, flags, null, null);
+		assert.strictEqual(resCell.getValueWithFormat(), "5", "Value in C3 after ++5 calculate");
+		assert.strictEqual(resCell.getValueForEdit(), "=+5", "Formula in C3 after ++5 calculate");
+
+		fragment[0].setFragmentText("-A1");
+		fillRange = ws.getRange2("C3");
+		resCell = ws.getRange2("C3");
+		wsView._saveCellValueAfterEdit(fillRange, fragment, flags, null, null);
+		assert.strictEqual(resCell.getValueWithFormat(), "-1", "Value in C3 after -A1 calculate");
+		assert.strictEqual(resCell.getValueForEdit(), "=-A1", "Formula in C3 after -A1 calculate");
+
+		fragment[0].setFragmentText("+A1");
+		fillRange = ws.getRange2("C3");
+		resCell = ws.getRange2("C3");
+		wsView._saveCellValueAfterEdit(fillRange, fragment, flags, null, null);
+		assert.strictEqual(resCell.getValueWithFormat(), "1", "Value in C3 after +A1 calculate");
+		assert.strictEqual(resCell.getValueForEdit(), "=+A1", "Formula in C3 after +A1 calculate");
+
+		fragment[0].setFragmentText("-A1:A2");
+		fillRange = ws.getRange2("C3");
+		resCell = ws.getRange2("C3");
+		wsView._saveCellValueAfterEdit(fillRange, fragment, flags, null, null);
+		assert.strictEqual(resCell.getValueWithFormat(), "#VALUE!", "Value in C3 after -A1:A2 calculate");
+		assert.strictEqual(resCell.getValueForEdit(), "=-A1:A2", "Formula in C3 after -A1:A2 calculate");
+
+		fragment[0].setFragmentText("+A1:A2");
+		fillRange = ws.getRange2("C3");
+		resCell = ws.getRange2("C3");
+		wsView._saveCellValueAfterEdit(fillRange, fragment, flags, null, null);
+		assert.strictEqual(resCell.getValueWithFormat(), "#VALUE!", "Value in C3 after +A1:A2 calculate");
+		assert.strictEqual(resCell.getValueForEdit(), "=+A1:A2", "Formula in C3 after +A1:A2 calculate");
+
+		fragment[0].setFragmentText("-{1,2,3}");
+		fillRange = ws.getRange2("C3");
+		resCell = ws.getRange2("C3");
+		wsView._saveCellValueAfterEdit(fillRange, fragment, flags, null, null);
+		assert.strictEqual(resCell.getValueWithFormat(), "-1", "Value in C3 after -{1,2,3} calculate");
+		assert.strictEqual(resCell.getValueForEdit(), "=-{-1,-2,-3}", "Formula in C3 after -{1,2,3} calculate");
+
+		fragment[0].setFragmentText("+{1,2,3}");
+		fillRange = ws.getRange2("C3");
+		resCell = ws.getRange2("C3");
+		wsView._saveCellValueAfterEdit(fillRange, fragment, flags, null, null);
+		assert.strictEqual(resCell.getValueWithFormat(), "1", "Value in C3 after +{1,2,3} calculate");
+		assert.strictEqual(resCell.getValueForEdit(), "=+{1,2,3}", "Formula in C3 after +{1,2,3} calculate");
 
 	});
 

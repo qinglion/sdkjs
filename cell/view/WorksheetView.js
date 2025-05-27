@@ -18682,13 +18682,20 @@
 		if (!isFormula && canConverToFormula) {
 			newFP = new AscCommonExcel.parserFormula(valText, cellWithFormula, this.model);
 			parseResult = new AscCommonExcel.ParseResult();
-			// todo add backlight when choosing Ref/Range. One number should not turn into a formula (+5) 
+			// todo add backlight when choosing Ref/Range
 			if (newFP.parse(AscCommonExcel.oFormulaLocaleInfo.Parse, AscCommonExcel.oFormulaLocaleInfo.DigitSep, parseResult)
 				|| !(parseResult.error !== c_oAscError.ID.FrmlParenthesesCorrectCount)) {
-				valText = "=" + valText;
-				val[0].setFragmentText(valText);
-				isFormulaFromVal = true;
-				isFormula = true;
+				if ((newFP.outStack.length === 1 && newFP.outStack[0].type === AscCommonExcel.cElementType.number) 
+					|| (newFP.outStack.length === 2 && newFP.outStack[0].type === AscCommonExcel.cElementType.number && 
+						newFP.outStack[1].type === AscCommonExcel.cElementType.operator && newFP.outStack[1].name === "un_minus")) {
+					isFormulaFromVal = false;
+					isFormula = false;
+				} else {
+					valText = "=" + valText;
+					val[0].setFragmentText(valText);
+					isFormulaFromVal = true;
+					isFormula = true;
+				}
 			}
 		}
 
