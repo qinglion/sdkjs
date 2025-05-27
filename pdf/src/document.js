@@ -5163,32 +5163,40 @@ var CPresentation = CPresentation || function(){};
         let allBuilderImages = aReaderImages.concat(aLoaderImages);
         let allImages = [];
         for(let imgIdx = 0; imgIdx < allBuilderImages.length; ++imgIdx) {
-            let url = allBuilderImages[imgIdx].Url;
-            allImages.push(AscCommon.getFullImageSrc2(url));
-        }
-        Asc.editor.ImageLoader.LoadImagesWithCallback(allImages, fEndCallback, []);
+            let embed = null;
+            let builderImage = allBuilderImages[imgIdx];
+            let blipFill = builderImage.BlipFill;
+            if(blipFill && blipFill.embed) {
+                embed = blipFill.embed;
+                let url =  _t.Viewer.file.nativeFile["getImageBase64"](parseInt(embed.substring(3)));
+                allImages.push(url);
+                builderImage.BlipFill.RasterImageId = url;
+                delete builderImage.BlipFill.embed;
+            }
 
-        // if(aUrls.length > 0) {
-        //     AscCommon.sendImgUrls(Asc.editor, aUrls, function (data) {
-        //         let oObjectsForDownload = AscCommon.GetObjectsForImageDownload(aBase64Img);
-        //         AscCommon.ResetNewUrls(data, aUrls, oObjectsForDownload.aBuilderImagesByUrl, oImageMap);
-        //         let aLoadUrls = [];
-        //         for(let nIdx = 0; nIdx < data.length; ++nIdx) {
-        //             if(data[nIdx].url) {
-        //                 aLoadUrls.push(data[nIdx].url);
-        //             }
-        //         }
-        //         Asc.editor.ImageLoader.LoadImagesWithCallback(aLoadUrls, fEndCallback, []);
-        //
-        //         let _file = _t.Viewer.file;
-        //         for (let url in aUrls) {
-        //             _file.nativeFile["changeImageUrl"](aUrls[url], oImageMap[url]);
-        //         }
-        //     });
-        // }
-        // else {
-        //     fEndCallback();
-        // }
+        }
+        let oImageMap = {};
+        if(allImages.length > 0) {
+            AscCommon.sendImgUrls(Asc.editor, allImages, function (data) {
+                let oObjectsForDownload = AscCommon.GetObjectsForImageDownload(allBuilderImages);
+                AscCommon.ResetNewUrls(data, allImages, oObjectsForDownload.aBuilderImagesByUrl, oImageMap);
+                let aLoadUrls = [];
+                for(let nIdx = 0; nIdx < data.length; ++nIdx) {
+                    if(data[nIdx].url) {
+                        aLoadUrls.push(data[nIdx].url);
+                    }
+                }
+                Asc.editor.ImageLoader.LoadImagesWithCallback(aLoadUrls, fEndCallback, []);
+
+                let _file = _t.Viewer.file;
+                for (let url in allImages) {
+                    _file.nativeFile["changeImageUrl"](allImages[url], oImageMap[url]);
+                }
+            });
+        }
+        else {
+            fEndCallback();
+        }
 
         return true;
     };

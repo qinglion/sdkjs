@@ -3074,7 +3074,9 @@ function BinaryPPTYLoader()
                 case 11:
                 {
                     // id. embed / link
-                    s.GetString2();
+                    uni_fill.fill.embed = s.GetString2();
+                    if (this.IsUseFullUrl)
+                        this.RebuildImages.push(new CBuilderImages(uni_fill.fill, null, oImageShape, oSpPr, oLn, undefined, undefined, undefined, oParagraph, oBullet));
                     break;
                 }
                 case 2:
