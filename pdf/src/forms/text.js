@@ -263,7 +263,7 @@
         this._multiline = bMultiline;
     
         function updateWidget(widget) {
-            let useXLimit = bMultiline && !this.fileSelect;
+            let useXLimit = bMultiline && !widget.IsFileSelect();
             widget.content.SetUseXLimit(useXLimit);
             widget.contentFormat.SetUseXLimit(useXLimit);
 
@@ -311,7 +311,7 @@
         }
 
         AscCommon.History.Add(new CChangesPDFTextFormPassword(this, this._password, bPassword));
-        if (bPassword === true && this.fileSelect != true) {
+        if (bPassword === true && this.IsFileSelect() != true) {
             this._password = true;
         }
         else if (bPassword === false) {
@@ -339,7 +339,7 @@
             let oDoc        = this.GetDocument();
             let isOnOpen    = oDoc.Viewer.IsOpenFormsInProgress;
 
-            oDoc.History.Add(new CChangesPDFFormValue(this, this.GetParentValue(), sValue));
+            oDoc.History.Add(new CChangesPDFFormValue(this, this.GetValue(), sValue));
 
 			if (isOnOpen != true)
 				this.SetWasChanged(true);
@@ -1078,6 +1078,12 @@
         }
         
         let contentYFormat = contentY;
+
+        let isMultiline = this.IsMultiline();
+        let useXLimit = isMultiline && !this.IsFileSelect();
+        this.content.SetUseXLimit(useXLimit);
+        this.contentFormat.SetUseXLimit(useXLimit);
+
         if (this.IsMultiline() == false) {
             let nContentH       = this.GetTextHeight(this.content);
             let nContentHFormat = this.GetTextHeight(this.contentFormat);
