@@ -4381,6 +4381,7 @@
 
 			this.isApplyChangesOnOpen = true;
 		}
+		this.initBroadcastChannelListeners();
 	};
 	PDFEditorApi.prototype._canSyncCollaborativeChanges = function(isFirstLoad)
 	{

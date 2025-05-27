@@ -14447,8 +14447,6 @@ background-repeat: no-repeat;\
 	};
 	asc_docs_api.prototype.initBroadcastChannelListeners = function() {
 		let oThis = this;
-		let docInfo = this.DocInfo;
-		let wb = oThis.wbModel;
 		let broadcastChannel = this.broadcastChannel;
 		if (broadcastChannel) {
 			broadcastChannel.onmessage = function(event) {
