@@ -1861,12 +1861,12 @@
 				posX = this.scrollMaxX;
 
 			let oDoc		= this.getPDFDoc();
-			let oActiveObj	= oDoc.GetActiveObject();
-			let nPage		= oActiveObj ? oActiveObj.GetPage() : undefined;
+			let oActiveForm	= oDoc.activeForm;
+			let nPage		= oActiveForm ? oActiveForm.GetPage() : undefined;
 
 			this.checkVisiblePages();
 			// выход из активного объекта если сместились на другую страницу
-			if (oActiveObj && !(nPage >= this.startVisiblePage && nPage <= this.endVisiblePage)) {
+			if (!oDoc.IsEditFieldsMode() && oActiveForm && !(nPage >= this.startVisiblePage && nPage <= this.endVisiblePage)) {
 				oDoc.BlurActiveObject();
 			}
 
@@ -1875,15 +1875,15 @@
 		};
 		this.scrollToXY = function(posY, posX) {
 			let oDoc		= this.getPDFDoc();
-			let oActiveObj	= oDoc.GetActiveObject();
-			let nPage		= oActiveObj ? oActiveObj.GetPage() : undefined;
+			let oActiveForm	= oDoc.activeForm;
+			let nPage		= oActiveForm ? oActiveForm.GetPage() : undefined;
 
 			this.m_oScrollVerApi.scrollToY(posY);
 			this.m_oScrollVerApi.scrollToX(posX);
 
 			this.checkVisiblePages();
 			// выход из активного объекта если сместились на другую страницу
-			if (oActiveObj && !(nPage >= this.startVisiblePage && nPage <= this.endVisiblePage)) {
+			if (!oDoc.IsEditFieldsMode() && oActiveForm && !(nPage >= this.startVisiblePage && nPage <= this.endVisiblePage)) {
 				oDoc.BlurActiveObject();
 			}
 		};
@@ -3131,12 +3131,12 @@
 			
 			this.isClearPages = false;
 			this.updateCurrentPage(this.pageDetector.getCurrentPage(this.currentPage));
-			let oActiveObj = oDoc.GetActiveObject();
+			let oActiveForm	= oDoc.activeForm;
 
 			// выход из активного объекта если сместились на другую страницу
-			if (oActiveObj && this.pageDetector.pages.map(function(item) {
+			if (!oDoc.IsEditFieldsMode() && oActiveForm && this.pageDetector.pages.map(function(item) {
 				return item.num;
-			}).includes(oActiveObj.GetPage()) == false) {
+			}).includes(oActiveForm.GetPage()) == false) {
 				oDoc.BlurActiveObject();
 			}
 

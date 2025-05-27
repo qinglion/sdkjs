@@ -1999,7 +1999,7 @@
 	 * @typeofeditors ["PDF"]
 	 */
     CTextField.prototype.SyncValue = function() {
-        this.SetValue(this.GetValue());
+        this.SetValue(this.GetParentValue());
         this.SetFormatValue(this.GetFormatValue());
         
         this.SetNeedRecalc(true);

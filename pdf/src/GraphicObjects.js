@@ -504,6 +504,9 @@
                         if (arr[i].getDocContent) {
                             if (arr[i].IsDrawing() && arr[i].IsEditFieldShape()) {
                                 let oField = arr[i].GetEditField();
+                                let oContent = oField.GetTrigger(AscPDF.FORMS_TRIGGERS_TYPES.Format) ? oField.contentFormat : oField.content;
+                                let oCalcedTextPr = oContent ? oContent.GetCalculatedTextPr() : null;
+
                                 cur_pr = new AscWord.CTextPr();
 
                                 // font family
@@ -513,7 +516,7 @@
                                 };
 
                                 // font size
-                                cur_pr.SetFontSize(oField.GetTextSize());
+                                cur_pr.SetFontSize(oCalcedTextPr ? oCalcedTextPr.GetFontSize() : oField.GetTextSize());
                                 
                                 // font color
                                 let aColor = oField.GetTextColor();
@@ -521,9 +524,6 @@
                                 let oUnifill = AscFormat.CreateUnfilFromRGB(oRGB.r, oRGB.g, oRGB.b);
                                 cur_pr.Unifill = oUnifill;
                                 cur_pr.Unifill.fill.color.RGBA = cur_pr.Unifill.fill.color.color.RGBA;
-
-                                // align
-                                cur_pr.Jc = AscPDF.getInternalAlignByPdfType(oField.GetAlign());
                             }
                             else {
                                 content = arr[i].getDocContent();
