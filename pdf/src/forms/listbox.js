@@ -96,6 +96,10 @@
 		return false;
 	};
     CListBoxField.prototype.Recalculate = function() {
+        if (this.IsNeedUpdateEditShape()) {
+            this.UpdateEditShape();
+        }
+        
         if (this.IsNeedRecalc() == false)
             return;
 

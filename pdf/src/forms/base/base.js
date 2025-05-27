@@ -386,24 +386,18 @@
         return this._partialName ? this._partialName : "";
     };
     CBaseField.prototype.SetPartialName = function(sName) {
-        this._partialName = sName;
         AscCommon.History.Add(new CChangesPDFFormPartialName(this, this._partialName, sName));
 
-        this.SetWasChanged(true);
+        this._partialName = sName;
 
-        if (this.IsEditMode()) {
-            AscCommon.History.StartNoHistoryMode();
-            let oShape = this.GetEditShape();
-            let oContent = oShape.GetDocContent();
-            let oPara = oContent.GetElement(0);
-            let oRun = oPara.GetElement(0);
-            oRun.Remove_FromContent(0, oRun.Content.length);
-            oRun.AddText(this.GetFullName());
-            oShape.recalcContent();
-            oShape.recalculate();
-            this.AddToRedraw();
-            AscCommon.History.EndNoHistoryMode();
-        }
+        this.SetWasChanged(true);
+        this.SetNeedUpdateEditShape(true);
+    };
+    CBaseField.prototype.SetNeedUpdateEditShape = function(bUpdate) {
+        this._needUpdateEditShape = bUpdate;
+    };
+    CBaseField.prototype.IsNeedUpdateEditShape = function() {
+        return this._needUpdateEditShape;
     };
     CBaseField.prototype.GetPartialName = function() {
         return this._partialName;
@@ -1472,7 +1466,7 @@
 
             if (bParentInherit) {
                 oParentField.DrainLogicFrom(oExistsField);
-                
+
                 aWidgetForms.forEach(function(widget) {
                     oParentField.AddKid(widget);
                     widget.SetPartialName(undefined);
@@ -2679,6 +2673,7 @@
     };
     CBaseField.prototype.UpdateEditShape = function() {
         if (!this.editShape) {
+            this.SetNeedUpdateEditShape(false);
             return false;
         }
 
@@ -2710,9 +2705,17 @@
         oPdfShape.spPr.xfrm.setExtX(nExtX);
         oPdfShape.spPr.xfrm.setExtY(nExtY);
         oPdfShape.spPr.xfrm.setRot(-nPageRotate * (Math.PI / 180));
+
+        let oContent = oPdfShape.GetDocContent();
+		let oPara = oContent.GetElement(0);
+		let oRun = oPara.GetElement(0);
+		oRun.Remove_FromContent(0, oRun.Content.length);
+		oRun.AddText(this.GetFullName());
+
         oPdfShape.recalcContent();
         oPdfShape.recalculate();
 
+        this.SetNeedUpdateEditShape(false);
         this.AddToRedraw();
         return true;
     };

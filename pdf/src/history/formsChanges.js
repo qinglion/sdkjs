@@ -625,6 +625,7 @@ CChangesPDFFormPartialName.prototype.private_SetValue = function(Value)
 {
 	let oField = this.Class;
 	oField._partialName = Value;
+	oField.SetNeedUpdateEditShape(true);
 };
 
 /**
