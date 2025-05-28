@@ -3763,6 +3763,14 @@
 		this.Settings = oSettings;
 	}
 
+	/**
+	 * Class representing document properties (similar to BuiltInDocumentProperties in VBA)
+	 * @constructor
+	 */
+	function ApiCore(oCore) {
+		this.Core = oCore;
+	}
+
 
 	/**
 	 * Twentieths of a point (equivalent to 1/1440th of an inch).
@@ -8070,6 +8078,19 @@
 	{
 		let oRange = this.GetRange();
 		return oRange.MoveCursorToPos(nPos);
+	};
+
+	/**
+	 * Retrieves the core properties interface for the current document.
+	 * Use this to view or modify standard metadata such as title, author, and keywords.
+	 *
+	 * @memberof ApiDocument
+	 * @returns {ApiCore} - Core document properties object.
+	 * @typeofeditors ["CDE"]
+	 * @see office-js-api/Examples/{Editor}/ApiDocument/Methods/GetCore.js
+	 */
+	ApiDocument.prototype.GetCore = function () {
+		return new ApiCore(this.Document.Core);
 	};
 
 	//------------------------------------------------------------------------------------------------------------------
@@ -22803,6 +22824,192 @@
 		return true;
 	};
 
+	//------------------------------------------------------------------------------------------------------------------
+	//
+	// ApiCore
+	//
+	//------------------------------------------------------------------------------------------------------------------
+
+	/**
+	 * Returns a type of the ApiCore class.
+	 *
+	 * @memberof ApiCore
+	 * @typeofeditors ["CDE"]
+	 * @returns {"core"}
+	 * @see office-js-api/Examples/{Editor}/ApiCore/Methods/GetClassType.js
+	 */
+	ApiCore.prototype.GetClassType = function () {
+		return "core";
+	};
+
+	/**
+	 * Sets the document title.
+	 *
+	 * @memberof ApiCore
+	 * @typeofeditors ["CDE"]
+	 * @param {string} sTitle
+	 * @see office-js-api/Examples/{Editor}/ApiCore/Methods/SetTitle.js
+	 */
+	ApiCore.prototype.SetTitle = function (sTitle) {
+		this.Core.setTitle(sTitle);
+	};
+
+	/**
+	 * Returns the document title.
+	 *
+	 * @memberof ApiCore
+	 * @typeofeditors ["CDE"]
+	 * @returns {string}
+	 * @see office-js-api/Examples/{Editor}/ApiCore/Methods/GetTitle.js
+	 */
+	ApiCore.prototype.GetTitle = function () {
+		return this.Core.asc_getTitle();
+	};
+
+	/**
+	 * Sets the document tags.
+	 *
+	 * @memberof ApiCore
+	 * @typeofeditors ["CDE"]
+	 * @param {string} sKeywords - A string of keywords.
+	 * @see office-js-api/Examples/{Editor}/ApiCore/Methods/SetKeywords.js
+	 *
+	 */
+	ApiCore.prototype.SetKeywords = function (sKeywords) {
+		this.Core.setKeywords(sKeywords);
+	};
+
+	/**
+	 * Returns the document tags.
+	 *
+	 * @memberof ApiCore
+	 * @typeofeditors ["CDE"]
+	 * @returns {string}
+	 * @see office-js-api/Examples/{Editor}/ApiCore/Methods/GetKeywords.js
+	 */
+	ApiCore.prototype.GetKeywords = function () {
+		return this.Core.asc_getKeywords();
+	};
+
+	/**
+	 * Sets the document description.
+	 *
+	 * @memberof ApiCore
+	 * @typeofeditors ["CDE"]
+	 * @param {string} sDescription - The document description.
+	 * @see office-js-api/Examples/{Editor}/ApiCore/Methods/SetDescription.js
+	 */
+	ApiCore.prototype.SetDescription = function (sDescription) {
+		this.Core.setDescription(sDescription);
+	};
+
+	/**
+	 * Returns the document description.
+	 *
+	 * @memberof ApiCore
+	 * @typeofeditors ["CDE"]
+	 * @returns {string}
+	 * @see office-js-api/Examples/{Editor}/ApiCore/Methods/GetDescription.js
+	 */
+	ApiCore.prototype.GetDescription = function () {
+		return this.Core.asc_getDescription();
+	};
+
+	/**
+	 * Sets the document author.
+	 *
+	 * @memberof ApiCore
+	 * @typeofeditors ["CDE"]
+	 * @param {string} sCreator - The document author.
+	 * @see office-js-api/Examples/{Editor}/ApiCore/Methods/SetAuthor.js
+	 */
+	ApiCore.prototype.SetCreator = function (sCreator) {
+		this.Core.setCreator(sCreator);
+	};
+
+	/**
+	 * Returns the document author.
+	 *
+	 * @memberof ApiCore
+	 * @typeofeditors ["CDE"]
+	 * @returns {string}
+	 * @see office-js-api/Examples/{Editor}/ApiCore/Methods/GetCreator.js
+	 */
+	ApiCore.prototype.GetCreator = function () {
+		return this.Core.asc_getCreator();
+	};
+
+	/**
+	 * Sets the document subject.
+	 *
+	 * @memberof ApiCore
+	 * @typeofeditors ["CDE"]
+	 * @param {string} sSubject - The document subject.
+	 * @see office-js-api/Examples/{Editor}/ApiCore/Methods/SetSubject.js
+	 */
+	ApiCore.prototype.SetSubject = function (sSubject) {
+		this.Core.setSubject(sSubject);
+	};
+
+	/**
+	 * Returns the document subject.
+	 *
+	 * @memberof ApiCore
+	 * @typeofeditors ["CDE"]
+	 * @returns {string}
+	 * @see office-js-api/Examples/{Editor}/ApiCore/Methods/GetSubject.js
+	 */
+	ApiCore.prototype.GetSubject = function () {
+		return this.Core.asc_getSubject();
+	};
+
+	/**
+	 * Sets the document status.
+	 *
+	 * @memberof ApiCore
+	 * @typeofeditors ["CDE"]
+	 * @param {string} sStatus - The document status.
+	 * @see office-js-api/Examples/{Editor}/ApiCore/Methods/SetStatus.js
+	 */
+	ApiCore.prototype.SetStatus = function (sStatus) {
+		this.Core.setStatus(sStatus);
+	};
+
+	/**
+	 * Returns the document status.
+	 *
+	 * @memberof ApiCore
+	 * @typeofeditors ["CDE"]
+	 * @returns {string}
+	 * @see office-js-api/Examples/{Editor}/ApiCore/Methods/GetStatus.js
+	 */
+	ApiCore.prototype.GetStatus = function () {
+		return this.Core.asc_getContentStatus();
+	};
+
+	/**
+	 * Sets the document category.
+	 *
+	 * @memberof ApiCore
+	 * @typeofeditors ["CDE"]
+	 * @param {string} sCategory - The document category.
+	 * @see office-js-api/Examples/{Editor}/ApiCore/Methods/SetCategory.js
+	 */
+	ApiCore.prototype.SetCategory = function (sCategory) {
+		this.Core.setCategory(sCategory);
+	};
+
+	/**
+	 * Returns the document category.
+	 *
+	 * @memberof ApiCore
+	 * @typeofeditors ["CDE"]
+	 * @returns {string}
+	 * @see office-js-api/Examples/{Editor}/ApiCore/Methods/GetCategory.js
+	 */
+	ApiCore.prototype.GetCategory = function () {
+		return this.Core.asc_getCategory();
+	};
 
 	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	// Export

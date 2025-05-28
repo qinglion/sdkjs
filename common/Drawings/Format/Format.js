@@ -14012,6 +14012,41 @@
 			this.title = oProps.title;
 			this.version = oProps.version;
 		};
+		CCore.prototype.setTitle = function (sTitle) {
+			const coreCopy = this.copy();
+			coreCopy.asc_putTitle(sTitle);
+			this.setProps(coreCopy);
+		};
+		CCore.prototype.setKeywords = function (sKeywords) {
+			const coreCopy = this.copy();
+			coreCopy.asc_putKeywords(sKeywords);
+			this.setProps(coreCopy);
+		};
+		CCore.prototype.setDescription = function (sDescription) {
+			const coreCopy = this.copy();
+			coreCopy.asc_putDescription(sDescription);
+			this.setProps(coreCopy);
+		};
+		CCore.prototype.setCreator = function (sCreator) {
+			const coreCopy = this.copy();
+			coreCopy.asc_putCreator(sCreator);
+			this.setProps(coreCopy);
+		};
+		CCore.prototype.setSubject = function (sSubject) {
+			const coreCopy = this.copy();
+			coreCopy.asc_putSubject(sSubject);
+			this.setProps(coreCopy);
+		};
+		CCore.prototype.setContentStatus = function (sContentStatus) {
+			const coreCopy = this.copy();
+			coreCopy.asc_putContentStatus(sContentStatus);
+			this.setProps(coreCopy);
+		};
+		CCore.prototype.setCategory = function (sCategory) {
+			const coreCopy = this.copy();
+			coreCopy.asc_putCategory(sCategory);
+			this.setProps(coreCopy);
+		};
 		CCore.prototype.Refresh_RecalcData = function () {
 		};
 		CCore.prototype.Refresh_RecalcData2 = function () {
