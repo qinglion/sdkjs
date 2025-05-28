@@ -544,9 +544,8 @@
 
 		var oThis = this;
 
-		this.onRepaintFormsCallbacks = [];
-		this.onRepaintAnnotsCallbacks = [];
-		this.onRepaintFinishCallbacks = [];
+		this.onRepaintCallbacks = [];
+		this.onAfterPaintCallback = [];
 
 		this.updateSkin = function()
 		{
@@ -894,29 +893,20 @@
 
 			this.scheduleRepaint();
 		};
-		this.scheduleRepaint = function(formsCallBack, annotsCallback, otherCallback) {
+		this.scheduleRepaint = function(onRepaintCallback, onAfterPaintCallback) {
 			let oThis = this;
 			if (this.scheduledRepaintTimer == null) {
 				this.scheduledRepaintTimer = setTimeout(function() {
 					oThis.scheduledRepaintTimer = null;
 					oThis.isRepaint = false;
 
-					let nFormsCallbacks = oThis.onRepaintFormsCallbacks.length;
-					let nAnnotCallbacks = oThis.onRepaintAnnotsCallbacks.length;
-					let nFinishCallbacks = oThis.onRepaintFinishCallbacks.length;
+					let nCallbacks = oThis.onRepaintCallbacks.length;
 
-					oThis.onRepaintFormsCallbacks.forEach(function(callback) {
+					oThis.onRepaintCallbacks.forEach(function(callback) {
 						callback();
 					});
-					oThis.onRepaintAnnotsCallbacks.forEach(function(callback) {
-						callback();
-					});
-					oThis.onRepaintFinishCallbacks.forEach(function(callback) {
-						callback();
-					});
-					oThis.onRepaintFormsCallbacks.splice(0, nFormsCallbacks);
-					oThis.onRepaintAnnotsCallbacks.splice(0, nAnnotCallbacks);
-					oThis.onRepaintFinishCallbacks .splice(0, nFinishCallbacks);
+					
+					oThis.onRepaintCallbacks.splice(0, nCallbacks);
 
 					if (oThis.Api && oThis.Api.printPreview)
 						oThis.Api.printPreview.update();
@@ -925,12 +915,10 @@
 				});
 			}
 			
-			if (formsCallBack)
-				this.onRepaintFormsCallbacks.push(formsCallBack);
-			if (annotsCallback)
-				this.onRepaintAnnotsCallbacks.push(annotsCallback);
-			if (otherCallback)
-				this.onRepaintFinishCallbacks.push(otherCallback);
+			if (onRepaintCallback)
+				this.onRepaintCallbacks.push(onRepaintCallback);
+			if (onAfterPaintCallback)
+				this.onAfterPaintCallback.push(onAfterPaintCallback);
 		};
 
 		this.onRepaintForms = function(pages) {
@@ -2666,9 +2654,9 @@
 			}
 		};
 
-		this.paint = function(formsCallBack, annotsCallback)
+		this.paint = function(onRepaintCallback, onAfterPaintCallback)
 		{
-			this.scheduleRepaint(formsCallBack, annotsCallback);
+			this.scheduleRepaint(onRepaintCallback, onAfterPaintCallback);
 		};
 		
 		this.getStructure = function()
@@ -3150,7 +3138,17 @@
 			this._checkTargetUpdate();
 
 			this.initPaintDone = true;
+
+			this.afterPaintCallbacks();
 		};
+		this.afterPaintCallbacks = function() {
+			this.onAfterPaintCallback.forEach(function(callback) {
+				callback();
+			});
+			
+			// clear used callbacks
+			this.onAfterPaintCallback.length = 0;
+		}
 		this.updatePageDetector = function() {
 			this.pageDetector = new CCurrentPageDetector(this.canvas.width, this.canvas.height);
 
