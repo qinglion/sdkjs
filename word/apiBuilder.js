@@ -14272,13 +14272,32 @@
 	 * Gets the font family from the current text properties.
 	 * @memberof ApiTextPr
 	 * @typeofeditors ["CDE", "CSE", "CPE"]
+	 * param {undefined | "ascii" | "eastAsia" | "hAnsi" | "cs"} [fontSlot="ascii"]
 	 * @return {?string}
 	 * @since 8.1.0
 	 * @see office-js-api/Examples/{Editor}/ApiTextPr/Methods/GetFontFamily.js
 	 */
-	ApiTextPr.prototype.GetFontFamily = function()
+	ApiTextPr.prototype.GetFontFamily = function(fontSlot)
 	{
-		return this.TextPr.GetFontFamily();
+		let textPr = this.TextPr;
+		let logicDocument = private_GetLogicDocument();
+		if (logicDocument)
+		{
+			textPr = textPr.Copy();
+			textPr.ReplaceThemeFonts(logicDocument.GetTheme().themeElements.fontScheme);
+		}
+		
+		fontSlot = GetStringParameter(fontSlot, "ascii");
+		
+		let fs = AscWord.fontslot_ASCII;
+		if ("eastAsia" === fontSlot)
+			fs = AscWord.fontslot_EastAsia;
+		else if ("hAnsi" === fontSlot)
+			fs = AscWord.fontslot_HAnsi;
+		else if ("cs" === fontSlot)
+			fs = AscWord.fontslot_CS;
+		
+		return textPr.GetFontInfo(fs).Name;
 	};
 
 	/**
