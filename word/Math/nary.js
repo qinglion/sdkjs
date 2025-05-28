@@ -889,15 +889,15 @@ CNary.prototype.GetTextOfElement = function(oMathText)
 		if (oLower)
 		{
 			oMathText.SetGlobalStyle(this);
+			oMathText.AddText(new AscMath.MathText("_", oLower));
 			oLastPos = oMathText.Add(oLower, true);
-			oMathText.AddBefore(oLastPos, new AscMath.MathText("_", oLower));
 		}
 
 		if (oUpper)
 		{
 			oMathText.SetGlobalStyle(this);
+			oMathText.AddText(new AscMath.MathText("^", oUpper));
 			oLastPos = oMathText.Add(oUpper, true);
-			oMathText.AddBefore(oLastPos, new AscMath.MathText("^", oUpper));
 		}
 
 		if (oBase)
