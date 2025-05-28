@@ -7205,6 +7205,106 @@
 		return arrResult;
 	};
 	/**
+	 * Returns a list of all forms in the document with the specified role name.
+	 * @memberof ApiDocument
+	 * @typeofeditors ["CDE", "CFE"]
+	 * @param role {string} - Form role.
+	 * @returns {ApiForm[]}
+	 * @see office-js-api/Examples/{Editor}/ApiDocument/Methods/GetFormsByRole.js
+	 */
+	ApiDocument.prototype.GetFormsByRole = function(role)
+	{
+		role = GetStringParameter(role, "");
+		if (!role)
+			return [];
+		
+		let result = [];
+		let forms = this.Document.GetFormsManager().GetAllFormsByRole(role);
+		for (let i = 0, count = forms.length; i < count; ++i)
+		{
+			let apiForm = ToApiForm(forms[i]);
+			if (apiForm)
+				result.push(apiForm);
+		}
+		
+		return result;
+	};
+	/**
+	 * Returns a list of all forms in the document with the specified key.
+	 * @memberof ApiDocument
+	 * @typeofeditors ["CDE", "CFE"]
+	 * @param key {string} - Key.
+	 * @returns {ApiForm[]}
+	 * @see office-js-api/Examples/{Editor}/ApiDocument/Methods/GetFormsByKey.js
+	 */
+	ApiDocument.prototype.GetFormsByKey = function(key)
+	{
+		key = GetStringParameter(key, "");
+		if (!key)
+			return [];
+		
+		let result = [];
+		let forms = this.Document.GetFormsManager().GetAllFormsByKey(key);
+		let isRadio = false; // Don't return radiobuttons by key since it's a Choice but not a Key
+		if (0 === forms.length)
+		{
+			forms = this.Document.GetFormsManager().GetRadioButtons(key);
+			isRadio = true;
+		}
+		
+		for (let i = 0, count = forms.length; i < count; ++i)
+		{
+			let apiForm = ToApiForm(forms[i]);
+			if (apiForm && isRadio === forms[i].IsRadioButton())
+				result.push(apiForm);
+		}
+		
+		return result;
+	};
+	/**
+	 * Returns a list of all form keys for the specified role.
+	 * @memberof ApiDocument
+	 * @typeofeditors ["CDE", "CFE"]
+	 * @param role {string} - Role.
+	 * @returns {string[]}
+	 * @see office-js-api/Examples/{Editor}/ApiDocument/Methods/GetFormKeysByRole.js
+	 */
+	ApiDocument.prototype.GetFormKeysByRole = function(role)
+	{
+		role = GetStringParameter(role, "");
+		if (!role)
+			return [];
+		
+		let keys = {};
+		let forms = this.Document.GetFormsManager().GetAllForms();
+		for (let i = 0, count = forms.length; i < count; ++i)
+		{
+			let apiForm = ToApiForm(forms[i]);
+			if (apiForm && role === apiForm.GetRole())
+				keys[apiForm.GetFormKey()] = 1;
+		}
+		
+		return Object.keys(keys);
+	};
+	/**
+	 * Returns the form value for the specified key.
+	 * @memberof ApiDocument
+	 * @typeofeditors ["CDE", "CFE"]
+	 * @param key {string} - Form key.
+	 * @returns {null | boolean | string} true/false for checkboxes and string for other form types. Returns null if
+	 * there is no form with the specified key.
+	 * @see office-js-api/Examples/{Editor}/ApiDocument/Methods/GetFormValueByKey.js
+	 */
+	ApiDocument.prototype.GetFormValueByKey = function(key)
+	{
+		let forms = this.GetFormsByKey(key);
+		if (!forms.length)
+			return null;
+		
+		return this.Document.GetFormsManager().GetFormValue(forms[0].Sdt);
+	};
+	
+	/**
 	 * The specific form type.
 	 * @typedef {("text" | "checkBox" | "picture" | "comboBox" | "dropDownList" | "dateTime" | "radio")} FormSpecificType
 	 * @see office-js-api/Examples/Enumerations/FormSpecificType.js
@@ -22009,6 +22109,59 @@
 			return new this.constructor(oSdt);
 		}, this);
 	};
+	/**
+	 * Returns the tag attribute for the current form.
+	 * @memberof ApiFormBase
+	 * @typeofeditors ["CDE" | "CFE"]
+	 * @since 9.0.0
+	 * @returns {string}
+	 * @see office-js-api/Examples/{Editor}/ApiFormBase/Methods/GetTag.js
+	 */
+	ApiFormBase.prototype.GetTag = function()
+	{
+		return this.Sdt.GetTag();
+	};
+	/**
+	 * Sets the tag attribute to the current form.
+	 * @memberof ApiFormBase
+	 * @typeofeditors ["CDE" | "CFE"]
+	 * @since 9.0.0
+	 * @param {string} tag - The tag which will be added to the current container.
+	 * @returns {boolean}
+	 * @see office-js-api/Examples/{Editor}/ApiFormBase/Methods/SetTag.js
+	 */
+	ApiFormBase.prototype.SetTag = function(tag)
+	{
+		this.Sdt.SetTag(tag);
+		return true;
+	};
+	
+	/**
+	 * Returns the role of the current form.
+	 * @memberof ApiFormBase
+	 * @typeofeditors ["CDE" | "CFE"]
+	 * @since 9.0.0
+	 * @returns {string}
+	 * @see office-js-api/Examples/{Editor}/ApiFormBase/Methods/GetRole.js
+	 */
+	ApiFormBase.prototype.GetRole = function()
+	{
+		return this.Sdt.GetFormRole();
+	};
+	/**
+	 * Sets the role of the current form.
+	 * @memberof ApiFormBase
+	 * @typeofeditors ["CDE" | "CFE"]
+	 * @since 9.0.0
+	 * @param {string} role - The role which will be attached to the current form.
+	 * @returns {boolean}
+	 * @see office-js-api/Examples/{Editor}/ApiFormBase/Methods/SetRole.js
+	 */
+	ApiFormBase.prototype.SetRole = function(role)
+	{
+		this.Sdt.SetFormRole(role);
+		return true;
+	};
 
 	//------------------------------------------------------------------------------------------------------------------
 	//
@@ -22858,7 +23011,56 @@
 			return true;
 		}, this);
 	};
-
+	
+	/**
+	 * Sets the date to the current form.
+	 * @memberof ApiDateForm
+	 * @typeofeditors ["CDE", "CFE"]
+	 * @param {Date | string} date - Date object.
+	 * @returns {boolean}
+	 * @since 9.0.0
+	 * @see office-js-api/Examples/{Editor}/ApiDateForm/Methods/SetDate.js
+	 */
+	ApiDateForm.prototype.SetDate = function(date)
+	{
+		return executeNoFormLockCheck(function(){
+			if (undefined !== date && typeof(date) === "string")
+			{
+				try
+				{
+					date = new Date(date);
+				}
+				catch
+				{
+					date = new Date();
+				}
+			}
+			
+			if (!(date instanceof Date))
+				return false;
+			
+			let oNewDatePr = this.Sdt.GetDatePickerPr().Copy();
+			oNewDatePr.SetFullDate(date);
+			
+			this.Sdt.ApplyDatePickerPr(oNewDatePr, true);
+			return true;
+		}, this);
+	};
+	
+	/**
+	 * Gets the date of the current form.
+	 * @memberof ApiDateForm
+	 * @typeofeditors ["CDE", "CFE"]
+	 * @returns {Date}
+	 * @since 9.0.0
+	 * @see office-js-api/Examples/{Editor}/ApiDateForm/Methods/GetDate.js
+	 */
+	ApiDateForm.prototype.GetDate = function()
+	{
+		let fullDate = this.Sdt.GetDatePickerPr().GetFullDate();
+		return new Date(fullDate);
+	};
+	
 	/**
 	 * Converts the ApiBlockLvlSdt object into the JSON object.
 	 * @memberof ApiBlockLvlSdt
@@ -24457,6 +24659,10 @@
 	ApiDocument.prototype["GetTagsOfAllForms"]             = ApiDocument.prototype.GetTagsOfAllForms;
 	ApiDocument.prototype["GetContentControlsByTag"]       = ApiDocument.prototype.GetContentControlsByTag;
 	ApiDocument.prototype["GetFormsByTag"]                 = ApiDocument.prototype.GetFormsByTag;
+	ApiDocument.prototype["GetFormsByRole"]                = ApiDocument.prototype.GetFormsByRole;
+	ApiDocument.prototype["GetFormsByKey"]                 = ApiDocument.prototype.GetFormsByKey;
+	ApiDocument.prototype["GetFormKeysByRole"]             = ApiDocument.prototype.GetFormKeysByRole;
+	ApiDocument.prototype["GetFormValueByKey"]             = ApiDocument.prototype.GetFormValueByKey;
 	ApiDocument.prototype["GetFormsData"]                  = ApiDocument.prototype.GetFormsData;
 	ApiDocument.prototype["SetFormsData"]                  = ApiDocument.prototype.SetFormsData;
 	ApiDocument.prototype["SetTrackRevisions"]             = ApiDocument.prototype.SetTrackRevisions;
@@ -25186,26 +25392,30 @@
 	ApiBlockLvlSdt.prototype["GetAppearance"]           = ApiBlockLvlSdt.prototype.GetAppearance;
 	
 	
-	ApiFormBase.prototype["GetClassType"]        = ApiFormBase.prototype.GetClassType;
-	ApiFormBase.prototype["GetFormType"]         = ApiFormBase.prototype.GetFormType;
-	ApiFormBase.prototype["GetFormKey"]          = ApiFormBase.prototype.GetFormKey;
-	ApiFormBase.prototype["SetFormKey"]          = ApiFormBase.prototype.SetFormKey;
-	ApiFormBase.prototype["GetTipText"]          = ApiFormBase.prototype.GetTipText;
-	ApiFormBase.prototype["SetTipText"]          = ApiFormBase.prototype.SetTipText;
-	ApiFormBase.prototype["IsRequired"]          = ApiFormBase.prototype.IsRequired;
-	ApiFormBase.prototype["SetRequired"]         = ApiFormBase.prototype.SetRequired;
-	ApiFormBase.prototype["IsFixed"]             = ApiFormBase.prototype.IsFixed;
-	ApiFormBase.prototype["ToFixed"]             = ApiFormBase.prototype.ToFixed;
-	ApiFormBase.prototype["ToInline"]            = ApiFormBase.prototype.ToInline;
-	ApiFormBase.prototype["SetBorderColor"]      = ApiFormBase.prototype.SetBorderColor;
-	ApiFormBase.prototype["SetBackgroundColor"]  = ApiFormBase.prototype.SetBackgroundColor;
-	ApiFormBase.prototype["GetText"]             = ApiFormBase.prototype.GetText;
-	ApiFormBase.prototype["Clear"]               = ApiFormBase.prototype.Clear;
-	ApiFormBase.prototype["GetWrapperShape"]     = ApiFormBase.prototype.GetWrapperShape;
-	ApiFormBase.prototype["SetPlaceholderText"]  = ApiFormBase.prototype.SetPlaceholderText;
-	ApiFormBase.prototype["SetTextPr"]           = ApiFormBase.prototype.SetTextPr;
-	ApiFormBase.prototype["GetTextPr"]           = ApiFormBase.prototype.GetTextPr;
-	ApiFormBase.prototype["MoveCursorOutside"]   = ApiFormBase.prototype.MoveCursorOutside;
+	ApiFormBase.prototype["GetClassType"]       = ApiFormBase.prototype.GetClassType;
+	ApiFormBase.prototype["GetFormType"]        = ApiFormBase.prototype.GetFormType;
+	ApiFormBase.prototype["GetFormKey"]         = ApiFormBase.prototype.GetFormKey;
+	ApiFormBase.prototype["SetFormKey"]         = ApiFormBase.prototype.SetFormKey;
+	ApiFormBase.prototype["GetTipText"]         = ApiFormBase.prototype.GetTipText;
+	ApiFormBase.prototype["SetTipText"]         = ApiFormBase.prototype.SetTipText;
+	ApiFormBase.prototype["IsRequired"]         = ApiFormBase.prototype.IsRequired;
+	ApiFormBase.prototype["SetRequired"]        = ApiFormBase.prototype.SetRequired;
+	ApiFormBase.prototype["IsFixed"]            = ApiFormBase.prototype.IsFixed;
+	ApiFormBase.prototype["ToFixed"]            = ApiFormBase.prototype.ToFixed;
+	ApiFormBase.prototype["ToInline"]           = ApiFormBase.prototype.ToInline;
+	ApiFormBase.prototype["SetBorderColor"]     = ApiFormBase.prototype.SetBorderColor;
+	ApiFormBase.prototype["SetBackgroundColor"] = ApiFormBase.prototype.SetBackgroundColor;
+	ApiFormBase.prototype["GetText"]            = ApiFormBase.prototype.GetText;
+	ApiFormBase.prototype["Clear"]              = ApiFormBase.prototype.Clear;
+	ApiFormBase.prototype["GetWrapperShape"]    = ApiFormBase.prototype.GetWrapperShape;
+	ApiFormBase.prototype["SetPlaceholderText"] = ApiFormBase.prototype.SetPlaceholderText;
+	ApiFormBase.prototype["SetTextPr"]          = ApiFormBase.prototype.SetTextPr;
+	ApiFormBase.prototype["GetTextPr"]          = ApiFormBase.prototype.GetTextPr;
+	ApiFormBase.prototype["MoveCursorOutside"]  = ApiFormBase.prototype.MoveCursorOutside;
+	ApiFormBase.prototype["GetTag"]             = ApiFormBase.prototype.GetTag;
+	ApiFormBase.prototype["SetTag"]             = ApiFormBase.prototype.SetTag;
+	ApiFormBase.prototype["GetRole"]            = ApiFormBase.prototype.GetRole;
+	ApiFormBase.prototype["SetRole"]            = ApiFormBase.prototype.SetRole;
 
 	ApiTextForm.prototype["IsAutoFit"]           = ApiTextForm.prototype.IsAutoFit;
 	ApiTextForm.prototype["SetAutoFit"]          = ApiTextForm.prototype.SetAutoFit;
@@ -25237,6 +25447,8 @@
 	ApiDateForm.prototype["SetLanguage"] = ApiDateForm.prototype.SetLanguage;
 	ApiDateForm.prototype["GetTime"]     = ApiDateForm.prototype.GetTime;
 	ApiDateForm.prototype["SetTime"]     = ApiDateForm.prototype.SetTime;
+	ApiDateForm.prototype["SetDate"]     = ApiDateForm.prototype.SetDate;
+	ApiDateForm.prototype["GetDate"]     = ApiDateForm.prototype.GetDate;
 	ApiDateForm.prototype["Copy"]        = ApiDateForm.prototype.Copy;
 
 	ApiComboBoxForm.prototype["GetListValues"]       = ApiComboBoxForm.prototype.GetListValues;
