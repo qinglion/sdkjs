@@ -7245,10 +7245,17 @@
 		
 		let result = [];
 		let forms = this.Document.GetFormsManager().GetAllFormsByKey(key);
+		let isRadio = false; // Don't return radiobuttons by key since it's a Choice but not a Key
+		if (0 === forms.length)
+		{
+			forms = this.Document.GetFormsManager().GetRadioButtons(key);
+			isRadio = true;
+		}
+		
 		for (let i = 0, count = forms.length; i < count; ++i)
 		{
 			let apiForm = ToApiForm(forms[i]);
-			if (apiForm)
+			if (apiForm && isRadio === forms[i].IsRadioButton())
 				result.push(apiForm);
 		}
 		
@@ -7294,7 +7301,7 @@
 		if (!forms.length)
 			return null;
 		
-		return this.Document.GetFormsManager().GetFormValue(forms[0]);
+		return this.Document.GetFormsManager().GetFormValue(forms[0].Sdt);
 	};
 	
 	/**
@@ -23017,7 +23024,7 @@
 	ApiDateForm.prototype.SetDate = function(date)
 	{
 		return executeNoFormLockCheck(function(){
-			if (date instanceof String)
+			if (undefined !== date && typeof(date) === "string")
 			{
 				try
 				{
