@@ -75,7 +75,7 @@ function (window, undefined) {
 	var arrayFunctionsMap = {"SUMPRODUCT": 1, "FILTER": 1, "SUM": 1, "LOOKUP": 1, "AGGREGATE": 1};
 
 	var importRangeLinksState = {importRangeLinks: null, startBuildImportRangeLinks: null};
-	const aExcludeRecursiveFormulas = ['ISFORMULA', 'SHEETS', 'AREAS', 'COLUMN', 'COLUMNS', 'ROW', 'ROWS', 'CELL', 'INDIRECT'];
+	const aExcludeRecursiveFormulas = ['ISFORMULA', 'SHEETS', 'AREAS', 'COLUMN', 'COLUMNS', 'ROW', 'ROWS', 'CELL', 'OFFSET'];
 
 	const cReplaceFormulaType = {
 		val: 1,
@@ -10444,6 +10444,10 @@ function parserFormula( formula, parent, _ws ) {
 		this.nCellPasteValue = null; // for paste recursive cell
 		this.bIsCellEdited = false;
 		this.bIsSheetCreating = false;
+		this.oIndirectFuncResult = null;
+		this.oOffsetFuncResult = null;
+		this.oCellContentFuncRes = null;
+		this.aCycleCell = [];
 
 		this.bIsEnabledRecursion = null;
 		this.nMaxIterations = null; // Max iterations of recursion calculations. Default value: 100.
@@ -11151,6 +11155,88 @@ function parserFormula( formula, parent, _ws ) {
 	 */
 	CalcRecursion.prototype.setIsSheetCreating = function (bIsSheetCreating) {
 		this.bIsSheetCreating = bIsSheetCreating;
+	};
+	/**
+	 * Method saves the result of the formula, which needs to be checked for cycle after being calculated.
+	 * @memberof CalcRecursion
+	 * @param {string}sFuncName
+	 * @param {cRef|cRef3D|cArea|cArea3D|cName|cName3D}oResult
+	 */
+	CalcRecursion.prototype.saveFunctionResult = function (sFuncName, oResult) {
+		if (oResult.type === cElementType.error) {
+			return;
+		}
+		switch (sFuncName) {
+			case 'INDIRECT':
+				this.oIndirectFuncResult = oResult;
+				break;
+			case 'OFFSET':
+				this.oOffsetFuncResult = oResult;
+				break;
+			case 'CELL':
+				this.oCellContentFuncRes = oResult;
+				break;
+		}
+	};
+	/**
+	 * Method returns the array of result of functions, which need to be checked for cycle after being calculated.
+	 * @memberof CalcRecursion
+	 * @returns {[]}
+	 */
+	CalcRecursion.prototype.getFunctionsResult = function () {
+		const aFunctionResults = [];
+
+		if (this.oIndirectFuncResult) {
+			aFunctionResults.push(this.oIndirectFuncResult);
+		}
+		if (this.oOffsetFuncResult) {
+			aFunctionResults.push(this.oOffsetFuncResult);
+		}
+		if (this.oCellContentFuncRes) {
+			aFunctionResults.push(this.oCellContentFuncRes);
+		}
+
+		return aFunctionResults;
+	};
+	/**
+	 * Method clears result of formulas, which need to be checked for cycle after being calculated.
+	 *  @memberof CalcRecursion
+	 */
+	CalcRecursion.prototype.clearFunctionsResult = function () {
+		this.oIndirectFuncResult = null;
+		this.oOffsetFuncResult = null;
+		this.oCellContentFuncRes = null;
+	};
+	/**
+	 * Method returns array of cycle cells.
+	 * Uses when "Iteration calculation" setting is disabled.
+	 * @memberof CalcRecursion
+	 * @returns {Cell[]}
+	 */
+	CalcRecursion.prototype.getCycleCells = function () {
+		return this.aCycleCell;
+	};
+	/**
+	 * Method adds cycle cell to array.
+	 * Uses when "Iteration calculation" setting is disabled.
+	 * @memberof CalcRecursion
+	 * @param {Cell} oCell
+	 */
+	CalcRecursion.prototype.addCycleCell = function (oCell) {
+		let bDuplicateElem = this.aCycleCell.some(function (oElem) {
+			return oElem.nRow === oCell.nRow && oElem.nCol === oCell.nCol && oElem.ws.getName() === oCell.ws.getName();
+		});
+		if (bDuplicateElem) {
+			return;
+		}
+		this.aCycleCell.push(oCell);
+	};
+	/**
+	 * Method clears array of cycle cells.
+	 * @memberof CalcRecursion
+	 */
+	CalcRecursion.prototype.clearCycleCells = function () {
+		this.aCycleCell = [];
 	};
 
 	const g_cCalcRecursion = new CalcRecursion();

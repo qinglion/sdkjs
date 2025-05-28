@@ -1844,6 +1844,338 @@ $(function () {
 		assert.strictEqual(bCellHasRecursion, false, "Test: Chain without recursion. A1081 -> B1080 -> A1082 -> B1081 -> A1083 using shared. With disabled recursion settings. Case from bug-73472. B1080 - false");
 		bCellHasRecursion = null;
 		g_cCalcRecursion.setStartCellIndex(null);
+		// - Case: Formula OFFSET mustn't recognize as recursive formula. Bug #74432
+		ws.getRange2("B1084").setValue("1");
+		ws.getRange2("C1084").setValue("=OFFSET(C1084, 0, -1)");
+		assert.strictEqual(ws.getRange2("C1084").getValue(), "1", "Test: Formula OFFSET mustn't recognize as recursive formula. Bug #74432. C1084 - 1");
+		oCell = selectCell("C1084");
+		bCellHasRecursion = !!getStartCellForIterCalc(oCell);
+		assert.strictEqual(bCellHasRecursion, false, "Test: Formula OFFSET mustn't recognize as recursive formula. Bug #74432. C1084 - false");
+		bCellHasRecursion = null;
+		// - Case: Formula ISFORMULA mustn't recognize as recursive. Is part of formula. Bug #74432
+		ws.getRange2("A1085").setValue("1");
+		ws.getRange2("B1085").setValue("=A1085+ISFORMULA(B1085)");
+		assert.strictEqual(ws.getRange2("B1085").getValue(), "2", "Test: Formula ISFORMULA mustn't recognize as recursive. Is part of formula. Bug #74432. B1085 - 2");
+		oCell = selectCell("B1085");
+		bCellHasRecursion = !!getStartCellForIterCalc(oCell);
+		assert.strictEqual(bCellHasRecursion, false, "Test: Formula ISFORMULA mustn't recognize as recursive. Is part of formula. Bug #74432. B1085 - false");
+		bCellHasRecursion = null;
+		// - Case: Formula ISFORMULA  contains in recursive formula. Bug #74432
+		ws.getRange2("A1086").setValue("1");
+		ws.getRange2("B1086").setValue("=A1086+B1086+ISFORMULA(B1086)");
+		assert.strictEqual(ws.getRange2("B1086").getValue(), "0", "Test: Formula ISFORMULA contains in recursive formula. Bug #74432. B1086 - 0");
+		oCell = selectCell("B1086");
+		bCellHasRecursion = !!getStartCellForIterCalc(oCell);
+		assert.strictEqual(bCellHasRecursion, true, "Test: Formula ISFORMULA contains in recursive formula. Bug #74432. B1086 - true");
+		bCellHasRecursion = null;
+		// - Case: Formula ISFORMULA contains in recursive formula from chain. Bug #74432
+		ws.getRange2("A1087").setValue("1");
+		ws.getRange2("B1087").setValue("=C1087");
+		ws.getRange2("C1087").setValue("=A1087+B1087+ISFORMULA(C1087)");
+		assert.strictEqual(ws.getRange2("C1087").getValue(), "0", "Test: Formula ISFORMULA contains in recursive formula from chain. Bug #74432. C1087 - 0");
+		oCell = selectCell("C1087");
+		bCellHasRecursion = !!getStartCellForIterCalc(oCell);
+		assert.strictEqual(bCellHasRecursion, true, "Test: Formula ISFORMULA contains in recursive formula from chain. Bug #74432. C1087 - true");
+		bCellHasRecursion = null;
+		// - Case: Formula ISFORMULA containts in IF formula mustn't recursive. Bug #74432
+		ws.getRange2("A1088").setValue("1");
+		ws.getRange2("B1088").setValue("=IF(A1088 = 1,A1088+ISFORMULA(B1088), -1");
+		assert.strictEqual(ws.getRange2("B1088").getValue(), "2", "Test: Formula ISFORMULA containts in IF formula mustn't recursive. Bug #74432. B1088 - 2");
+		oCell = selectCell("B1088");
+		bCellHasRecursion = !!getStartCellForIterCalc(oCell);
+		assert.strictEqual(bCellHasRecursion, false, "Test: Formula ISFORMULA containts in IF formula mustn't recursive. Bug #74432. B1088 - false");
+		bCellHasRecursion = null;
+		// - Case: Formula ISFORMULA contains in IF formula has recursive element. Bug #74432
+		ws.getRange2("A1089").setValue("1");
+		ws.getRange2("B1089").setValue("=IF(A1089 = 1,A1089+B1089+ISFORMULA(B1089), -1");
+		assert.strictEqual(ws.getRange2("B1089").getValue(), "0", "Test: Formula ISFORMULA contains in IF formula has recursive element. Bug #74432. B1089 - 0");
+		oCell = selectCell("B1089");
+		bCellHasRecursion = !!getStartCellForIterCalc(oCell);
+		assert.strictEqual(bCellHasRecursion, true, "Test: Formula ISFORMULA contains in IF formula has recursive element. Bug #74432. B1089 - true");
+		bCellHasRecursion = null;
+		// - Case: Formula COLUMN mustn't recognize as recursive
+		ws.getRange2("A1090").setValue("1");
+		ws.getRange2("B1090").setValue("=A1090+COLUMN(B1090)");
+		assert.strictEqual(ws.getRange2("B1090").getValue(), "3", "Test: Formula COLUMN mustn't recognize as recursive. B1090 - 3");
+		oCell = selectCell("B1090");
+		bCellHasRecursion = !!getStartCellForIterCalc(oCell);
+		assert.strictEqual(bCellHasRecursion, false, "Test: Formula COLUMN mustn't recognize as recursive. B1090 - false");
+		bCellHasRecursion = null;
+		// - Case: Formula COLUMN contains in recursive formula
+		ws.getRange2("A1091").setValue("1");
+		ws.getRange2("B1091").setValue("=A1091+B1091+COLUMN(B1091)");
+		assert.strictEqual(ws.getRange2("B1091").getValue(), "0", "Test: Formula COLUMN contains in recursive formula. B1091 - 0");
+		oCell = selectCell("B1091");
+		bCellHasRecursion = !!getStartCellForIterCalc(oCell);
+		assert.strictEqual(bCellHasRecursion, true, "Test: Formula COLUMN contains in recursive formula. B1091 - true");
+		bCellHasRecursion = null;
+		// - Case: Formula COLUMN contains in recursive formula from chain
+		ws.getRange2("A1092").setValue("1");
+		ws.getRange2("B1092").setValue("=C1092");
+		ws.getRange2("C1092").setValue("=A1092+B1092+COLUMN(C1092)");
+		assert.strictEqual(ws.getRange2("C1092").getValue(), "0", "Test: Formula COLUMN contains in recursive formula from chain. C1092 - 0");
+		oCell = selectCell("C1092");
+		bCellHasRecursion = !!getStartCellForIterCalc(oCell);
+		assert.strictEqual(bCellHasRecursion, true, "Test: Formula COLUMN contains in recursive formula from chain. C1092 - true");
+		bCellHasRecursion = null;
+		// - Case: Formula COLUMN in IF formula mustn't recursive
+		ws.getRange2("A1093").setValue("1");
+		ws.getRange2("B1093").setValue("=IF(A1093 = 1, A1093+COLUMN(B1093), -1)");
+		assert.strictEqual(ws.getRange2("B1093").getValue(), "3", "Test: Formula COLUMN in IF formula mustn't recursive. B1093 - 3");
+		oCell = selectCell("B1093");
+		bCellHasRecursion = !!getStartCellForIterCalc(oCell);
+		assert.strictEqual(bCellHasRecursion, false, "Test: Formula COLUMN in IF formula mustn't recursive. B1093 - false");
+		bCellHasRecursion = null;
+		// - Case: Formula COLUMN contains in IF formula has recursive element
+		ws.getRange2("A1094").setValue("1");
+		ws.getRange2("B1094").setValue("=IF(A1094 = 1, A1094+B1094+COLUMN(B1094), -1)");
+		assert.strictEqual(ws.getRange2("B1094").getValue(), "0", "Test: Formula COLUMN contains in IF formula has recursive element. B1094 - 0");
+		oCell = selectCell("B1094");
+		bCellHasRecursion = !!getStartCellForIterCalc(oCell);
+		assert.strictEqual(bCellHasRecursion, true, "Test: Formula COLUMN contains in IF formula has recursive element. B1094 - true");
+		bCellHasRecursion = null;
+		// - Case: Formula COLUMNS mustn't recognize as recursive. Is part of formula.
+		ws.getRange2("A1095").setValue("1");
+		ws.getRange2("B1095").setValue("=A1095+COLUMNS(B1095)");
+		assert.strictEqual(ws.getRange2("B1095").getValue(), "2", "Test: Formula COLUMNS mustn't recognize as recursive. Is part of formula. B1095 - 2");
+		oCell = selectCell("B1095");
+		bCellHasRecursion = !!getStartCellForIterCalc(oCell);
+		assert.strictEqual(bCellHasRecursion, false, "Test: Formula COLUMNS mustn't recognize as recursive. Is part of formula. B1095 - false");
+		bCellHasRecursion = null;
+		// - Case: Formula COLUMNS contains in recursive formula
+		ws.getRange2("A1096").setValue("1");
+		ws.getRange2("B1096").setValue("=A1096+B1096+COLUMNS(B1096)");
+		assert.strictEqual(ws.getRange2("B1096").getValue(), "0", "Test: Formula COLUMNS contains in recursive formula. B1096 - 0");
+		oCell = selectCell("B1096");
+		bCellHasRecursion = !!getStartCellForIterCalc(oCell);
+		assert.strictEqual(bCellHasRecursion, true, "Test: Formula COLUMNS contains in recursive formula. B1096 - true");
+		bCellHasRecursion = null;
+		// - Case: Formula COLUMNS contains in recursive formula from chain
+		ws.getRange2("A1097").setValue("1");
+		ws.getRange2("B1097").setValue("=C1097");
+		ws.getRange2("C1097").setValue("=A1097+B1097+COLUMNS(C1097)");
+		assert.strictEqual(ws.getRange2("C1097").getValue(), "0", "Test: Formula COLUMNS contains in recursive formula from chain. C1097 - 0");
+		oCell = selectCell("C1097");
+		bCellHasRecursion = !!getStartCellForIterCalc(oCell);
+		assert.strictEqual(bCellHasRecursion, true, "Test: Formula COLUMNS contains in recursive formula from chain. C1097 - true");
+		bCellHasRecursion = null;
+		// - Case: Formula COLUMNS contains in IF formula mustn't recursive
+		ws.getRange2("A1098").setValue("1");
+		ws.getRange2("B1098").setValue("=IF(A1098 = 1, A1098+COLUMNS(B1098), -1)");
+		assert.strictEqual(ws.getRange2("B1098").getValue(), "2", "Test: Formula COLUMNS contains in IF formula mustn't recursive. B1098 - 2");
+		oCell = selectCell("B1098");
+		bCellHasRecursion = !!getStartCellForIterCalc(oCell);
+		assert.strictEqual(bCellHasRecursion, false, "Test: Formula COLUMNS contains in IF formula mustn't recursive. B1098 - false");
+		bCellHasRecursion = null;
+		// - Case: Formula COLUMNS contains in IF formula has recursive element
+		ws.getRange2("A1099").setValue("1");
+		ws.getRange2("B1099").setValue("=IF(A1099 = 1, A1099+B1099+COLUMNS(B1099), -1)");
+		assert.strictEqual(ws.getRange2("B1099").getValue(), "0", "Test: Formula COLUMNS contains in IF formula has recursive element. B1099 - 0");
+		oCell = selectCell("B1099");
+		bCellHasRecursion = !!getStartCellForIterCalc(oCell);
+		assert.strictEqual(bCellHasRecursion, true, "Test: Formula COLUMNS contains in IF formula has recursive element. B1099 - true");
+		bCellHasRecursion = null;
+		// - Case: Formula ROW mustn't recognize as recursive. Is part of formula.
+		ws.getRange2("A1100").setValue("1");
+		ws.getRange2("B1100").setValue("=A1100+ROW(B1100)");
+		assert.strictEqual(ws.getRange2("B1100").getValue(), "1101", "Test: Formula ROW mustn't recognize as recursive. Is part of formula. B1100 - 1101");
+		oCell = selectCell("B1100");
+		bCellHasRecursion = !!getStartCellForIterCalc(oCell);
+		assert.strictEqual(bCellHasRecursion, false, "Test: Formula ROW mustn't recognize as recursive. Is part of formula. B1100 - false");
+		bCellHasRecursion = null;
+		// - Case: Formula ROW contains in recursive formula
+		ws.getRange2("A1101").setValue("1");
+		ws.getRange2("B1101").setValue("=A1101+B1101+ROW(B1101)");
+		assert.strictEqual(ws.getRange2("B1101").getValue(), "0", "Test: Formula ROW contains in recursive formula. B1101 - 0");
+		oCell = selectCell("B1101");
+		bCellHasRecursion = !!getStartCellForIterCalc(oCell);
+		assert.strictEqual(bCellHasRecursion, true, "Test: Formula ROW contains in recursive formula. B1101 - true");
+		bCellHasRecursion = null;
+		// - Case: Formula ROW contains in recursive formula from chain
+		ws.getRange2("A1102").setValue("1");
+		ws.getRange2("B1102").setValue("=C1102");
+		ws.getRange2("C1102").setValue("=A1102+B1102+ROW(C1102)");
+		assert.strictEqual(ws.getRange2("C1102").getValue(), "0", "Test: Formula ROW contains in recursive formula from chain. C1102 - 0");
+		oCell = selectCell("C1102");
+		bCellHasRecursion = !!getStartCellForIterCalc(oCell);
+		assert.strictEqual(bCellHasRecursion, true, "Test: Formula ROW contains in recursive formula from chain. C1102 - true");
+		bCellHasRecursion = null;
+		// - Case: Formula ROW contains in IF formula mustn't recursive
+		ws.getRange2("A1103").setValue("1");
+		ws.getRange2("B1103").setValue("=IF(A1103 = 1, A1103+ROW(B1103), -1)");
+		assert.strictEqual(ws.getRange2("B1103").getValue(), "1104", "Test: Formula ROW contains in IF formula mustn't recursive. B1103 - 1104");
+		oCell = selectCell("B1103");
+		bCellHasRecursion = !!getStartCellForIterCalc(oCell);
+		assert.strictEqual(bCellHasRecursion, false, "Test: Formula ROW contains in IF formula mustn't recursive. B1103 - false");
+		bCellHasRecursion = null;
+		// - Case: Formula ROW contains in IF formula has recursive element
+		ws.getRange2("A1104").setValue("1");
+		ws.getRange2("B1104").setValue("=IF(A1104 = 1, A1104+B1104+ROW(B1104), -1)");
+		assert.strictEqual(ws.getRange2("B1104").getValue(), "0", "Test: Formula ROW contains in IF formula has recursive element. B1104 - 0");
+		oCell = selectCell("B1104");
+		bCellHasRecursion = !!getStartCellForIterCalc(oCell);
+		assert.strictEqual(bCellHasRecursion, true, "Test: Formula ROW contains in IF formula has recursive element. B1104 - true");
+		bCellHasRecursion = null;
+		// - Case: Formula ROWS mustn't recognize as recursive. Is part of formula.
+		ws.getRange2("A1105").setValue("1");
+		ws.getRange2("B1105").setValue("=A1105+ROWS(B1105:B1106)");
+		assert.strictEqual(ws.getRange2("B1105").getValue(), "3", "Test: Formula ROWS mustn't recognize as recursive. Is part of formula. B1105 - 4");
+		oCell = selectCell("B1105");
+		bCellHasRecursion = !!getStartCellForIterCalc(oCell);
+		assert.strictEqual(bCellHasRecursion, false, "Test: Formula ROWS mustn't recognize as recursive. Is part of formula. B1105 - false");
+		bCellHasRecursion = null;
+		// - Case: Formula ROWS contains in recursive formula
+		ws.getRange2("A1107").setValue("1");
+		ws.getRange2("B1107").setValue("=A1107+B1107+ROWS(B1107:B1111)");
+		assert.strictEqual(ws.getRange2("B1107").getValue(), "0", "Test: Formula ROWS contains in recursive formula. B1107 - 0");
+		oCell = selectCell("B1107");
+		bCellHasRecursion = !!getStartCellForIterCalc(oCell);
+		assert.strictEqual(bCellHasRecursion, true, "Test: Formula ROWS contains in recursive formula. B1107 - true");
+		bCellHasRecursion = null;
+		// - Case: Formula ROWS contains in recursive formula from chain
+		ws.getRange2("A1109").setValue("1");
+		ws.getRange2("B1109").setValue("=C1109");
+		ws.getRange2("C1109").setValue("=A1109+B1109+ROWS(C1109:C1110)");
+		assert.strictEqual(ws.getRange2("C1109").getValue(), "0", "Test: Formula ROWS contains in recursive formula from chain. C1109 - 0");
+		oCell = selectCell("C1109");
+		bCellHasRecursion = !!getStartCellForIterCalc(oCell);
+		assert.strictEqual(bCellHasRecursion, true, "Test: Formula ROWS contains in recursive formula from chain. C1109 - true");
+		bCellHasRecursion = null;
+		// - Case: Formula ROWS contains in IF formula mustn't recursive
+		ws.getRange2("A1111").setValue("1");
+		ws.getRange2("B1111").setValue("=IF(A1111 = 1, A1111+ROWS(B1111:B1112), -1)");
+		assert.strictEqual(ws.getRange2("B1111").getValue(), "3", "Test: Formula ROWS contains in IF formula mustn't recursive. B1111 - 3");
+		oCell = selectCell("B1111");
+		bCellHasRecursion = !!getStartCellForIterCalc(oCell);
+		assert.strictEqual(bCellHasRecursion, false, "Test: Formula ROWS contains in IF formula mustn't recursive. B1111 - false");
+		bCellHasRecursion = null;
+		// - Case: Formula ROWS contains in IF formula has recursive element
+		ws.getRange2("A1112").setValue("1");
+		ws.getRange2("B1112").setValue("=IF(A1112 = 1, A1112+B1112+ROWS(B1112:B1113), -1)");
+		assert.strictEqual(ws.getRange2("B1112").getValue(), "0", "Test: Formula ROWS contains in IF formula has recursive element. B1112 - 0");
+		oCell = selectCell("B1112");
+		bCellHasRecursion = !!getStartCellForIterCalc(oCell);
+		assert.strictEqual(bCellHasRecursion, true, "Test: Formula ROWS contains in IF formula has recursive element. B1112 - true");
+		bCellHasRecursion = null;
+		// - Case: Formula SHEETS mustn't recognize as recursive. Is part of formula.
+		ws.getRange2("A1113").setValue("1");
+		ws.getRange2("B1113").setValue("=A1113+SHEETS(B1113)");
+		assert.strictEqual(ws.getRange2("B1113").getValue(), "2", "Test: Formula SHEETS mustn't recognize as recursive. Is part of formula. B1113 - 2");
+		oCell = selectCell("B1113");
+		bCellHasRecursion = !!getStartCellForIterCalc(oCell);
+		assert.strictEqual(bCellHasRecursion, false, "Test: Formula SHEETS mustn't recognize as recursive. Is part of formula. B1113 - false");
+		bCellHasRecursion = null;
+		// - Case: Formula SHEETS contains in recursive formula
+		ws.getRange2("A1114").setValue("1");
+		ws.getRange2("B1114").setValue("=A1114+B1114+SHEETS(B1114)");
+		assert.strictEqual(ws.getRange2("B1114").getValue(), "0", "Test: Formula SHEETS contains in recursive formula. B1114 - 0");
+		oCell = selectCell("B1114");
+		bCellHasRecursion = !!getStartCellForIterCalc(oCell);
+		assert.strictEqual(bCellHasRecursion, true, "Test: Formula SHEETS contains in recursive formula. B1114 - true");
+		bCellHasRecursion = null;
+		// - Case: Formula SHEETS contains in recursive formula from chain
+		ws.getRange2("A1115").setValue("1");
+		ws.getRange2("B1115").setValue("=C1115");
+		ws.getRange2("C1115").setValue("=A1115+B1115+SHEETS(C1115)");
+		assert.strictEqual(ws.getRange2("C1115").getValue(), "0", "Test: Formula SHEETS contains in recursive formula from chain. C1115 - 0");
+		oCell = selectCell("C1115");
+		bCellHasRecursion = !!getStartCellForIterCalc(oCell);
+		assert.strictEqual(bCellHasRecursion, true, "Test: Formula SHEETS contains in recursive formula from chain. C1115 - true");
+		bCellHasRecursion = null;
+		// - Case: Formula SHEETS contains in IF formula mustn't recursive
+		ws.getRange2("A1116").setValue("1");
+		ws.getRange2("B1116").setValue("=IF(A1116 = 1, A1116+SHEETS(B1116), -1)");
+		assert.strictEqual(ws.getRange2("B1116").getValue(), "2", "Test: Formula SHEETS contains in IF formula mustn't recursive. B1116 - 2");
+		oCell = selectCell("B1116");
+		bCellHasRecursion = !!getStartCellForIterCalc(oCell);
+		assert.strictEqual(bCellHasRecursion, false, "Test: Formula SHEETS contains in IF formula mustn't recursive. B1116 - false");
+		bCellHasRecursion = null;
+		// - Case: Formula SHEETS contains in IF formula has recursive element
+		ws.getRange2("A1117").setValue("1");
+		ws.getRange2("B1117").setValue("=IF(A1117 = 1, A1117+B1117+SHEETS(B1117), -1)");
+		assert.strictEqual(ws.getRange2("B1117").getValue(), "0", "Test: Formula SHEETS contains in IF formula has recursive element. B1117 - 0");
+		oCell = selectCell("B1117");
+		bCellHasRecursion = !!getStartCellForIterCalc(oCell);
+		assert.strictEqual(bCellHasRecursion, true, "Test: Formula SHEETS contains in IF formula has recursive element. B1117 - true");
+		bCellHasRecursion = null;
+		// - Case: Formula CELL mustn't recognize as recursive. Is part of formula.
+		ws.getRange2("A1117").setValue("1");
+		ws.getRange2("B1117").setValue("=A1117+CELL(\"col\", B1117)");
+		assert.strictEqual(ws.getRange2("B1117").getValue(), "3", "Test: Formula CELL mustn't recognize as recursive. Is part of formula. B1117 - 3");
+		oCell = selectCell("B1117");
+		bCellHasRecursion = !!getStartCellForIterCalc(oCell);
+		assert.strictEqual(bCellHasRecursion, false, "Test: Formula CELL mustn't recognize as recursive. Is part of formula. B1117 - false");
+		bCellHasRecursion = null;
+		// - Case: Formula CELL contains in recursive formula
+		ws.getRange2("A1118").setValue("1");
+		ws.getRange2("B1118").setValue("=A1118+B1118+CELL(\"col\", B1118)");
+		assert.strictEqual(ws.getRange2("B1118").getValue(), "0", "Test: Formula CELL contains in recursive formula. B1118 - 0");
+		oCell = selectCell("B1118");
+		bCellHasRecursion = !!getStartCellForIterCalc(oCell);
+		assert.strictEqual(bCellHasRecursion, true, "Test: Formula CELL contains in recursive formula. B1118 - true");
+		bCellHasRecursion = null;
+		// - Case: Formula CELL contains in recursive formula from chain
+		ws.getRange2("A1119").setValue("1");
+		ws.getRange2("B1119").setValue("=C1119");
+		ws.getRange2("C1119").setValue("=A1119+B1119+CELL(\"col\", C1119)");
+		assert.strictEqual(ws.getRange2("C1119").getValue(), "0", "Test: Formula CELL contains in recursive formula from chain. C1119 - 0");
+		oCell = selectCell("C1119");
+		bCellHasRecursion = !!getStartCellForIterCalc(oCell);
+		assert.strictEqual(bCellHasRecursion, true, "Test: Formula CELL contains in recursive formula from chain. C1119 - true");
+		bCellHasRecursion = null;
+		// - Case: Formula CELL contains in IF formula mustn't recursive
+		ws.getRange2("A1120").setValue("1");
+		ws.getRange2("B1120").setValue("=IF(A1120 = 1, A1120+CELL(\"col\", B1120), -1)");
+		assert.strictEqual(ws.getRange2("B1120").getValue(), "3", "Test: Formula CELL contains in IF formula mustn't recursive. B1120 - 3");
+		oCell = selectCell("B1120");
+		bCellHasRecursion = !!getStartCellForIterCalc(oCell);
+		assert.strictEqual(bCellHasRecursion, false, "Test: Formula CELL contains in IF formula mustn't recursive. B1120 - false");
+		bCellHasRecursion = null;
+		// - Case: Formula CELL contains in IF formula has recursive element
+		ws.getRange2("A1121").setValue("1");
+		ws.getRange2("B1121").setValue("=IF(A1121 = 1, A1121+B1121+CELL(\"col\", B1121), -1)");
+		assert.strictEqual(ws.getRange2("B1121").getValue(), "0", "Test: Formula CELL contains in IF formula has recursive element. B1121 - 0");
+		oCell = selectCell("B1121");
+		bCellHasRecursion = !!getStartCellForIterCalc(oCell);
+		assert.strictEqual(bCellHasRecursion, true, "Test: Formula CELL contains in IF formula has recursive element. B1121 - true");
+		bCellHasRecursion = null;
+		// - Case: Formula INDIRECT mustn't recognize as recursive.
+		ws.getRange2("A1122").setValue("1");
+		ws.getRange2("B1122").setValue("=INDIRECT(\"A1122\")");
+		assert.strictEqual(ws.getRange2("B1122").getValue(), "1", "Test: Formula INDIRECT mustn't recognize as recursive. B1122 - 1");
+		// - Case: Formula INDIRECT is recursive formula.
+		ws.getRange2("A1123").setValue("=INDIRECT(\"A1123\")");
+		assert.strictEqual(ws.getRange2("A1123").getValue(), "0", "Test: Formula INDIRECT is recursive formula. A1123 - 0");
+		// - Case: Formula INDIRECT is recursive formula via chain.
+		ws.getRange2("A1124").setValue("=B1124");
+		ws.getRange2("B1124").setValue("=INDIRECT(\"A1124\")");
+		assert.strictEqual(ws.getRange2("B1124").getValue(), "0", "Test: Formula INDIRECT is recursive formula via chain. B1124 - 0");
+		// - Case: Formula INDIRECT contains in FORMULA mustn't recognize as recursive.
+		ws.getRange2("A1125").setValue("1");
+		ws.getRange2("B1125").setValue("=INDIRECT(\"A1125\") + A1125");
+		assert.strictEqual(ws.getRange2("B1125").getValue(), "2", "Test: Formula INDIRECT contains in FORMULA mustn't recognize as recursive. B1125 - 2");
+		// - Case: Formula INDIRECT contains in FORMULA recognize as recursive.
+		ws.getRange2("A1126").setValue("1");
+		ws.getRange2("B1126").setValue("=A1126+B1126+INDIRECT(\"A1126\")");
+		assert.strictEqual(ws.getRange2("B1126").getValue(), "0", "Test: Formula INDIRECT contains in FORMULA recognize as recursive. B1126 - 0");
+		// - Case: Formula OFFSET is recursive formula.
+		ws.getRange2("A1127").setValue("=OFFSET(A1127, 0, 0)");
+		assert.strictEqual(ws.getRange2("A1127").getValue(), "0", "Test: Formula OFFSET is recursive formula. A1127 - 0");
+		// - Case: Formula OFFSET is recursive formula by chain.
+		ws.getRange2("A1128").setValue("=B1128");
+		ws.getRange2("B1128").setValue("=OFFSET(B1128, 0, -1)");
+		assert.strictEqual(ws.getRange2("B1128").getValue(), "0", "Test: Formula OFFSET is recursive formula by chain. B1128 - 0");
+		// - Case: Formula OFFSET contains in recursive formula.
+		ws.getRange2("A1129").setValue("1");
+		ws.getRange2("B1129").setValue("=A1129+B1129+OFFSET(B1129, 0, -1)");
+		assert.strictEqual(ws.getRange2("B1129").getValue(), "0", "Test: Formula OFFSET contains in recursive formula. B1129 - 0");
+		// - Case: Formula CELL with type contents is recursive formula.
+		ws.getRange2("A1130").setValue("=CELL(\"contents\", A1130)");
+		assert.strictEqual(ws.getRange2("A1130").getValue(), "0", "Test: Formula CELL with type contents is recursive formula. A1130 - 0");
+		// - Case: Formula INDIRECT - recursive cell with enabled setting.
+		g_cCalcRecursion.setIsEnabledRecursion(true);
+		ws.getRange2("A1131").setValue("=INDIRECT(\"A1131\")+1");
+		assert.strictEqual(ws.getRange2("A1131").getValue(), "15", "Test: Formula INDIRECT - recursive cell with enabled setting. A1131 - 15");
 		// -- Test changeLinkedCell method.
 		oCell = selectCell("A1000");
 		let oCellNeedEnableRecalc = selectCell("B1000");

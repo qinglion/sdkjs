@@ -1747,9 +1747,10 @@ function (window, undefined) {
 				ret = new cError(cErrorType.bad_reference);
 			}
 		}
+		// Save result for recursion check
+		AscCommonExcel.g_cCalcRecursion.saveFunctionResult(this.name, ret);
 
 		return ret;
-
 	};
 
 	/**
@@ -1916,6 +1917,9 @@ function (window, undefined) {
 		if (!res) {
 			res = new cError(cErrorType.wrong_value_type);
 		}
+		// Save result for recursion check
+		AscCommonExcel.g_cCalcRecursion.saveFunctionResult(this.name, res);
+
 		return res;
 
 	};
