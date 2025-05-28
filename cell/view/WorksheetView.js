@@ -19104,7 +19104,7 @@
 					let afterExternalReferences = t.getExternalReferencesByCell(c, true, true);
 					if (afterExternalReferences) {
 						//t.model.workbook.handlers.trigger("asc_onNeedUpdateExternalReference");
-						t.updateExternalReferenceByCell(c, true);
+						t.updateExternalReferenceByCell(c, true, null, true);
 					}
 
 					if (callback) {
@@ -26698,10 +26698,10 @@
 	};
 
 
-	WorksheetView.prototype.updateExternalReferenceByCell = function (c, initStructure, callback) {
+	WorksheetView.prototype.updateExternalReferenceByCell = function (c, initStructure, callback, forceUpdate) {
 		var t = this;
 		var externalReferences = this.getExternalReferencesByCell(c, initStructure);
-		this.workbook.doUpdateExternalReference(externalReferences, callback);
+		this.workbook.doUpdateExternalReference(externalReferences, callback, forceUpdate);
 	};
 
 	WorksheetView.prototype.getExternalReferencesByCell = function (c, initStructure, opt_get_only_ids) {
