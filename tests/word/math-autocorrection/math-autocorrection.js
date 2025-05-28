@@ -1590,6 +1590,7 @@ $(function () {
 		Test("\\sum_{\\begin{matrix}0\\lei\\lem\\\\0<j<n\\\\\\end{matrix}}{P\\left(i,j\\right)}", [["ParaRun", ""], ["CNary", "\\sum_{\\begin{matrix}0\\lei\\lem\\\\0<j<n\\\\\\end{matrix}}{P\\left(i,j\\right)}"]], true, "Check LaTeX words");
 		Test("1\\ 2", [["ParaRun", "1\\ 2"]], true, "Check LaTeX words");
 		Test("\\dot{}\\lim\\below{n\\rightarrow\\infty}{\\left(1+\\frac{1}{n}\\right)^n}", [["ParaRun", ""], ["CAccent", "\\dot{}"], ["ParaRun", ""], ["CMathFunc", "\\lim\\below{n\\to\\infty}{\\left(1+\\frac{1}{n}\\right)^n}"],], true, "Check LaTeX words");
+		Test("\\quad \\text { with } \\quad", [["ParaRun", "\\quad"], ["ParaRun", "\\text{ with }"], ["ParaRun", "\\quad"]], true, "Check text mode");
 
 		QUnit.module( "accent", function ()
 		{
@@ -1674,6 +1675,7 @@ $(function () {
 			Test("n^{2} ", [["ParaRun", ""], ["CDegree", "n^2"], ["ParaRun", ""]], true, "Check LaTeX degree");
 			Test("n^(2) ", [["ParaRun", ""], ["CDegree", "n^{\\left(2\\right)}"], ["ParaRun", ""]], true, "Check LaTeX degree");
 			Test("n^{2+1}_y", [["ParaRun", ""], ["CDegreeSubSup", "n_y^{2+1}"], ["ParaRun", ""]], true, "Check LaTeX degree");
+			Test("E^{\\prime}", [["ParaRun", ""], ["CDegree", "E^{\\prime}"], ["ParaRun", ""]], true, "Check LaTeX degree with prime");
 		})
 
 		QUnit.module( "prescript", function ()
@@ -1803,6 +1805,7 @@ $(function () {
 				Test("\\left[\\begin{matrix}1&2\\\\3&4\\\\\\end{matrix}\\right]", [["ParaRun", ""], ["CDelimiter", "\\left[\\begin{matrix}1&2\\\\3&4\\\\\\end{matrix}\\right]"]], true, "Check bug #61007 pmatrix");
 				Test("\\begin{matrix}&&\\\\&&\\\\&&\\\\&&\\end{matrix}", [["ParaRun", ""], ["CMathMatrix", "\\begin{matrix}&&\\\\&&\\\\&&\\\\&&\\\\\\end{matrix}"]], true, "Check matrix bug #71892");
 				Test("\\begin{array}{l} n + 1\\end{array}", [["ParaRun", ""], ["CEqArray", "\\matrix{n+1}"]], true, "Check matrix bug #71892");
+				Test("\\begin{cases}\\frac{3 I N}{8} & I<0 \\\\ -\\frac{I N}{8}(N-1) & I>0\\end{cases}", [["ParaRun", ""], ["CDelimiter", '\\left\\{\\begin{matrix}\\frac{3IN}{8}&I<0\\\\-\\frac{IN}{8}\\left(N-1\\right)&I>0\\\\\\end{matrix}\\right.']], true, "Check \\begin{cases} processing");
 			})
 
 			QUnit.module( "Check bug #67181", function ()

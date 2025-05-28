@@ -193,7 +193,7 @@
 		let oStyle = this.oLookahead.style;
 
 		if (this.oLookahead.data === "\\ "
-			// || this.oLookahead.data === "\\quad"
+			|| this.oLookahead.data === "\\quad"
 			// || this.oLookahead.data === "\\:"
 			// || this.oLookahead.data === "\\;"
 		)
@@ -202,8 +202,8 @@
 
 			if (this.oLookahead.data === "\\ ")
 				strSpace = " ";
-			// else if (this.oLookahead.data === "\\quad")
-			// 	strSpace = " ";
+			else if (this.oLookahead.data === "\\quad")
+				strSpace = " ";
 			// else if (this.oLookahead.data === "\\:")
 			// 	strSpace = " ";
 			// else if (this.oLookahead.data === "\\;")
@@ -757,21 +757,27 @@
 	}
 	CLaTeXParser.prototype.IsTextLiteral = function ()
 	{
-		return this.oLookahead.data === "\\text"
+		return this.oLookahead.class === Literals.text.id;
 	}
 	CLaTeXParser.prototype.GetTextLiteral = function ()
 	{
+		let style = this.oLookahead.style.Copy();
 		this.EatToken(this.oLookahead.class);
 		let oContent = this.GetTextArgument();
+
+		let metaData = style.GetMathMetaData();
+		metaData.setIsText();
 
 		return {
 			type: Struc.char,
 			value: oContent,
+			style: style
 		}
 	}
 	CLaTeXParser.prototype.GetTextArgument = function ()
 	{
 		let strText = "";
+		this.SkipFreeSpace();
 
 		this.EatToken(this.oLookahead.class); // {
 
@@ -1521,9 +1527,17 @@
 		while (this.IsExpressionLiteral(arrBreakSymbol))
 		{
 			if (this.IsPreScript())
-				arrExpList.push(this.GetPreScriptLiteral());
+			{
+				let el = this.GetPreScriptLiteral();
+				if (el)
+					arrExpList.push(el);
+			}
 			else
-				arrExpList.push(this.GetWrapperElementLiteral());
+			{
+				let el = this.GetWrapperElementLiteral();
+				if (el)
+					arrExpList.push(el);
+			}
 		}
 
 		this.EscapeSymbol = undefined;
@@ -1563,6 +1577,28 @@
 			if (this.oLookahead.data === "{") {
 				this.SkipFreeSpace();
 				this.EatToken(this.oLookahead.class);
+
+				if (this.oLookahead.data === '\\prime')
+				{
+					this.EatToken(this.oLookahead.class);
+					oArgument.push({
+						type: Struc.char,
+						value: "′"
+					});
+					this.EatToken(this.oLookahead.class);
+					return oArgument;
+				}
+				else if (this.oLookahead.data === "\\pprime")
+				{
+					this.EatToken(this.oLookahead.class);
+					oArgument.push({
+						type: Struc.char,
+						value: "″"
+					});
+					this.EatToken(this.oLookahead.class);
+					return oArgument;
+				}
+
 				oArgument.push(this.GetExpressionLiteral());
 				this.EatToken(this.oLookahead.class);
 			}

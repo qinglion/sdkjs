@@ -1271,7 +1271,7 @@
 			" "			:	" ",
 
 			"\\ "		:	" ",
-			// "\\quad"	:	" ",
+			"\\quad"	:	" "
 			// "\\qquad"	:	"  ",
 			// "\:"		:	" ",
 			// "\;"		:	" ",
@@ -1549,6 +1549,20 @@
 	TokenPunctuation.prototype = Object.create(LexerLiterals.prototype)
 	TokenPunctuation.prototype.constructor = TokenPunctuation;
 
+	function TokenText()
+	{
+		this.id = 35;
+		this.Unicode = {};
+		this.LaTeX = {};
+		//for now, later add Unicode
+		this.LaTeXSpecial = {
+			"\\text": "\\text"
+		};
+		this.Init();
+	}
+	TokenText.prototype = Object.create(LexerLiterals.prototype)
+	TokenText.prototype.constructor = TokenText;
+
 	//---------------------------------------Initialize data for Tokenizer----------------------------------------------
 
 	// List of tokens types for parsers processing
@@ -1585,6 +1599,7 @@
 		arrayMatrix:	new TokenArrayMatrix(),
 		eqArray:		new TokenEqArray(),
 		punct:			new TokenPunctuation(),
+		text:			new TokenText()
 	};
 
 	// The array defines the sequence in which the tokens are checked by the lexer
@@ -1621,6 +1636,7 @@
 		MathLiterals.eqArray,
 		MathLiterals.punct,
 		MathLiterals.space,
+		MathLiterals.text
 	];
 
 	//-------------------------------------Generating AutoCorrection Rules----------------------------------------------
@@ -2864,7 +2880,8 @@
 						}
 						else
 						{
-							strEndBracket = strStartBracket = oTokens.strMatrixType[0].charCodeAt(0)
+							strStartBracket = oTokens.strMatrixType[0].charCodeAt(0);
+							strEndBracket = -1;
 						}
 					}
 
@@ -2876,7 +2893,7 @@
 						cols = oTokens.value[0].length;
 					}
 
-					if (strEndBracket && strStartBracket)
+					if (strEndBracket || strStartBracket)
 					{
 						let Delimiter = oContext.Add_DelimiterEx(
 							new CTextPr(),
@@ -5415,6 +5432,7 @@
 		this.isLinearFraction	= false;
 		this.isEscapedSlash		= false;
 		this.isLimitNary		= false;
+		this.isText				= false;
 
 		this.setIsLinearFraction = function ()
 		{
@@ -5452,6 +5470,15 @@
 			return this.isLimitNary;
 		}
 
+		this.setIsText = function()
+		{
+			this.isText = true;
+		}
+		this.getIsText = function()
+		{
+			return this.isText;
+		}
+
 		this.Copy = function ()
 		{
 			let oCopy = new MathMetaData();
@@ -5467,6 +5494,9 @@
 
 			if (this.isLimitNary)
 				oCopy.setIsLimitNary();
+
+			if (this.isText)
+				oCopy.setIsText();
 
 			return oCopy;
 		}
@@ -5588,7 +5618,8 @@
 
 			return this.style.IsEqual(oStyleParent.GetAdditionalStyleData())
 				&& this.IsReviewDataEqual(oStyleParent)
-				&& this.IsMPrpEqual(oStyleParent.mathPrp);
+				&& this.IsMPrpEqual(oStyleParent.mathPrp)
+				&& this.IsMetaDataEqual(oStyleParent.metaData)
 		}
 
 		if (oStyleParent)
@@ -5599,10 +5630,28 @@
 
 			return this.style.IsEqual(oStyle)
 				&& this.IsReviewDataEqual(oStyleParent)
-				&& this.IsMPrpEqual(oStyleParent.MathPrp);
+				&& this.IsMPrpEqual(oStyleParent.MathPrp)
+				&& this.IsMetaDataEqual(oStyleParent.math_autocorrection)
 		}
 
 		return false;
+	};
+	MathTextAdditionalData.prototype.IsMetaDataEqual = function (oMetaData)
+	{
+		let oCurrentMetaData = this.metaData;
+
+		if (!oMetaData
+			&& oCurrentMetaData.getIsEscapedSlash() === false
+			&& oCurrentMetaData.getIsMathRm() === false
+			&& oCurrentMetaData.getIsText() === false)
+			return true;
+
+		if (!oMetaData)
+			return false;
+
+		return oMetaData.getIsEscapedSlash() === oCurrentMetaData.getIsEscapedSlash()
+			&& oMetaData.getIsMathRm() === oCurrentMetaData.getIsMathRm()
+			&& oMetaData.getIsText() === oCurrentMetaData.getIsText();
 	};
 	MathTextAdditionalData.prototype.IsReviewDataEqual = function (oContent)
 	{
