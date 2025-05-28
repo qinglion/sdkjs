@@ -549,6 +549,25 @@ ParaRun.prototype.GetTextOfElement = function(oMathText, isSelectedText)
 	let nEndPos		= (isSelectedText == true ? Math.max(this.Selection.StartPos, this.Selection.EndPos) : this.Content.length);
 	let isStrFont	= false;
 
+	if (oMathText.IsLaTeX() && this.math_autocorrection)
+	{
+		if (this.math_autocorrection.getIsMathRm() || this.math_autocorrection.getIsText())
+		{
+			let str = '';
+			for (let i = nStartPos; i < nEndPos; i++)
+			{
+				let oCurrentElement = this.Content[i];
+				str += oCurrentElement.GetTextOfElement().GetText();
+			}
+
+			if (this.math_autocorrection.getIsMathRm())
+				oMathText.AddText(new AscMath.MathText('\\mathrm{' + str + '}', this));
+			else if (this.math_autocorrection.getIsText())
+				oMathText.AddText(new AscMath.MathText('\\text{' + str + '}', this));
+
+			return oMathText;
+		}
+	}
 	// [Unicode] Investigate the mechanism for converting an escaped backslash. Information about separating it
 	// into a separate Run is not enough.
 
@@ -605,8 +624,8 @@ ParaRun.prototype.GetTextOfElement = function(oMathText, isSelectedText)
 			{
 				if (strCurrentElement === " " && strLast !== "\\") //normal space
 					oMathText.AddText(new AscMath.MathText('\\ ', this))
-				// else if (strCurrentElement === " ")
-				// 	oMathText.AddText(new AscMath.MathText("\\quad", this));
+				else if (strCurrentElement === " ")
+					oMathText.AddText(new AscMath.MathText("\\quad", this));
 				// else if (strCurrentElement === " ")
 				// 	oMathText.AddText(new AscMath.MathText("\\:", this));
 				// else if (strCurrentElement === " ")
@@ -629,7 +648,13 @@ ParaRun.prototype.GetTextOfElement = function(oMathText, isSelectedText)
 				// }
 				// else
 				// {
-					oMathText.AddText(new AscMath.MathText(strCurrentElement, this));
+					let mathText = new AscMath.MathText(strCurrentElement, this);
+					let additionalData = mathText.GetAdditionalData();
+
+					if (this.math_autocorrection)
+						additionalData.metaData = this.math_autocorrection.Copy();
+
+					oMathText.AddText(mathText);
 				//}
 			}
 		}
