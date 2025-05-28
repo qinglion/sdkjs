@@ -35979,6 +35979,38 @@ $(function () {
 
 	});
 
+	QUnit.test("Test: \"AREAS\"", function (assert) {
+
+		oParser = new parserFormula('AREAS(1)', "A1", ws);
+		assert.ok(oParser.parse(), "AREAS(1)");
+		assert.strictEqual(oParser.calculate().getValue(), "#VALUE!", "Result of AREAS(1)");
+
+		oParser = new parserFormula('AREAS("str")', "A1", ws);
+		assert.ok(oParser.parse(), 'AREAS("str")');
+		assert.strictEqual(oParser.calculate().getValue(), "#VALUE!", 'Result of AREAS("str")');
+
+		oParser = new parserFormula('AREAS({1,2,3})', "A1", ws);
+		assert.ok(oParser.parse(), 'AREAS({1,2,3})');
+		assert.strictEqual(oParser.calculate().getValue(), "#VALUE!", 'Result of AREAS({1,2,3})');
+
+		oParser = new parserFormula('AREAS(A10)', "A1", ws);
+		assert.ok(oParser.parse(), "AREAS(A10)");
+		assert.strictEqual(oParser.calculate().getValue(), 1, "Result of AREAS(A10)");
+
+		oParser = new parserFormula('AREAS('+ ws.getName() + '!A10)', "A1", ws);
+		assert.ok(oParser.parse(), "AREAS(Sheet1!A10)");
+		assert.strictEqual(oParser.calculate().getValue(), 1, "Result of AREAS(Sheet1!A10)");
+
+		oParser = new parserFormula('AREAS(A10:A11)', "A1", ws);
+		assert.ok(oParser.parse(), "AREAS(A10:A11)");
+		assert.strictEqual(oParser.calculate().getValue(), 1, "Result of AREAS(A10:A11)");
+
+		oParser = new parserFormula('AREAS('+ ws.getName() + '!A10:A11)', "A1", ws);
+		assert.ok(oParser.parse(), "AREAS(Sheet1!A10:A11)");
+		assert.strictEqual(oParser.calculate().getValue(), 1, "Result of AREAS(Sheet1!A10:A11)");
+
+	});
+
 	QUnit.test("Test: \"reference argument test\"", function (assert) {
 		ws.getRange2("A1").setValue("1");
 		ws.getRange2("A2").setValue("2");

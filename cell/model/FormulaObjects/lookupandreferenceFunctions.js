@@ -73,7 +73,7 @@ function (window, undefined) {
 		cUNIQUE, cVLOOKUP, cXLOOKUP, cVSTACK, cHSTACK, cTOROW, cTOCOL, cWRAPROWS, cWRAPCOLS, cXMATCH);
 
 	cFormulaFunctionGroup['NotRealised'] = cFormulaFunctionGroup['NotRealised'] || [];
-	cFormulaFunctionGroup['NotRealised'].push(cAREAS, cRTD);
+	cFormulaFunctionGroup['NotRealised'].push(cRTD);
 
 	function searchRegExp(str, flags) {
 		var vFS = str
@@ -591,7 +591,21 @@ function (window, undefined) {
 	cAREAS.prototype = Object.create(cBaseFunction.prototype);
 	cAREAS.prototype.constructor = cAREAS;
 	cAREAS.prototype.name = 'AREAS';
+	cAREAS.prototype.argumentsMin = 1;
+	cAREAS.prototype.argumentsMax = 1;
 	cAREAS.prototype.argumentsType = [argType.reference];
+	cAREAS.prototype.arrayIndexes = {0: 1};
+	cAREAS.prototype.Calculate = function (arg) {
+		let arg0 = arg[0];
+		if (arg0.type !== AscCommonExcel.cElementType.cell && arg0.type !== AscCommonExcel.cElementType.cell3D && 
+			arg0.type !== AscCommonExcel.cElementType.cellsRange && arg0.type !== AscCommonExcel.cElementType.cellsRange3D) {
+			return new cError(cErrorType.wrong_value_type);
+		}
+		let areasCounter = 1;
+		// todo In future versions, after adding the processing of the brackets inside the argument, make the counter of several areas inside arg
+
+		return new cNumber(areasCounter);
+	};
 
 	/**
 	 * @constructor
