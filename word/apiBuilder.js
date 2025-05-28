@@ -7204,6 +7204,7 @@
 
 		return arrResult;
 	};
+	
 	/**
 	 * The specific form type.
 	 * @typedef {("text" | "checkBox" | "picture" | "comboBox" | "dropDownList" | "dateTime" | "radio")} FormSpecificType
@@ -22009,6 +22010,59 @@
 			return new this.constructor(oSdt);
 		}, this);
 	};
+	/**
+	 * Returns the tag attribute for the current form.
+	 * @memberof ApiFormBase
+	 * @typeofeditors ["CDE" | "CFE"]
+	 * @since 9.0.0
+	 * @returns {string}
+	 * @see office-js-api/Examples/{Editor}/ApiFormBase/Methods/GetTag.js
+	 */
+	ApiFormBase.prototype.GetTag = function()
+	{
+		return this.Sdt.GetTag();
+	};
+	/**
+	 * Sets the tag attribute to the current form.
+	 * @memberof ApiFormBase
+	 * @typeofeditors ["CDE" | "CFE"]
+	 * @since 9.0.0
+	 * @param {string} tag - The tag which will be added to the current container.
+	 * @returns {boolean}
+	 * @see office-js-api/Examples/{Editor}/ApiFormBase/Methods/SetTag.js
+	 */
+	ApiFormBase.prototype.SetTag = function(tag)
+	{
+		this.Sdt.SetTag(tag);
+		return true;
+	};
+	
+	/**
+	 * Returns the role of the current form.
+	 * @memberof ApiFormBase
+	 * @typeofeditors ["CDE" | "CFE"]
+	 * @since 9.0.0
+	 * @returns {string}
+	 * @see office-js-api/Examples/{Editor}/ApiFormBase/Methods/GetRole.js
+	 */
+	ApiFormBase.prototype.GetRole = function()
+	{
+		return this.Sdt.GetFormRole();
+	};
+	/**
+	 * Sets the role of the current form.
+	 * @memberof ApiFormBase
+	 * @typeofeditors ["CDE" | "CFE"]
+	 * @since 9.0.0
+	 * @param {string} role - The role which will be attached to the current form.
+	 * @returns {boolean}
+	 * @see office-js-api/Examples/{Editor}/ApiFormBase/Methods/SetRole.js
+	 */
+	ApiFormBase.prototype.SetRole = function(role)
+	{
+		this.Sdt.SetFormRole(role);
+		return true;
+	};
 
 	//------------------------------------------------------------------------------------------------------------------
 	//
@@ -25186,26 +25240,30 @@
 	ApiBlockLvlSdt.prototype["GetAppearance"]           = ApiBlockLvlSdt.prototype.GetAppearance;
 	
 	
-	ApiFormBase.prototype["GetClassType"]        = ApiFormBase.prototype.GetClassType;
-	ApiFormBase.prototype["GetFormType"]         = ApiFormBase.prototype.GetFormType;
-	ApiFormBase.prototype["GetFormKey"]          = ApiFormBase.prototype.GetFormKey;
-	ApiFormBase.prototype["SetFormKey"]          = ApiFormBase.prototype.SetFormKey;
-	ApiFormBase.prototype["GetTipText"]          = ApiFormBase.prototype.GetTipText;
-	ApiFormBase.prototype["SetTipText"]          = ApiFormBase.prototype.SetTipText;
-	ApiFormBase.prototype["IsRequired"]          = ApiFormBase.prototype.IsRequired;
-	ApiFormBase.prototype["SetRequired"]         = ApiFormBase.prototype.SetRequired;
-	ApiFormBase.prototype["IsFixed"]             = ApiFormBase.prototype.IsFixed;
-	ApiFormBase.prototype["ToFixed"]             = ApiFormBase.prototype.ToFixed;
-	ApiFormBase.prototype["ToInline"]            = ApiFormBase.prototype.ToInline;
-	ApiFormBase.prototype["SetBorderColor"]      = ApiFormBase.prototype.SetBorderColor;
-	ApiFormBase.prototype["SetBackgroundColor"]  = ApiFormBase.prototype.SetBackgroundColor;
-	ApiFormBase.prototype["GetText"]             = ApiFormBase.prototype.GetText;
-	ApiFormBase.prototype["Clear"]               = ApiFormBase.prototype.Clear;
-	ApiFormBase.prototype["GetWrapperShape"]     = ApiFormBase.prototype.GetWrapperShape;
-	ApiFormBase.prototype["SetPlaceholderText"]  = ApiFormBase.prototype.SetPlaceholderText;
-	ApiFormBase.prototype["SetTextPr"]           = ApiFormBase.prototype.SetTextPr;
-	ApiFormBase.prototype["GetTextPr"]           = ApiFormBase.prototype.GetTextPr;
-	ApiFormBase.prototype["MoveCursorOutside"]   = ApiFormBase.prototype.MoveCursorOutside;
+	ApiFormBase.prototype["GetClassType"]       = ApiFormBase.prototype.GetClassType;
+	ApiFormBase.prototype["GetFormType"]        = ApiFormBase.prototype.GetFormType;
+	ApiFormBase.prototype["GetFormKey"]         = ApiFormBase.prototype.GetFormKey;
+	ApiFormBase.prototype["SetFormKey"]         = ApiFormBase.prototype.SetFormKey;
+	ApiFormBase.prototype["GetTipText"]         = ApiFormBase.prototype.GetTipText;
+	ApiFormBase.prototype["SetTipText"]         = ApiFormBase.prototype.SetTipText;
+	ApiFormBase.prototype["IsRequired"]         = ApiFormBase.prototype.IsRequired;
+	ApiFormBase.prototype["SetRequired"]        = ApiFormBase.prototype.SetRequired;
+	ApiFormBase.prototype["IsFixed"]            = ApiFormBase.prototype.IsFixed;
+	ApiFormBase.prototype["ToFixed"]            = ApiFormBase.prototype.ToFixed;
+	ApiFormBase.prototype["ToInline"]           = ApiFormBase.prototype.ToInline;
+	ApiFormBase.prototype["SetBorderColor"]     = ApiFormBase.prototype.SetBorderColor;
+	ApiFormBase.prototype["SetBackgroundColor"] = ApiFormBase.prototype.SetBackgroundColor;
+	ApiFormBase.prototype["GetText"]            = ApiFormBase.prototype.GetText;
+	ApiFormBase.prototype["Clear"]              = ApiFormBase.prototype.Clear;
+	ApiFormBase.prototype["GetWrapperShape"]    = ApiFormBase.prototype.GetWrapperShape;
+	ApiFormBase.prototype["SetPlaceholderText"] = ApiFormBase.prototype.SetPlaceholderText;
+	ApiFormBase.prototype["SetTextPr"]          = ApiFormBase.prototype.SetTextPr;
+	ApiFormBase.prototype["GetTextPr"]          = ApiFormBase.prototype.GetTextPr;
+	ApiFormBase.prototype["MoveCursorOutside"]  = ApiFormBase.prototype.MoveCursorOutside;
+	ApiFormBase.prototype["GetTag"]             = ApiFormBase.prototype.GetTag;
+	ApiFormBase.prototype["SetTag"]             = ApiFormBase.prototype.SetTag;
+	ApiFormBase.prototype["GetRole"]            = ApiFormBase.prototype.GetRole;
+	ApiFormBase.prototype["SetRole"]            = ApiFormBase.prototype.SetRole;
 
 	ApiTextForm.prototype["IsAutoFit"]           = ApiTextForm.prototype.IsAutoFit;
 	ApiTextForm.prototype["SetAutoFit"]          = ApiTextForm.prototype.SetAutoFit;
