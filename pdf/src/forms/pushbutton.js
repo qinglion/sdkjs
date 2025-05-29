@@ -1216,7 +1216,9 @@
 			let oStyle = this.GetFontStyle();
 			this.content.SetBold(oStyle.bold);
 			this.content.SetItalic(oStyle.italic);
-            this.content.SetFontSize(this.GetTextSize());
+            if (this.GetTextSize()) {
+                this.content.SetFontSize(this.GetTextSize());
+            }
         }, undefined, this);
     };
     CPushButtonField.prototype.GetCaptionRun = function() {
