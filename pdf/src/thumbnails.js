@@ -216,6 +216,8 @@
     CBlock.prototype.getHeight = function(columnW, startOffset, betweenPages, zoom)
     {
         let oViewer = Asc.editor.getDocumentRenderer();
+        let oThumbnails = oViewer.thumbnails;
+        let nAllMaxPageHeight = oThumbnails.getMaxPageHeight();
 
         var maxPageHeight = 0;
         for (var i = 0, len = this.pages.length; i < len; i++)
@@ -232,19 +234,24 @@
             }
         }
 
-        var blockHeight = (maxPageHeight * zoom) >> 0;
+       // upscace small pages to big pages
+        let nScaleFactor = parseFloat((nAllMaxPageHeight / maxPageHeight).toFixed(2));
+
+        var blockHeight = (maxPageHeight * zoom * nScaleFactor) >> 0;
         var numberBlockH = AscCommon.AscBrowser.convertToRetinaValue(PageStyle.numberFontOffset + PageStyle.numberFontHeight, true);
         blockHeight += numberBlockH;
 
         var currentPosX = startOffset;
         for (var i = 0, len = this.pages.length; i < len; i++)
         {
-            let oViewer = Asc.editor.getDocumentRenderer();
             let isLandscape = oViewer.isLandscapePage(this.pages[i].num);
 
             var drPage = this.pages[i];
-            var pW = (drPage.page.width * zoom) >> 0;
-            var pH = (drPage.page.height * zoom) >> 0;
+            // upscace small pages to big pages
+            let nScaleFactor = parseFloat((nAllMaxPageHeight / drPage.page.height).toFixed(2));
+
+            var pW = (drPage.page.width * zoom * nScaleFactor) >> 0;
+            var pH = (drPage.page.height * zoom * nScaleFactor) >> 0;
             if (isLandscape)
             {
                 let tmp = pW;
