@@ -1791,7 +1791,10 @@
 		};
 		this.CoAuthoringApi.onAiPluginSettings = function(data)
 		{
-			t.aiPluginSettings = JSON.stringify(data);
+			if (data) {
+				data.proxy = AscCommon.getBaseUrl() + "../../../../ai-proxy";
+				t.aiPluginSettings = JSON.stringify(data);
+			}
 		};
 		this.CoAuthoringApi.onWarning                 = function(code)
 		{
