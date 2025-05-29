@@ -20542,6 +20542,9 @@
 				var nFrom = opt_by_row ? cell.nCol : cell.nRow;
 				var nTo = oSortedIndexes[nFrom];
 				if (null != nTo) {
+					if (!cell.formulaParsed.isParsed) {
+						cell.formulaParsed.parse();
+					}
 					if (opt_by_row) {
 						cell.changeOffset(new AscCommon.CellBase(0, nTo - nFrom), true, true, true);
 					} else {
