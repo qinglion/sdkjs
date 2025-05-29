@@ -1039,7 +1039,7 @@
                 if (!this.selectedPages.includes(dp.num)) {
                     this.resetSelection();
                     this.selectedPages.push(dp.num);
-                    this.viewer.navigateToPage(dp.num);
+                    this.viewer.navigateToPage(dp.num, undefined, this.viewer.scrollMaxX / 2);
                 }
 
                 this.prepareDragGhost(dp, this.selectedPages.length);
@@ -1139,7 +1139,7 @@
                     if (!this.selectedPages.includes(dp.num) || this.selectedPages.length > 1) {
                         this.resetSelection();
                         this.selectedPages.push(dp.num);
-                        this.viewer.navigateToPage(dp.num);
+                        this.viewer.navigateToPage(dp.num, undefined, this.viewer.scrollMaxX / 2);
                         this.repaint();
                     }
                 }
@@ -1285,7 +1285,7 @@
 
         oDoc.DoAction(function() {
 			oDoc.MovePages(selectedIndices, toIndex);
-            oDoc.Viewer.navigateToPage(toIndex);
+            oDoc.Viewer.navigateToPage(toIndex, undefined, oDoc.viewer.scrollMaxX / 2);
 
         }, AscDFH.historydescription_Pdf_MovePage, null, aToCheckLock);
     };
