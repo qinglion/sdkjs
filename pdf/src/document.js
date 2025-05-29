@@ -1268,7 +1268,7 @@ var CPresentation = CPresentation || function(){};
         let oViewer = this.Viewer;
         if (!oViewer.canInteract()) {
             let oDoc = this;
-            oViewer.onRepaintFinishCallbacks.push(function() {
+            oViewer.paint(null, function() {
                 oDoc.OnMouseDown(x, y, e);
             });
             return;
