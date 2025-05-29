@@ -9133,12 +9133,12 @@
 		if(!this.TableParts || !name)
 			return res;
 
+		let _name = name.toLowerCase();
 		for(var i = 0; i < this.TableParts.length; i++)
 		{
-			if(this.TableParts[i].DisplayName.toLowerCase() === name.toLowerCase())
+			if(this.TableParts[i].DisplayName.length === _name.length && this.TableParts[i].DisplayName.toLowerCase() === _name)
 			{
-				res = this.TableParts[i].getTableRangeForFormula(objectParam);
-				break;
+				return this.TableParts[i].getTableRangeForFormula(objectParam);
 			}
 		}
 		return res;
@@ -9148,15 +9148,15 @@
 		if(!this.TableParts || !tableName)
 			return res;
 
+		let _tableName = tableName.toLowerCase();
 		for(var i = 0; i < this.TableParts.length; i++)
 		{
-			if(this.TableParts[i].DisplayName.toLowerCase() === tableName.toLowerCase())
+			if(this.TableParts[i].DisplayName.length === tableName.length && this.TableParts[i].DisplayName.toLowerCase() === _tableName)
 			{
 				/* if there is a quote before a special character (i.e. escaping was used), remove it, while the quote itself is also a special character */
 				columnName = parserHelp.escapeTableCharacters(columnName, false);
 
-				res = this.TableParts[i].getTableIndexColumnByName(columnName);
-				break;
+				return this.TableParts[i].getTableIndexColumnByName(columnName);
 			}
 		}
 		return res;
@@ -9166,9 +9166,10 @@
 		if(!this.TableParts || !tableName)
 			return res;
 
+		let _tableName = tableName.toLowerCase();
 		for(var i = 0; i < this.TableParts.length; i++)
 		{
-			if(this.TableParts[i].DisplayName.toLowerCase() === tableName.toLowerCase())
+			if(this.TableParts[i].DisplayName.length === _tableName.length && this.TableParts[i].DisplayName.toLowerCase() === _tableName)
 			{
 				res = this.TableParts[i].getTableNameColumnByIndex(columnIndex);
 				break;
@@ -9181,9 +9182,10 @@
 		if(!this.TableParts || !tableName)
 			return res;
 
+		let _tableName = tableName.toLowerCase();
 		for(var i = 0; i < this.TableParts.length; i++)
 		{
-			if(this.TableParts[i].DisplayName.toLowerCase() === tableName.toLowerCase())
+			if(this.TableParts[i].DisplayName.length === _tableName.length && this.TableParts[i].DisplayName.toLowerCase() === _tableName)
 			{
 				res = this.TableParts[i];
 				break;
@@ -9196,9 +9198,10 @@
 		if(!this.TableParts || !tableName)
 			return res;
 
+		let _tableName = tableName.toLowerCase();
 		for(var i = 0; i < this.TableParts.length; i++)
 		{
-			if(this.TableParts[i].DisplayName.toLowerCase() === tableName.toLowerCase())
+			if(this.TableParts[i].DisplayName.length === _tableName.length && this.TableParts[i].DisplayName.toLowerCase() === _tableName)
 			{
 				res = this.TableParts[i].getTableRangeColumnByName(columnName);
 				break;
@@ -12145,7 +12148,7 @@
 
 				this.workbook.dependencyFormulas.lockRecal();
 				for (let j = 0; j < table.TableColumns.length; j++) {
-					let tableColName = table.TableColumns[j].Name;
+					let tableColName = table.TableColumns[j].getTableColumnName();
 					this._getCell(table.Ref.r1, table.Ref.c1 + j, function(cell) {
 						let valueData = cell.getValueData();
 						let val = valueData && valueData.value && valueData.value.text;

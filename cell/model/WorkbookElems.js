@@ -8517,9 +8517,8 @@ function RangeDataManagerElem(bbox, data)
 						tableColumn = new TableColumn();
 						let cell = autoFilters.worksheet.getCell3(headerRow, i);
 						if (!cell.isNullText()) {
-							tableColumn.Name =
-								autoFilters.checkTableColumnName(newTableColumns.concat(this.TableColumns),
-									cell.getValueWithoutFormat());
+							tableColumn.setTableColumnName(autoFilters.checkTableColumnName(newTableColumns.concat(this.TableColumns),
+								cell.getValueWithoutFormat()));
 						}
 					}
 
@@ -8531,8 +8530,8 @@ function RangeDataManagerElem(bbox, data)
 					if (!tableColumn) {
 						tableColumn = newTableColumns[j] = new TableColumn();
 					}
-					if (tableColumn.Name === null) {
-						tableColumn.Name = autoFilters._generateColumnName2(newTableColumns);
+					if (tableColumn.getTableColumnName() === null) {
+						tableColumn.setTableColumnName(autoFilters._generateColumnName2(newTableColumns));
 					}
 				}
 
@@ -8618,7 +8617,7 @@ function RangeDataManagerElem(bbox, data)
 			//todo undo
 			let deletedMap = {};
 			for (let i = 0; i < deleted.length; ++i) {
-				deletedMap[deleted[i].Name] = 1;
+				deletedMap[deleted[i].getTableColumnName()] = 1;
 			}
 			this.handlers.trigger("deleteColumnTablePart", this.DisplayName, deletedMap);
 
@@ -8649,8 +8648,8 @@ function RangeDataManagerElem(bbox, data)
 
 		for (let j = 0; j < newTableColumns.length; j++) {
 			let tableColumn = newTableColumns[j];
-			if (tableColumn.Name === null) {
-				tableColumn.Name = autoFilters._generateColumnName2(newTableColumns);
+			if (tableColumn.getTableColumnName() === null) {
+				tableColumn.setTableColumnName(autoFilters._generateColumnName2(newTableColumns));
 			}
 		}
 
@@ -8683,7 +8682,7 @@ function RangeDataManagerElem(bbox, data)
 		this.removeDependencies();
 		let newTableColumns = this.TableColumns;
 		newTableColumns.push(new TableColumn());
-		newTableColumns[newTableColumns.length - 1].Name = autoFilters._generateColumnName2(newTableColumns);
+		newTableColumns[newTableColumns.length - 1].setTableColumnName(autoFilters._generateColumnName2(newTableColumns));
 
 		this.TableColumns = newTableColumns;
 		if (this.QueryTable) {
@@ -8777,10 +8776,10 @@ function RangeDataManagerElem(bbox, data)
 			return res;
 		}
 
+		let _name = name.toLowerCase();
 		for (let i = 0; i < this.TableColumns.length; i++) {
-			if (name.toLowerCase() === this.TableColumns[i].Name.toLowerCase()) {
-				res = i;
-				break;
+			if (_name === this.TableColumns[i].getTableColumnName(true)) {
+				return i;
 			}
 		}
 
@@ -8793,10 +8792,10 @@ function RangeDataManagerElem(bbox, data)
 			return res;
 		}
 
+		let _name = name.toLowerCase();
 		for (let i = 0; i < this.TableColumns.length; i++) {
-			if (name.toLowerCase() === this.TableColumns[i].Name.toLowerCase()) {
-				res = new Asc.Range(this.Ref.c1 + i, this.Ref.r1, this.Ref.c1 + i, this.Ref.r2);
-				break;
+			if (_name === this.TableColumns[i].getTableColumnName(true)) {
+				return new Asc.Range(this.Ref.c1 + i, this.Ref.r1, this.Ref.c1 + i, this.Ref.r2);
 			}
 		}
 
@@ -8810,7 +8809,7 @@ function RangeDataManagerElem(bbox, data)
 		}
 
 		if (this.TableColumns[index]) {
-			res = this.TableColumns[index].Name;
+			res = this.TableColumns[index].getTableColumnName();
 		}
 
 		return res;
@@ -8822,10 +8821,10 @@ function RangeDataManagerElem(bbox, data)
 			return res;
 		}
 
+		let _name = name.toLowerCase();
 		for (let i = 0; i < this.TableColumns.length; i++) {
-			if (name.toLowerCase() === this.TableColumns[i].Name.toLowerCase()) {
-				res = i;
-				break;
+			if (_name === this.TableColumns[i].getTableColumnName(true)) {
+				return i;
 			}
 		}
 
@@ -8999,7 +8998,7 @@ function RangeDataManagerElem(bbox, data)
 
 	TablePart.prototype.getColIdByName = function (name) {
 		for (let i = 0; i < this.TableColumns.length; i++) {
-			if (name === this.TableColumns[i].Name) {
+			if (name === this.TableColumns[i].getTableColumnName()) {
 				return i;
 			}
 		}
@@ -9900,6 +9899,8 @@ function RangeDataManagerElem(bbox, data)
 		this.rowNumbers = null;
 
 		this.id = null;
+		
+		this._lowerCaseName = null;
 		//формируется на сохранения
 		//this.tableColumnId = null;
 	}
@@ -10111,7 +10112,7 @@ function RangeDataManagerElem(bbox, data)
 		var endRow = (includeTotal && tablePart.isTotalsRow()) || (!tablePart.isTotalsRow()) ? ref.r2 : ref.r2 - 1;
 		var col = null;
 		for (var i = 0; i < tablePart.TableColumns.length; i++) {
-			if (this.Name === tablePart.TableColumns[i].Name) {
+			if (this.getTableColumnName() === tablePart.TableColumns[i].getTableColumnName()) {
 				col = ref.c1 + i;
 				break;
 			}
@@ -10123,6 +10124,20 @@ function RangeDataManagerElem(bbox, data)
 
 		return res;
 	};
+	TableColumn.prototype.getTableColumnName = function (toLowerCase) {
+		if (toLowerCase && this.Name) {
+			if (!this._lowerCaseName) {
+				this._lowerCaseName = this.Name.toLowerCase();
+			}
+			return this._lowerCaseName;
+		}
+		return this.Name;
+	};
+	TableColumn.prototype.setTableColumnName = function (val) {
+		this.Name = val;
+		this._lowerCaseName = this.Name && this.Name.toLowerCase();
+	};
+
 
 	/** @constructor */
 	function TableStyleInfo() {

@@ -25760,7 +25760,7 @@
 			const table = tableInfo.table;
 			var res = [];
 			for (var j = 0; j < table.TableColumns.length; j++) {
-				res.push(table.TableColumns[j].Name);
+				res.push(table.TableColumns[j].getTableColumnName());
 			}
 			return res;
 		}

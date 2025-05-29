@@ -2747,7 +2747,7 @@ parserHelp.setDigitSeparator(AscCommon.g_oDefaultCultureInfo.NumberDecimalSepara
 			to = this.hdtcendIndex.index;
 		}
 		for (var i = from; i <= to; ++i) {
-			res.push(table.TableColumns[i].Name);
+			res.push(table.TableColumns[i].getTableColumnName());
 		}
 		return res;
 	};

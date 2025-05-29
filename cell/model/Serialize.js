@@ -7684,7 +7684,7 @@
             if (c_oSer_TableColumns.Name === type) {
                 //replace only _x000a_ for fix bug(other spec. symbols didn't see in table columns)
                 var columnName = this.stream.GetString2LE(length);
-                oTableColumn.Name = columnName.replaceAll("_x000a_", "\n");
+                oTableColumn.setTableColumnName(columnName.replaceAll("_x000a_", "\n"));
             } else if (c_oSer_TableColumns.TotalsRowLabel === type) {
                 oTableColumn.TotalsRowLabel = this.stream.GetString2LE(length);
             } else if (c_oSer_TableColumns.TotalsRowFunction === type) {
