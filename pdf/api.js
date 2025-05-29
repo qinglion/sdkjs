@@ -3476,7 +3476,7 @@
 	
 			let sLang = Asc.editor.InterfaceLocale;
 
-			function applyStamps(dataText) {
+			function applyStamps(dataText, lang) {
 				AscPDF.STAMPS_JSON = JSON.parse(dataText);
 				AscPDF.stampsLocale = lang;
 
@@ -3512,7 +3512,7 @@
 				xhr.send(null);
 	
 				if (xhr.status === 200 || location.href.indexOf("file:") === 0) {
-					applyStamps(xhr.responseText);
+					applyStamps(xhr.responseText, lang);
 				}
 			}
 
