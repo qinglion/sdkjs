@@ -126,10 +126,11 @@
 	 */
 
 	/**
-	 * Content control list element
+	 * The content control list element.
 	 * @typedef {Object} ContentControlListElement
-	 * @property {string} Display - element display text
-	 * @property {string} Value - element value
+	 * @property {string} Display - The element display text.
+	 * @property {string} Value - The element value.
+	 * @see office-js-api/Examples/Plugins/{Editor}/Enumeration/ContentControlListElement.js
 	 */
 
     var Api = window["asc_docs_api"];
