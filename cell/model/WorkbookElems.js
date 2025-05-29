@@ -18327,11 +18327,22 @@ function RangeDataManagerElem(bbox, data)
 					}
 				}
 
+				let oContext = {};
+				oContext["address"] = arguments[1] && arguments[1].getName();
+				oContext["argsInfo"] = [];
+
 				//prepare arguments
 				let args = [];
 				for (let i = 0; i < argsInfo.length; i++) {
 					let type = argsInfo[i].type;
 					let defaultValue = argsInfo[i].defaultValue;
+
+					if (arg[i] && (arg[i].type === AscCommonExcel.cElementType.cell || arg[i].type === AscCommonExcel.cElementType.cell3D
+						|| arg[i].type === AscCommonExcel.cElementType.cellsRange || arg[i].type === AscCommonExcel.cElementType.cellsRange3D)) {
+						let _range = arg[i].getRange();
+						oContext["argsInfo"][i] = {"address": _range.getName(), "startCol": _range.bbox.c1, "endCol": _range.bbox.c2, "startRow": _range.bbox.r1, "endRow": _range.bbox.r2};
+					}
+
 
 					if (!arg[i] && !defaultValue) {
 						continue;
@@ -18353,6 +18364,8 @@ function RangeDataManagerElem(bbox, data)
 					}
 				}
 
+
+				window["context"] = oContext;
 				let res = func.apply(this, args);
 
 				//prepare result
