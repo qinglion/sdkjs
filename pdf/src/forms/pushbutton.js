@@ -490,13 +490,22 @@
         let nButtonPos = this.GetLayout();
         let oDrawing = this.GetDrawing();
 
+        let oPara1                      = this.content.GetElement(0);
+        oPara1.Pr.Spacing.Before        = 0;
+        oPara1.Pr.Spacing.After         = 0;
+        oPara1.CompiledPr.NeedRecalc    = true;
+
+        let oPara2;
+        if (this.content.GetElementsCount() == 2) {
+            oPara2 = this.content.GetElement(1);
+            oPara2.Pr.Spacing.Before = 0;
+            oPara2.Pr.Spacing.After  = 0;
+            oPara2.CompiledPr.NeedRecalc = true;
+        }
+        
         // положение текста с картинкой в одном параграфе
         if (oDrawing) {
-            let oPara1                      = this.content.GetElement(0);
-            let oRun                        = oPara1.GetElement(0);
-            oPara1.Pr.Spacing.Before        = 0;
-            oPara1.Pr.Spacing.After         = 0;
-            oPara1.CompiledPr.NeedRecalc    = true;
+            let oRun = oPara1.GetElement(0);
 
             if ([position["iconTextH"], position["textIconH"]].includes(nButtonPos) && this.content.GetElementsCount() == 1) {
                 this.content.Recalculate_Page(0, true);
@@ -540,11 +549,7 @@
         }
         
         // центрируем текст если картинки нет
-        let oPara = this.content.GetElement(0);
         let oCaptionRun = this.GetCaptionRun();
-        oPara.Pr.Spacing.Before = 0;
-        oPara.Pr.Spacing.After  = 0;
-        oPara.CompiledPr.NeedRecalc = true;
         if (oCaptionRun) {
             oCaptionRun.Pr.Position = 0;
             oCaptionRun.RecalcInfo.TextPr = true
@@ -555,11 +560,20 @@
         let nContentH       = oContentBounds.Bottom - oContentBounds.Top;
 
         if (this.content.GetElementsCount() == 1)
-            oPara.Pr.Spacing.Before = (dFrmH - nContentH) / 2;
-        else if (this.content.GetElementsCount() == 2)
-            oPara.Pr.Spacing.Before = (dFrmH - nContentH/2) / 2;
+            oPara1.Pr.Spacing.Before = (dFrmH - nContentH) / 2;
+        else if (this.content.GetElementsCount() == 2) {
+            if (nButtonPos == position["textIconV"]) {
+                oPara1.Pr.Spacing.Before = (dFrmH - nContentH / 2) / 2;
+            }
+            else if (nButtonPos == position["iconTextV"]) {
+                oPara1.Pr.Spacing.Before = (dFrmH - nContentH / 2) / 2 - nContentH / 2;
+            }
+
+            oPara2.CompiledPr.NeedRecalc = true;
+            oPara1.CompiledPr.NeedRecalc = true;
+        }
+
         this.content.SetAlign(AscPDF.ALIGN_TYPE.center);
-        oPara.CompiledPr.NeedRecalc = true;
     };
 
     /**
@@ -1012,7 +1026,7 @@
     CPushButtonField.prototype.CheckImageOnce = function() {
         // на открытии не заполняли контент формы, но если внешнего вида нет, тогда рисуем сами, нужно заполнить форму контентом
         let oDrawing = this.GetDrawing();
-        if (!oDrawing && !this.IsNeedDrawFromStream()) {
+        if (!oDrawing && !this.IsNeedDrawFromStream() && !this.imageChecked) {
             this.DoInitialRecalc();
             let sImgRasterId = this._imgData.normal;
             if (sImgRasterId)
@@ -1202,7 +1216,9 @@
 			let oStyle = this.GetFontStyle();
 			this.content.SetBold(oStyle.bold);
 			this.content.SetItalic(oStyle.italic);
-            this.content.SetFontSize(this.GetTextSize());
+            if (this.GetTextSize()) {
+                this.content.SetFontSize(this.GetTextSize());
+            }
         }, undefined, this);
     };
     CPushButtonField.prototype.GetCaptionRun = function() {
@@ -1709,13 +1725,8 @@
             oPara1 = this.content.GetElement(0);
             oPara2 = this.content.GetElement(1);
 
-            if (oPara2.GetAllDrawingObjects().length != 0) {
-                let temp = this.content.Content[0];
-                this.content.Content[0] = this.content.Content[1];
-                this.content.Content[1] = temp;
-                oPara1.Set_DocumentIndex(1);
-                oPara2.Set_DocumentIndex(0);
-            }
+            this.content.Remove_FromContent(0, 1);
+            this.content.Add_ToContent(1, oPara1);
         }
         else {
             oPara1 = this.content.GetElement(0);
@@ -1776,13 +1787,8 @@
             oPara1 = this.content.GetElement(0);
             oPara2 = this.content.GetElement(1);
 
-            if (oPara1.GetAllDrawingObjects().length != 0) {
-                let temp = this.content.Content[0];
-                this.content.Content[0] = this.content.Content[1];
-                this.content.Content[1] = temp;
-                oPara1.Set_DocumentIndex(1);
-                oPara2.Set_DocumentIndex(0);
-            }
+            this.content.Remove_FromContent(0, 1);
+            this.content.Add_ToContent(1, oPara1);
         }
         else {
             oPara1 = this.content.GetElement(0);
