@@ -2321,7 +2321,7 @@
 			return null;
 		}
 
-		var ParaTextPr = new AscCommonWord.ParaTextPr({Spacing : nSpacing});
+		var ParaTextPr = new AscCommonWord.ParaTextPr({Spacing : private_Twips2MM(nSpacing)});
 		Document.AddToParagraph(ParaTextPr);
 		
 		Document.LoadDocumentState(oldSelectionInfo);
@@ -2450,7 +2450,7 @@
 			return null;
 		}
 
-		var ParaTextPr = new AscCommonWord.ParaTextPr({Position : nPosition});
+		var ParaTextPr = new AscCommonWord.ParaTextPr({Position : private_PtToMM(private_GetHps(nPosition))});
 		Document.AddToParagraph(ParaTextPr);
 		
 		Document.LoadDocumentState(oldSelectionInfo);
@@ -9866,7 +9866,7 @@
 	ApiParagraph.prototype.SetPosition = function(nPosition)
 	{
 		this.Paragraph.SetApplyToAll(true);
-		this.Paragraph.Add(new AscCommonWord.ParaTextPr({Position : nPosition}));
+		this.Paragraph.Add(new AscCommonWord.ParaTextPr({Position : private_PtToMM(private_GetHps(nPosition))}));
 		this.Paragraph.SetApplyToAll(false);
 		
 		return this;
@@ -9902,7 +9902,7 @@
 	ApiParagraph.prototype.SetSpacing = function(nSpacing)
 	{
 		this.Paragraph.SetApplyToAll(true);
-		this.Paragraph.Add(new AscCommonWord.ParaTextPr({Spacing : nSpacing}));
+		this.Paragraph.Add(new AscCommonWord.ParaTextPr({Spacing : private_Twips2MM(nSpacing)}));
 		this.Paragraph.SetApplyToAll(false);
 		
 		return this;
