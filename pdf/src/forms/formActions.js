@@ -508,7 +508,7 @@
             return;
         }
 
-        editor.sendEvent("asc_onOpenLinkPdfForm", this.uri, this.OpenLink.bind(this), oActionsQueue.Continue.bind(oActionsQueue));
+        Asc.editor.sendEvent("asc_onOpenLinkPdfForm", this.uri, this.OpenLink.bind(this), oActionsQueue.Continue.bind(oActionsQueue));
     };
     CActionURI.prototype.GetURI = function() {
         return this.uri;
