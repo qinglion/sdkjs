@@ -571,9 +571,16 @@ CInlineLevelSdt.prototype.Draw_HighLights = function(PDSH)
 CInlineLevelSdt.prototype.Draw_Elements = function(PDSE)
 {
 	if (this.private_IsAddFormFieldToGraphics(PDSE.Graphics) || this.IsSkipDraw(PDSE.Graphics))
+	{
 		this.SkipDraw(PDSE);
+	}
 	else
+	{
 		CParagraphContentWithParagraphLikeContent.prototype.Draw_Elements.apply(this, arguments);
+		
+		if (this.IsSignatureForm())
+			this.DrawSignatureSign(PDSE.Graphics);
+	}
 };
 CInlineLevelSdt.prototype.Draw_Lines = function(PDSL)
 {
@@ -584,6 +591,46 @@ CInlineLevelSdt.prototype.Draw_Lines = function(PDSL)
 		this.SkipDraw(PDSL);
 	else
 		CParagraphContentWithParagraphLikeContent.prototype.Draw_Lines.apply(this, arguments);
+};
+CInlineLevelSdt.prototype.DrawSignatureSign = function(graphics)
+{
+	let logicDocument = this.GetLogicDocument();
+	if (!this.IsSignatureForm() || !logicDocument || !this.Bounds || !this.Bounds[0])
+		return;
+	
+	let _t = this;
+	let bounds = this.Bounds[0];
+	AscCommon.ExecuteNoHistory(function() {
+		let docContent = new AscWord.CDocumentContent();
+		let p = docContent.GetElement(0);
+		let run = new AscWord.Run();
+		run.SetFontSize(10);
+		run.SetRFontsAscii("Arial");
+		run.AddText(_t.GetPlaceholderText());
+		p.AddToContent(0, run);
+		p.SetParagraphAlign(AscCommon.align_Center);
+		p.SetParagraphSpacing({
+			Before   : 0,
+			After    : 0,
+			LineRule : linerule_Auto,
+			Line     : 1
+		});
+		p.SetParagraphIndent({
+			Left      : 0,
+			Right     : 0,
+			FirstLine : 0
+		});
+		
+		docContent.Reset(0, 0, bounds.W, bounds.H);
+		docContent.Recalculate_Page(0, true);
+		
+		let contentBounds = docContent.GetPageBounds(0);
+		let contentH = contentBounds.Bottom - contentBounds.Top;
+		if (contentH < bounds.H)
+			docContent.Shift(0, 0, (bounds.H - contentH) >> 1);
+		
+		docContent.Draw(0, graphics);
+	}, logicDocument);
 };
 CInlineLevelSdt.prototype.IsSkipDraw = function(oGraphics)
 {
