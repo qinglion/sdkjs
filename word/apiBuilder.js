@@ -10172,7 +10172,7 @@
 		return this.Paragraph.GetText(oProp);
 	};
 	/**
-	 * Returns the paragraph text properties.
+	 * Returns the text properties for end of paragraph mark.
 	 * @memberof ApiParagraph
 	 * @typeofeditors ["CDE"]
 	 * @return {ApiTextPr}  
