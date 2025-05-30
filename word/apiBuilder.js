@@ -22843,27 +22843,147 @@
 	};
 
 	/**
-	 * Sets the document title.
+	 * Sets the document category.
 	 *
 	 * @memberof ApiCore
 	 * @typeofeditors ["CDE"]
-	 * @param {string} sTitle
-	 * @see office-js-api/Examples/{Editor}/ApiCore/Methods/SetTitle.js
+	 * @param {string} sCategory
+	 * @see office-js-api/Examples/{Editor}/ApiCore/Methods/SetCategory.js
 	 */
-	ApiCore.prototype.SetTitle = function (sTitle) {
-		this.Core.setTitle(sTitle);
+	ApiCore.prototype.SetCategory = function (sCategory) {
+		this.Core.setCategory(sCategory);
 	};
 
 	/**
-	 * Returns the document title.
+	 * Returns the document category.
 	 *
 	 * @memberof ApiCore
 	 * @typeofeditors ["CDE"]
 	 * @returns {string}
-	 * @see office-js-api/Examples/{Editor}/ApiCore/Methods/GetTitle.js
+	 * @see office-js-api/Examples/{Editor}/ApiCore/Methods/GetCategory.js
 	 */
-	ApiCore.prototype.GetTitle = function () {
-		return this.Core.asc_getTitle();
+	ApiCore.prototype.GetCategory = function () {
+		return this.Core.asc_getCategory();
+	};
+
+	/**
+	 * Sets the document status.
+	 *
+	 * @memberof ApiCore
+	 * @typeofeditors ["CDE"]
+	 * @param {string} sStatus
+	 * @see office-js-api/Examples/{Editor}/ApiCore/Methods/SetContentStatus.js
+	 */
+	ApiCore.prototype.SetContentStatus = function (sStatus) {
+		this.Core.setContentStatus(sStatus);
+	};
+
+	/**
+	 * Returns the document status.
+	 *
+	 * @memberof ApiCore
+	 * @typeofeditors ["CDE"]
+	 * @returns {string}
+	 * @see office-js-api/Examples/{Editor}/ApiCore/Methods/GetContentStatus.js
+	 */
+	ApiCore.prototype.GetContentStatus = function () {
+		return this.Core.asc_getContentStatus();
+	};
+
+	/**
+	 * Sets the document creation date.
+	 *
+	 * @memberof ApiCore
+	 * @typeofeditors ["CDE"]
+	 * @param {string} sCreated
+	 * @see office-js-api/Examples/{Editor}/ApiCore/Methods/SetCreated.js
+	 */
+	ApiCore.prototype.SetCreated = function (sCreated) {
+		this.Core.setCreated(sCreated);
+	};
+
+	/**
+	 * Returns the document creation date.
+	 *
+	 * @memberof ApiCore
+	 * @typeofeditors ["CDE"]
+	 * @returns {string}
+	 * @see office-js-api/Examples/{Editor}/ApiCore/Methods/GetCreated.js
+	 */
+	ApiCore.prototype.GetCreated = function () {
+		return this.Core.asc_getCreated();
+	};
+
+	/**
+	 * Sets the document author.
+	 *
+	 * @memberof ApiCore
+	 * @typeofeditors ["CDE"]
+	 * @param {string} sCreator
+	 * @see office-js-api/Examples/{Editor}/ApiCore/Methods/SetCreator.js
+	 */
+	ApiCore.prototype.SetCreator = function (sCreator) {
+		this.Core.setCreator(sCreator);
+	};
+
+	/**
+	 * Returns the document author.
+	 *
+	 * @memberof ApiCore
+	 * @typeofeditors ["CDE"]
+	 * @returns {string}
+	 * @see office-js-api/Examples/{Editor}/ApiCore/Methods/GetCreator.js
+	 */
+	ApiCore.prototype.GetCreator = function () {
+		return this.Core.asc_getCreator();
+	};
+
+	/**
+	 * Sets the document description.
+	 *
+	 * @memberof ApiCore
+	 * @typeofeditors ["CDE"]
+	 * @param {string} sDescription
+	 * @see office-js-api/Examples/{Editor}/ApiCore/Methods/SetDescription.js
+	 */
+	ApiCore.prototype.SetDescription = function (sDescription) {
+		this.Core.setDescription(sDescription);
+	};
+
+	/**
+	 * Returns the document description.
+	 *
+	 * @memberof ApiCore
+	 * @typeofeditors ["CDE"]
+	 * @returns {string}
+	 * @see office-js-api/Examples/{Editor}/ApiCore/Methods/GetDescription.js
+	 */
+	ApiCore.prototype.GetDescription = function () {
+		return this.Core.asc_getDescription();
+	};
+
+	/**
+	 * Sets the document identifier.
+	 *
+	 * @memberof ApiCore
+	 * @typeofeditors ["CDE"]
+	 * @param {string} sIdentifier
+	 * @see office-js-api/Examples/{Editor}/ApiCore/Methods/SetIdentifier.js
+	 */
+	ApiCore.prototype.SetIdentifier = function (sIdentifier) {
+		this.Core.setIdentifier(sIdentifier);
+	};
+
+	/**
+	 * Returns the document identifier.
+	 *
+	 * @memberof ApiCore
+	 * @typeofeditors ["CDE"]
+	 * @returns {string}
+	 * @see office-js-api/Examples/{Editor}/ApiCore/Methods/GetIdentifier.js
+	 */
+	ApiCore.prototype.GetIdentifier = function () {
+		return this.Core.asc_getIdentifier();
 	};
 
 	/**
@@ -22892,51 +23012,123 @@
 	};
 
 	/**
-	 * Sets the document description.
+	 * Sets the document language.
 	 *
 	 * @memberof ApiCore
 	 * @typeofeditors ["CDE"]
-	 * @param {string} sDescription - The document description.
-	 * @see office-js-api/Examples/{Editor}/ApiCore/Methods/SetDescription.js
+	 * @param {string} sLanguage
+	 * @see office-js-api/Examples/{Editor}/ApiCore/Methods/SetLanguage.js
 	 */
-	ApiCore.prototype.SetDescription = function (sDescription) {
-		this.Core.setDescription(sDescription);
+	ApiCore.prototype.SetLanguage = function (sLanguage) {
+		this.Core.setLanguage(sLanguage);
 	};
 
 	/**
-	 * Returns the document description.
+	 * Returns the document language.
 	 *
 	 * @memberof ApiCore
 	 * @typeofeditors ["CDE"]
 	 * @returns {string}
-	 * @see office-js-api/Examples/{Editor}/ApiCore/Methods/GetDescription.js
+	 * @see office-js-api/Examples/{Editor}/ApiCore/Methods/GetLanguage.js
 	 */
-	ApiCore.prototype.GetDescription = function () {
-		return this.Core.asc_getDescription();
+	ApiCore.prototype.GetLanguage = function () {
+		return this.Core.asc_getLanguage();
 	};
 
 	/**
-	 * Sets the document author.
+	 * Sets the name of the user who last modified the document.
 	 *
 	 * @memberof ApiCore
 	 * @typeofeditors ["CDE"]
-	 * @param {string} sCreator - The document author.
-	 * @see office-js-api/Examples/{Editor}/ApiCore/Methods/SetAuthor.js
+	 * @param {string} sLastModifiedBy
+	 * @see office-js-api/Examples/{Editor}/ApiCore/Methods/SetLastModifiedBy.js
 	 */
-	ApiCore.prototype.SetCreator = function (sCreator) {
-		this.Core.setCreator(sCreator);
+	ApiCore.prototype.SetLastModifiedBy = function (sLastModifiedBy) {
+		this.Core.setLastModifiedBy(sLastModifiedBy);
 	};
 
 	/**
-	 * Returns the document author.
+	 * Returns the name of the user who last modified the document.
 	 *
 	 * @memberof ApiCore
 	 * @typeofeditors ["CDE"]
 	 * @returns {string}
-	 * @see office-js-api/Examples/{Editor}/ApiCore/Methods/GetCreator.js
+	 * @see office-js-api/Examples/{Editor}/ApiCore/Methods/GetLastModifiedBy.js
 	 */
-	ApiCore.prototype.GetCreator = function () {
-		return this.Core.asc_getCreator();
+	ApiCore.prototype.GetLastModifiedBy = function () {
+		return this.Core.asc_getLastModifiedBy();
+	};
+
+	/**
+	 * Sets the date when the document was last printed.
+	 *
+	 * @memberof ApiCore
+	 * @typeofeditors ["CDE"]
+	 * @param {string} sLastPrinted
+	 * @see office-js-api/Examples/{Editor}/ApiCore/Methods/SetLastPrinted.js
+	 */
+	ApiCore.prototype.SetLastPrinted = function (sLastPrinted) {
+		this.Core.setLastPrinted(sLastPrinted);
+	};
+
+	/**
+	 * Returns the date when the document was last printed.
+	 *
+	 * @memberof ApiCore
+	 * @typeofeditors ["CDE"]
+	 * @returns {string}
+	 * @see office-js-api/Examples/{Editor}/ApiCore/Methods/GetLastPrinted.js
+	 */
+	ApiCore.prototype.GetLastPrinted = function () {
+		return this.Core.asc_getLastPrinted();
+	};
+
+	/**
+	 * Sets the document modified date.
+	 *
+	 * @memberof ApiCore
+	 * @typeofeditors ["CDE"]
+	 * @param {string} sModified
+	 * @see office-js-api/Examples/{Editor}/ApiCore/Methods/SetModified.js
+	 */
+	ApiCore.prototype.SetModified = function (sModified) {
+		this.Core.setModified(sModified);
+	};
+
+	/**
+	 * Returns the document modified date.
+	 *
+	 * @memberof ApiCore
+	 * @typeofeditors ["CDE"]
+	 * @returns {string}
+	 * @see office-js-api/Examples/{Editor}/ApiCore/Methods/GetModified.js
+	 */
+	ApiCore.prototype.GetModified = function () {
+		return this.Core.asc_getModified();
+	};
+
+	/**
+	 * Sets the document revision.
+	 *
+	 * @memberof ApiCore
+	 * @typeofeditors ["CDE"]
+	 * @param {string} sRevision
+	 * @see office-js-api/Examples/{Editor}/ApiCore/Methods/SetRevision.js
+	 */
+	ApiCore.prototype.SetRevision = function (sRevision) {
+		this.Core.setRevision(sRevision);
+	};
+
+	/**
+	 * Returns the document revision.
+	 *
+	 * @memberof ApiCore
+	 * @typeofeditors ["CDE"]
+	 * @returns {string}
+	 * @see office-js-api/Examples/{Editor}/ApiCore/Methods/GetRevision.js
+	 */
+	ApiCore.prototype.GetRevision = function () {
+		return this.Core.asc_getRevision();
 	};
 
 	/**
@@ -22944,7 +23136,7 @@
 	 *
 	 * @memberof ApiCore
 	 * @typeofeditors ["CDE"]
-	 * @param {string} sSubject - The document subject.
+	 * @param {string} sSubject
 	 * @see office-js-api/Examples/{Editor}/ApiCore/Methods/SetSubject.js
 	 */
 	ApiCore.prototype.SetSubject = function (sSubject) {
@@ -22964,51 +23156,51 @@
 	};
 
 	/**
-	 * Sets the document status.
+	 * Sets the document title.
 	 *
 	 * @memberof ApiCore
 	 * @typeofeditors ["CDE"]
-	 * @param {string} sStatus - The document status.
-	 * @see office-js-api/Examples/{Editor}/ApiCore/Methods/SetStatus.js
+	 * @param {string} sTitle
+	 * @see office-js-api/Examples/{Editor}/ApiCore/Methods/SetTitle.js
 	 */
-	ApiCore.prototype.SetStatus = function (sStatus) {
-		this.Core.setStatus(sStatus);
+	ApiCore.prototype.SetTitle = function (sTitle) {
+		this.Core.setTitle(sTitle);
 	};
 
 	/**
-	 * Returns the document status.
+	 * Returns the document title.
 	 *
 	 * @memberof ApiCore
 	 * @typeofeditors ["CDE"]
 	 * @returns {string}
-	 * @see office-js-api/Examples/{Editor}/ApiCore/Methods/GetStatus.js
+	 * @see office-js-api/Examples/{Editor}/ApiCore/Methods/GetTitle.js
 	 */
-	ApiCore.prototype.GetStatus = function () {
-		return this.Core.asc_getContentStatus();
+	ApiCore.prototype.GetTitle = function () {
+		return this.Core.asc_getTitle();
 	};
 
 	/**
-	 * Sets the document category.
+	 * Sets the document version.
 	 *
 	 * @memberof ApiCore
 	 * @typeofeditors ["CDE"]
-	 * @param {string} sCategory - The document category.
-	 * @see office-js-api/Examples/{Editor}/ApiCore/Methods/SetCategory.js
+	 * @param {string} sVersion
+	 * @see office-js-api/Examples/{Editor}/ApiCore/Methods/SetVersion.js
 	 */
-	ApiCore.prototype.SetCategory = function (sCategory) {
-		this.Core.setCategory(sCategory);
+	ApiCore.prototype.SetVersion = function (sVersion) {
+		this.Core.setVersion(sVersion);
 	};
 
 	/**
-	 * Returns the document category.
+	 * Returns the document version.
 	 *
 	 * @memberof ApiCore
 	 * @typeofeditors ["CDE"]
 	 * @returns {string}
-	 * @see office-js-api/Examples/{Editor}/ApiCore/Methods/GetCategory.js
+	 * @see office-js-api/Examples/{Editor}/ApiCore/Methods/GetVersion.js
 	 */
-	ApiCore.prototype.GetCategory = function () {
-		return this.Core.asc_getCategory();
+	ApiCore.prototype.GetVersion = function () {
+		return this.Core.asc_getVersion();
 	};
 
 	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -23976,6 +24168,36 @@
 	ApiChartSeries.prototype["ChangeChartType"]   =  ApiChartSeries.prototype.ChangeChartType;
 	ApiChartSeries.prototype["GetChartType"]      =  ApiChartSeries.prototype.GetChartType;
 
+	ApiCore.prototype["SetCategory"] = ApiCore.prototype.SetCategory;
+	ApiCore.prototype["GetCategory"] = ApiCore.prototype.GetCategory;
+	ApiCore.prototype["SetContentStatus"] = ApiCore.prototype.SetContentStatus;
+	ApiCore.prototype["GetContentStatus"] = ApiCore.prototype.GetContentStatus;
+	ApiCore.prototype["SetCreated"] = ApiCore.prototype.SetCreated;
+	ApiCore.prototype["GetCreated"] = ApiCore.prototype.GetCreated;
+	ApiCore.prototype["SetCreator"] = ApiCore.prototype.SetCreator;
+	ApiCore.prototype["GetCreator"] = ApiCore.prototype.GetCreator;
+	ApiCore.prototype["SetDescription"] = ApiCore.prototype.SetDescription;
+	ApiCore.prototype["GetDescription"] = ApiCore.prototype.GetDescription;
+	ApiCore.prototype["SetIdentifier"] = ApiCore.prototype.SetIdentifier;
+	ApiCore.prototype["GetIdentifier"] = ApiCore.prototype.GetIdentifier;
+	ApiCore.prototype["SetKeywords"] = ApiCore.prototype.SetKeywords;
+	ApiCore.prototype["GetKeywords"] = ApiCore.prototype.GetKeywords;
+	ApiCore.prototype["SetLanguage"] = ApiCore.prototype.SetLanguage;
+	ApiCore.prototype["GetLanguage"] = ApiCore.prototype.GetLanguage;
+	ApiCore.prototype["SetLastModifiedBy"] = ApiCore.prototype.SetLastModifiedBy;
+	ApiCore.prototype["GetLastModifiedBy"] = ApiCore.prototype.GetLastModifiedBy;
+	ApiCore.prototype["SetLastPrinted"] = ApiCore.prototype.SetLastPrinted;
+	ApiCore.prototype["GetLastPrinted"] = ApiCore.prototype.GetLastPrinted;
+	ApiCore.prototype["SetModified"] = ApiCore.prototype.SetModified;
+	ApiCore.prototype["GetModified"] = ApiCore.prototype.GetModified;
+	ApiCore.prototype["SetRevision"] = ApiCore.prototype.SetRevision;
+	ApiCore.prototype["GetRevision"] = ApiCore.prototype.GetRevision;
+	ApiCore.prototype["SetSubject"] = ApiCore.prototype.SetSubject;
+	ApiCore.prototype["GetSubject"] = ApiCore.prototype.GetSubject;
+	ApiCore.prototype["SetTitle"] = ApiCore.prototype.SetTitle;
+	ApiCore.prototype["GetTitle"] = ApiCore.prototype.GetTitle;
+	ApiCore.prototype["SetVersion"] = ApiCore.prototype.SetVersion;
+	ApiCore.prototype["GetVersion"] = ApiCore.prototype.GetVersion;
 
 	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	// Export for internal usage
