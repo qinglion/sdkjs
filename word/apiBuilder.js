@@ -14381,7 +14381,7 @@
 	{
 		let textPr = this.TextPr;
 		let logicDocument = private_GetLogicDocument();
-		if (logicDocument)
+		if (logicDocument && logicDocument.IsDocumentEditor())
 		{
 			textPr = textPr.Copy();
 			textPr.ReplaceThemeFonts(logicDocument.GetTheme().themeElements.fontScheme);
@@ -14397,7 +14397,7 @@
 		else if ("cs" === fontSlot)
 			fs = AscWord.fontslot_CS;
 		
-		return textPr.GetFontInfo(fs).Name;
+		return textPr.GetFontFamily(fs);
 	};
 
 	/**
@@ -25883,7 +25883,7 @@
 
 	function private_GetLogicDocument()
 	{
-		return editor.WordControl.m_oLogicDocument;
+		return editor && editor.WordControl ? editor.WordControl.m_oLogicDocument : null;
 	}
 	
 	function LoadFont(fontName)
