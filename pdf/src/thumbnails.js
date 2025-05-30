@@ -1200,7 +1200,9 @@
             }
     
             // Draw additional copies (background pages)
-            for (let offset of offsets) {
+            for (let i = 0; i < offsets.length; i++) {
+                let offset = offsets[i];
+
                 this.dragCtx.fillStyle = PageStyle.emptyColor;
                 this.dragCtx.fillRect(offset.x, offset.y, w, h);
                 this.dragCtx.strokeRect(offset.x, offset.y, w, h);

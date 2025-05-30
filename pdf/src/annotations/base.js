@@ -571,8 +571,12 @@
     CAnnotationBase.prototype.SetDrawFromStream = function(bFromStream) {
         let oDoc = Asc.editor.getPDFDoc();
 
-        if (this.IsChanged() && this.IsNeedDrawFromStream() && false == bFromStream) {
-            oDoc.History.Add(new CChangesPDFAnnotChangedView(this, this._bDrawFromStream, bFromStream));
+        if (false == this.IsChanged()) {
+            this._prevDrawFromStreamState = this._bDrawFromStream;
+        }
+
+        if (this._prevDrawFromStreamState) {
+            oDoc.History.Add(new CChangesPDFAnnotChangedView(this, this._prevDrawFromStreamState, bFromStream));
         }
 
         this._bDrawFromStream = bFromStream;

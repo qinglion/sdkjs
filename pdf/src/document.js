@@ -5291,7 +5291,14 @@ var CPresentation = CPresentation || function(){};
         let oThumbnails = this.Viewer.thumbnails;
         if (oThumbnails && oThumbnails.isInFocus) {
             if (oSelContent.MergePagesInfo && oSelContent.MergePagesInfo.binaryData) {
-                let nInsertPos = Math.min.apply(null, oThumbnails.selectedPages) + 1;
+                let nInsertPos;
+                if (true === Asc.editor.pastePageBefore) {
+                    nInsertPos = Math.min.apply(null, oThumbnails.selectedPages);
+                    delete Asc.editor.pastePageBefore;
+                }
+                else {
+                    nInsertPos = Math.max.apply(null, oThumbnails.selectedPages) + 1;
+                }
                 
                 this.MergePagesBinary(nInsertPos, oSelContent.MergePagesInfo.binaryData);
 

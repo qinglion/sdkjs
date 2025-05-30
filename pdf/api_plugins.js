@@ -188,8 +188,7 @@
 	 * @returns {comment[]} - An array of comment objects containing the comment data.
 	 * @see office-js-api/Examples/Plugins/PDF/Api/Methods/GetAllComments.js
 	 */
-	Api.prototype["pluginMethod_GetAllComments"] = function()
-	{
+	Api.prototype["pluginMethod_GetAllComments"] = function() {
 		let oDoc = this.getPDFDoc();
 		if (!oDoc)
 			return;
@@ -197,8 +196,9 @@
 		let arrResult = [];
 
 		let aAnnots = oDoc.annots;
-		for (let annot of aAnnots)
-		{
+		for (let i = 0; i < aAnnots.length; i++) {
+			let annot = aAnnots[i];
+
 			let oAscCommData = annot.GetAscCommentData();
 			let oCommData = oAscCommData ? new AscCommon.CCommentData() : undefined;
 			oCommData && oCommData.Read_FromAscCommentData(oAscCommData);
