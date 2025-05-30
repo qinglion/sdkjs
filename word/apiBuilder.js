@@ -2035,10 +2035,14 @@
 		}
 		else
 		{
-			var Unifill        = new AscFormat.CUniFill();
-			Unifill.fill       = new AscFormat.CSolidFill();
-			Unifill.fill.color = AscFormat.CorrectUniColor(color, Unifill.fill.color, 1);
-			ParaTextPr = new AscCommonWord.ParaTextPr({Unifill : Unifill});
+			ParaTextPr = new AscCommonWord.ParaTextPr({
+				Color      : {
+					Auto : false,
+					r    : r,
+					g    : g,
+					b    : b
+				}, Unifill : undefined
+			});
 			Document.AddToParagraph(ParaTextPr);
 		}
 
@@ -9700,10 +9704,15 @@
 		}
 		else
 		{
-			var Unifill        = new AscFormat.CUniFill();
-			Unifill.fill       = new AscFormat.CSolidFill();
-			Unifill.fill.color = AscFormat.CorrectUniColor(color, Unifill.fill.color, 1);
-			this.Paragraph.Add(new AscCommonWord.ParaTextPr({Unifill : Unifill}));
+			this.Paragraph.Add(new AscCommonWord.ParaTextPr({
+				Color      : {
+					Auto : false,
+					r    : r,
+					g    : g,
+					b    : b
+				}, Unifill : undefined
+			}));
+			
 		}
 		this.Paragraph.SetApplyToAll(false);
 		
