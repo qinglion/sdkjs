@@ -7098,34 +7098,23 @@ $(function () {
 
 	});
 
-
-	QUnit.test("Test: \"ROUNDDOWN(31415.92654,-2)\"", function (assert) {
-		oParser = new parserFormula("ROUNDDOWN(31415.92654,-2)", "A1", ws);
-		assert.ok(oParser.parse());
-		assert.strictEqual(oParser.calculate().getValue(), 31400);
-	});
-
-	QUnit.test("Test: \"ROUNDDOWN(-3.14159,1)\"", function (assert) {
-		oParser = new parserFormula("ROUNDDOWN(-3.14159,1)", "A1", ws);
-		assert.ok(oParser.parse());
-		assert.strictEqual(oParser.calculate().getValue(), -3.1);
-	});
-
-	QUnit.test("Test: \"ROUNDDOWN(3.14159,3)\"", function (assert) {
-		oParser = new parserFormula("ROUNDDOWN(3.14159,3)", "A1", ws);
-		assert.ok(oParser.parse());
-		assert.strictEqual(oParser.calculate().getValue(), 3.141);
-	});
-
-	QUnit.test("Test: \"ROUNDDOWN(3.2,0)\"", function (assert) {
+	QUnit.test("Test: \"ROUNDDOWN\"", function (assert) {
 		oParser = new parserFormula("ROUNDDOWN(3.2,0)", "A1", ws);
 		assert.ok(oParser.parse());
 		assert.strictEqual(oParser.calculate().getValue(), 3);
 
-		testArrayFormula2(assert, "ROUNDDOWN", 2, 2);
-	});
+		oParser = new parserFormula("ROUNDDOWN(3.14159,3)", "A1", ws);
+		assert.ok(oParser.parse());
+		assert.strictEqual(oParser.calculate().getValue(), 3.141);
 
-	QUnit.test("Test: \"ROUNDDOWN\"", function (assert) {
+		oParser = new parserFormula("ROUNDDOWN(-3.14159,1)", "A1", ws);
+		assert.ok(oParser.parse());
+		assert.strictEqual(oParser.calculate().getValue(), -3.1);
+
+		oParser = new parserFormula("ROUNDDOWN(31415.92654,-2)", "A1", ws);
+		assert.ok(oParser.parse());
+		assert.strictEqual(oParser.calculate().getValue(), 31400);
+
 		oParser = new parserFormula("ROUNDDOWN(123.431,0.1)", "A1", ws);
 		assert.ok(oParser.parse());
 		assert.strictEqual(oParser.calculate().getValue() - 0, 123);
@@ -7169,6 +7158,48 @@ $(function () {
 		oParser = new parserFormula("ROUNDDOWN(-50.55,0.1)", "A1", ws);
 		assert.ok(oParser.parse());
 		assert.strictEqual(oParser.calculate().getValue(), -50);
+
+		oParser = new parserFormula("ROUNDDOWN(10000000000,3)", "A1", ws);
+		assert.ok(oParser.parse());
+		assert.strictEqual(oParser.calculate().getValue(), 10000000000);
+
+		oParser = new parserFormula("ROUNDDOWN(10000000000,-3)", "A1", ws);
+		assert.ok(oParser.parse());
+		assert.strictEqual(oParser.calculate().getValue(), 10000000000);
+
+		oParser = new parserFormula("ROUNDDOWN(12345678901,-3)", "A1", ws);
+		assert.ok(oParser.parse());
+		assert.strictEqual(oParser.calculate().getValue(), 12345678000);
+
+		// Tests for negative numbers with fractional second argument
+		oParser = new parserFormula("ROUNDDOWN(-123.456, 1.9)", "A1", ws);
+		assert.ok(oParser.parse());
+		assert.strictEqual(oParser.calculate().getValue(), -123.4);
+
+		oParser = new parserFormula("ROUNDDOWN(-123.456, -1.9)", "A1", ws);
+		assert.ok(oParser.parse());
+		assert.strictEqual(oParser.calculate().getValue(), -120);
+
+		// More tests with negative second argument
+		oParser = new parserFormula("ROUNDDOWN(5555.55, -2)", "A1", ws);
+		assert.ok(oParser.parse());
+		assert.strictEqual(oParser.calculate().getValue(), 5500);
+
+		oParser = new parserFormula("ROUNDDOWN(-5555.55, -2)", "A1", ws);
+		assert.ok(oParser.parse());
+		assert.strictEqual(oParser.calculate().getValue(), -5500);
+
+		// Tests with decimal places in second argument
+		oParser = new parserFormula("ROUNDDOWN(123.456, 1.1)", "A1", ws);
+		assert.ok(oParser.parse());
+		assert.strictEqual(oParser.calculate().getValue(), 123.4);
+
+		oParser = new parserFormula("ROUNDDOWN(123.456, 1.9)", "A1", ws);
+		assert.ok(oParser.parse());
+		assert.strictEqual(oParser.calculate().getValue(), 123.4);
+
+
+		testArrayFormula2(assert, "ROUNDDOWN", 2, 2);
 	});
 
 
