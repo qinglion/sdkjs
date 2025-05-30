@@ -309,6 +309,7 @@
         CalcPr: 15,
         Connections: 16,
         AppName: 17,
+        SlicerCaches: 18,
         SlicerCachesExt: 19,
         SlicerCache: 20,
         WorkbookProtection: 21,
