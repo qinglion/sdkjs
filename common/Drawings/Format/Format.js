@@ -14023,10 +14023,12 @@
 			coreCopy.asc_putContentStatus(sContentStatus);
 			this.setProps(coreCopy);
 		};
-		CCore.prototype.setCreated = function (sCreated) {
-			const coreCopy = this.copy();
-			coreCopy.asc_putCreated(sCreated);
-			this.setProps(coreCopy);
+		CCore.prototype.setCreated = function (oCreatedDate) {
+			if (oCreatedDate instanceof Date && !isNaN(oCreatedDate)) {
+				const coreCopy = this.copy();
+				coreCopy.asc_putCreated(oCreatedDate);
+				this.setProps(coreCopy);
+			}
 		};
 		CCore.prototype.setCreator = function (sCreator) {
 			const coreCopy = this.copy();
@@ -14058,15 +14060,19 @@
 			coreCopy.asc_putLastModifiedBy(sLastModifiedBy);
 			this.setProps(coreCopy);
 		};
-		CCore.prototype.setLastPrinted = function (sLastPrinted) {
-			const coreCopy = this.copy();
-			coreCopy.asc_putLastPrinted(sLastPrinted);
-			this.setProps(coreCopy);
+		CCore.prototype.setLastPrinted = function (oLastPrintedDate) {
+			if (oLastPrintedDate instanceof Date && !isNaN(oLastPrintedDate)) {
+				const coreCopy = this.copy();
+				coreCopy.asc_putLastPrinted(oLastPrintedDate);
+				this.setProps(coreCopy);
+			}
 		};
-		CCore.prototype.setModified = function (sModified) {
-			const coreCopy = this.copy();
-			coreCopy.asc_putModified(sModified);
-			this.setProps(coreCopy);
+		CCore.prototype.setModified = function (oModifiedDate) {
+			if (oModifiedDate instanceof Date && !isNaN(oModifiedDate)) {
+				const coreCopy = this.copy();
+				coreCopy.asc_putModified(oModifiedDate);
+				this.setProps(coreCopy);
+			}
 		};
 		CCore.prototype.setRevision = function (sRevision) {
 			const coreCopy = this.copy();
