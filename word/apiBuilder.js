@@ -3771,6 +3771,14 @@
 		this.Core = oCore;
 	}
 
+	/**
+	 * Class representing custom properties of the document.
+	 * @constructor
+	 */
+	function ApiCustomProperties(oCustomProperties) {
+		this.CustomProperties = oCustomProperties;
+	};
+
 
 	/**
 	 * Twentieths of a point (equivalent to 1/1440th of an inch).
@@ -8091,6 +8099,18 @@
 	 */
 	ApiDocument.prototype.GetCore = function () {
 		return new ApiCore(this.Document.Core);
+	};
+
+	/**
+	 * Retrieves the custom properties of the document.
+	 *
+	 * @memberof ApiDocument
+	 * @returns {ApiCustomProperties}
+	 * @typeofeditors ["CDE"]
+	 * @see office-js-api/Examples/{Editor}/ApiDocument/Methods/GetCustomProperties.js
+	 */
+	ApiDocument.prototype.GetCustomProperties = function () {
+		return new ApiCustomProperties(this.Document.CustomProperties);
 	};
 
 	//------------------------------------------------------------------------------------------------------------------
@@ -22895,11 +22915,11 @@
 	 *
 	 * @memberof ApiCore
 	 * @typeofeditors ["CDE"]
-	 * @param {string} sCreated
+	 * @param {Date} oCreated
 	 * @see office-js-api/Examples/{Editor}/ApiCore/Methods/SetCreated.js
 	 */
-	ApiCore.prototype.SetCreated = function (sCreated) {
-		this.Core.setCreated(sCreated);
+	ApiCore.prototype.SetCreated = function (oCreated) {
+		this.Core.setCreated(oCreated);
 	};
 
 	/**
@@ -22907,7 +22927,7 @@
 	 *
 	 * @memberof ApiCore
 	 * @typeofeditors ["CDE"]
-	 * @returns {string}
+	 * @returns {Date}
 	 * @see office-js-api/Examples/{Editor}/ApiCore/Methods/GetCreated.js
 	 */
 	ApiCore.prototype.GetCreated = function () {
@@ -23064,11 +23084,11 @@
 	 *
 	 * @memberof ApiCore
 	 * @typeofeditors ["CDE"]
-	 * @param {string} sLastPrinted
+	 * @param {Date} oLastPrinted
 	 * @see office-js-api/Examples/{Editor}/ApiCore/Methods/SetLastPrinted.js
 	 */
-	ApiCore.prototype.SetLastPrinted = function (sLastPrinted) {
-		this.Core.setLastPrinted(sLastPrinted);
+	ApiCore.prototype.SetLastPrinted = function (oLastPrinted) {
+		this.Core.setLastPrinted(oLastPrinted);
 	};
 
 	/**
@@ -23076,7 +23096,7 @@
 	 *
 	 * @memberof ApiCore
 	 * @typeofeditors ["CDE"]
-	 * @returns {string}
+	 * @returns {Date}
 	 * @see office-js-api/Examples/{Editor}/ApiCore/Methods/GetLastPrinted.js
 	 */
 	ApiCore.prototype.GetLastPrinted = function () {
@@ -23088,11 +23108,11 @@
 	 *
 	 * @memberof ApiCore
 	 * @typeofeditors ["CDE"]
-	 * @param {string} sModified
+	 * @param {Date} oModified
 	 * @see office-js-api/Examples/{Editor}/ApiCore/Methods/SetModified.js
 	 */
-	ApiCore.prototype.SetModified = function (sModified) {
-		this.Core.setModified(sModified);
+	ApiCore.prototype.SetModified = function (oModified) {
+		this.Core.setModified(oModified);
 	};
 
 	/**
@@ -23100,7 +23120,7 @@
 	 *
 	 * @memberof ApiCore
 	 * @typeofeditors ["CDE"]
-	 * @returns {string}
+	 * @returns {Date}
 	 * @see office-js-api/Examples/{Editor}/ApiCore/Methods/GetModified.js
 	 */
 	ApiCore.prototype.GetModified = function () {
@@ -23201,6 +23221,80 @@
 	 */
 	ApiCore.prototype.GetVersion = function () {
 		return this.Core.asc_getVersion();
+	};
+
+	//------------------------------------------------------------------------------------------------------------------
+	//
+	// ApiCustomProperties
+	//
+	//------------------------------------------------------------------------------------------------------------------
+
+	/**
+	 * Returns a type of the ApiCustomProperties class.
+	 *
+	 * @memberof ApiCustomProperties
+	 * @typeofeditors ["CDE"]
+	 * @returns {"customProperties"}
+	 * @see office-js-api/Examples/{Editor}/ApiCustomProperties/Methods/GetClassType.js
+	 */
+	ApiCustomProperties.prototype.GetClassType = function () {
+		return 'customProperties';
+	};
+
+	/**
+	 * Adds a custom string property to the document.
+	 *
+	 * @memberof ApiCustomProperties
+	 * @typeofeditors ["CDE"]
+	 * @param {string} setName
+	 * @param {string} sValue
+	 * @see office-js-api/Examples/{Editor}/ApiCustomProperties/Methods/AddProperty.js
+	 */
+	ApiCustomProperties.prototype.AddStringProperty = function (sName, sValue) {
+		return this.CustomProperties.AddProperty(sName, AscCommon.c_oVariantTypes.vtLpwstr, '' + sValue);
+	};
+
+	/**
+	 * Adds a custom number property to the document.
+	 *
+	 * @memberof ApiCustomProperties
+	 * @typeofeditors ["CDE"]
+	 * @param {string} sName
+	 * @param {number} nValue
+	 * @see office-js-api/Examples/{Editor}/ApiCustomProperties/Methods/AddNumberProperty.js
+	 */
+	ApiCustomProperties.prototype.AddNumberProperty = function (sName, nValue) {
+		Number.isInteger(nValue)
+			? this.CustomProperties.AddProperty(sName, AscCommon.c_oVariantTypes.vtI4, parseInt(nValue))
+			: this.CustomProperties.AddProperty(sName, AscCommon.c_oVariantTypes.vtR8, parseFloat(nValue));
+	};
+
+	/**
+	 * Adds a custom date property to the document.
+	 *
+	 * @memberof ApiCustomProperties
+	 * @typeofeditors ["CDE"]
+	 * @param {string} sName
+	 * @param {Date} oValue
+	 * @see office-js-api/Examples/{Editor}/ApiCustomProperties/Methods/AddDateProperty.js
+	 */
+	ApiCustomProperties.prototype.AddDateProperty = function (sName, oValue) {
+		if (oValue instanceof Date && !isNaN(oValue.getTime())) {
+			this.CustomProperties.AddProperty(sName, AscCommon.c_oVariantTypes.vtFiletime, oValue);
+		}
+	};
+
+	/**
+	 * Adds a custom boolean property to the document.
+	 *
+	 * @memberof ApiCustomProperties
+	 * @typeofeditors ["CDE"]
+	 * @param {string} sName
+	 * @param {boolean} bValue
+	 * @see office-js-api/Examples/{Editor}/ApiCustomProperties/Methods/AddBoolProperty.js
+	 */
+	ApiCustomProperties.prototype.AddBoolProperty = function (sName, bValue) {
+		this.CustomProperties.AddProperty(sName, AscCommon.c_oVariantTypes.vtBool, Boolean(bValue));
 	};
 
 	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
