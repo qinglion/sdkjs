@@ -89,7 +89,7 @@
 
 		let oViewer		= this.DocumentRenderer;
 		let oFile		= oViewer.file;
-		let nPt2Px		= g_dKoef_pt_to_mm * g_dKoef_mm_to_pix;
+		let nPt2Px		= AscCommonWord.g_dKoef_pt_to_mm * AscCommonWord.g_dKoef_mm_to_pix;
 
 		let nWidthPx	= oFile.pages[nPage].W * nPt2Px;
 		let nHeightPx	= oFile.pages[nPage].H * nPt2Px;
