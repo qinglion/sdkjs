@@ -139,9 +139,9 @@
                 let sTargetSrc;
                 if (nAPType != AscPDF.APPEARANCE_TYPES.rollover && nAPType != AscPDF.APPEARANCE_TYPES.mouseDown) {
                     sTargetSrc = oImgData.src;
+                    field.SetImage(sTargetSrc);
                 }
-    
-                field.SetImage(sTargetSrc);
+                
                 if (undefined == nAPType) {
                     field.SetImageRasterId('', AscPDF.APPEARANCE_TYPES.rollover);
                     field.SetImageRasterId('', AscPDF.APPEARANCE_TYPES.mouseDown);
@@ -2144,24 +2144,24 @@
         //     WriteImage.call(this, memory, AscPDF.APPEARANCE_TYPES.normal);
             
         // }
-        // if (this.IsImageChanged(AscPDF.APPEARANCE_TYPES.mouseDown)) {
-        //     nButtonFlags |= (1 << 6);
-        //     WriteImage.call(this, memory, AscPDF.APPEARANCE_TYPES.mouseDown);
-        // }
         // if (this.IsImageChanged(AscPDF.APPEARANCE_TYPES.rollover)) {
-        //     nButtonFlags |= (1 << 7);
+        //     nButtonFlags |= (1 << 6);
         //     WriteImage.call(this, memory, AscPDF.APPEARANCE_TYPES.rollover);
+        // }
+        // if (this.IsImageChanged(AscPDF.APPEARANCE_TYPES.mouseDown)) {
+        //     nButtonFlags |= (1 << 7);
+        //     WriteImage.call(this, memory, AscPDF.APPEARANCE_TYPES.mouseDown);
         // }
 
         nButtonFlags |= (1 << 5);
         WriteImage.call(this, memory, AscPDF.APPEARANCE_TYPES.normal);
 
         nButtonFlags |= (1 << 6);
-        WriteImage.call(this, memory, AscPDF.APPEARANCE_TYPES.mouseDown);
-
-        nButtonFlags |= (1 << 7);
         WriteImage.call(this, memory, AscPDF.APPEARANCE_TYPES.rollover);
         
+        nButtonFlags |= (1 << 7);
+        WriteImage.call(this, memory, AscPDF.APPEARANCE_TYPES.mouseDown);
+
         let nEndPos = memory.GetCurPosition();
 
         // запись флагов
