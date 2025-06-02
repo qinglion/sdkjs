@@ -75,9 +75,9 @@
         AscCommon.History.EndNoHistoryMode();
 
         this._imgData = {
-            normal:     undefined,
-            mouseDown:  undefined,
-            rollover:   undefined,
+            normal:     "",
+            mouseDown:  "",
+            rollover:   "",
 
             // регистрируем что картинки изменились, нужно при записи, чтобы не писать исходные картинки снова
             changedInfo: {
@@ -2138,21 +2138,30 @@
                 memory.WriteLong(nExistIdx);
         }
 
-        // запись картинок. добавляем в уникальный массив, далее пишем картинки на уровне родителей
-        if (this.IsImageChanged(AscPDF.APPEARANCE_TYPES.normal)) {
-            nButtonFlags |= (1 << 5);
-            WriteImage.call(this, memory, AscPDF.APPEARANCE_TYPES.normal);
+        // not supported in server side now
+        // if (this.IsImageChanged(AscPDF.APPEARANCE_TYPES.normal)) {
+        //     nButtonFlags |= (1 << 5);
+        //     WriteImage.call(this, memory, AscPDF.APPEARANCE_TYPES.normal);
             
-        }
-        if (this.IsImageChanged(AscPDF.APPEARANCE_TYPES.mouseDown)) {
-            nButtonFlags |= (1 << 6);
-            WriteImage.call(this, memory, AscPDF.APPEARANCE_TYPES.mouseDown);
-        }
-        if (this.IsImageChanged(AscPDF.APPEARANCE_TYPES.rollover)) {
-            nButtonFlags |= (1 << 7);
-            WriteImage.call(this, memory, AscPDF.APPEARANCE_TYPES.rollover);
-        }
+        // }
+        // if (this.IsImageChanged(AscPDF.APPEARANCE_TYPES.mouseDown)) {
+        //     nButtonFlags |= (1 << 6);
+        //     WriteImage.call(this, memory, AscPDF.APPEARANCE_TYPES.mouseDown);
+        // }
+        // if (this.IsImageChanged(AscPDF.APPEARANCE_TYPES.rollover)) {
+        //     nButtonFlags |= (1 << 7);
+        //     WriteImage.call(this, memory, AscPDF.APPEARANCE_TYPES.rollover);
+        // }
 
+        nButtonFlags |= (1 << 5);
+        WriteImage.call(this, memory, AscPDF.APPEARANCE_TYPES.normal);
+
+        nButtonFlags |= (1 << 6);
+        WriteImage.call(this, memory, AscPDF.APPEARANCE_TYPES.mouseDown);
+
+        nButtonFlags |= (1 << 7);
+        WriteImage.call(this, memory, AscPDF.APPEARANCE_TYPES.rollover);
+        
         let nEndPos = memory.GetCurPosition();
 
         // запись флагов
