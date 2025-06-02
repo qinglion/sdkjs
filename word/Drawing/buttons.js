@@ -87,6 +87,15 @@
 			wordControl.StartUpdateOverlay();
 			wordControl.OnUpdateOverlay();
 			wordControl.EndUpdateOverlay();
+			
+			// TODO: Пока временно сделаем так, в будущем надо отделить загрузку и обновление картинок, которые
+			//       рисуются не на оверлее
+			let drawingDocument = wordControl.m_oDrawingDocument;
+			if (drawingDocument)
+			{
+				drawingDocument.ClearCachePages();
+				drawingDocument.FirePaint();
+			}
 		}
 	};
 	StorageBaseImageCtrl.prototype.resize = function()
