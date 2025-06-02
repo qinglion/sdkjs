@@ -604,8 +604,8 @@ CInlineLevelSdt.prototype.DrawSignatureSign = function(graphics)
 	if (!innerDrawings.length)
 		return;
 	
-	let boundsW = innerDrawings[0].GetWidth();
-	let boundsH = innerDrawings[0].GetHeight();
+	let boundsW = innerDrawings[0].getExtX();
+	let boundsH = innerDrawings[0].getExtY();
 	
 	let drawingDocument = logicDocument.getDrawingDocument();
 	let icons = drawingDocument.contentControls.icons;
@@ -658,7 +658,7 @@ CInlineLevelSdt.prototype.DrawSignatureSign = function(graphics)
 		{
 			let contentBounds = docContent.GetPageBounds(0);
 			let contentH = contentBounds.Bottom - contentBounds.Top;
-			docContent.Shift(0, offset_mm + imageW_mm + gap, (boundsH - contentH) >> 1);
+			docContent.Shift(0, offset_mm + imageW_mm + gap, (boundsH - contentH) / 2);
 			docContent.Set_ClipInfo(0, clip_offset, boundsW - 2 * clip_offset, clip_offset, boundsH - 2 * clip_offset);
 
 			docContent.Draw(0, graphics);
@@ -675,7 +675,7 @@ CInlineLevelSdt.prototype.DrawSignatureSign = function(graphics)
 			
 			let imageX = boundsW / 2 - (contentW + offset_mm + imageW_mm) / 2;
 			
-			docContent.Shift(0, imageX + imageW_mm + gap - (docContentW - contentW) / 2, (boundsH - contentH) >> 1);
+			docContent.Shift(0, imageX + imageW_mm + gap - (docContentW - contentW) / 2, (boundsH - contentH) / 2);
 			docContent.Set_ClipInfo(0, clip_offset, boundsW - 2 * clip_offset, clip_offset, boundsH - 2 * clip_offset);
 			docContent.Draw(0, graphics);
 			
