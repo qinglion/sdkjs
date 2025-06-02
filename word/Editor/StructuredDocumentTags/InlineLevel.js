@@ -600,12 +600,12 @@ CInlineLevelSdt.prototype.DrawSignatureSign = function(graphics)
 	
 	let _t = this;
 	
-	let innerDrawings = this.GetAllDrawingObjects();
-	if (!innerDrawings.length)
+	let parentShape = this.Paragraph && this.Paragraph.Parent ? this.Paragraph.Parent.Is_DrawingShape(true) : null;
+	if (!parentShape)
 		return;
 	
-	let boundsW = innerDrawings[0].getExtX();
-	let boundsH = innerDrawings[0].getExtY();
+	let boundsW = parentShape.getXfrmExtX();
+	let boundsH = parentShape.getXfrmExtY();
 	
 	let drawingDocument = logicDocument.getDrawingDocument();
 	let icons = drawingDocument.contentControls.icons;
