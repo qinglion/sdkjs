@@ -622,12 +622,12 @@ CInlineLevelSdt.prototype.DrawSignatureSign = function(graphics)
 		
 		const rPR = AscCommon.AscBrowser.retinaPixelRatio;
 		const offset_px = 10 * Math.round(rPR);
-		const offset_mm = offset_px * g_dKoef_pix_to_mm / zoomCoeff;
+		const offset_mm = offset_px * AscCommon.g_dKoef_pix_to_mm / zoomCoeff;
 		const gap = offset_mm / 2;
-		const clip_offset = Math.round(rPR) * g_dKoef_pix_to_mm / zoomCoeff;
+		const clip_offset = Math.round(rPR) * AscCommon.g_dKoef_pix_to_mm / zoomCoeff;
 		
-		let imageH_mm = imageH_px * g_dKoef_pix_to_mm / zoomCoeff;
-		let imageW_mm = imageW_px * g_dKoef_pix_to_mm / zoomCoeff;
+		let imageH_mm = imageH_px * AscCommon.g_dKoef_pix_to_mm / zoomCoeff;
+		let imageW_mm = imageW_px * AscCommon.g_dKoef_pix_to_mm / zoomCoeff;
 		
 		
 		let docContent = new AscWord.CDocumentContent();
