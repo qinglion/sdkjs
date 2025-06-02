@@ -1156,7 +1156,8 @@
 		Toc : 1,
 		Image : 2,
 		Combo : 3,
-		Date : 4
+		Date : 4,
+		Signature : 5
 	};
 
 	var exportObj = AscCommon.CCButtonType;
@@ -1165,6 +1166,7 @@
 	exportObj["Toc"] = exportObj.Toc;
 	exportObj["Combo"] = exportObj.Combo;
 	exportObj["Date"] = exportObj.Date;
+	exportObj["Signature"] = exportObj.Signature;
 
 	AscCommon.ContentControlTrack = {
 		Hover : 0,
@@ -2103,6 +2105,7 @@
 		this.icons = new CCIcons();
 		this.icons.register(AscCommon.CCButtonType.Toc, "toc");
 		this.icons.register(AscCommon.CCButtonType.Image, "img");
+		this.icons.register(AscCommon.CCButtonType.Signature, "signature")
 		this.icons.generateComboImages();
 
 		this.ContentControlObjects = [];

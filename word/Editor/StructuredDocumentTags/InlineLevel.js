@@ -600,11 +600,32 @@ CInlineLevelSdt.prototype.DrawSignatureSign = function(graphics)
 	
 	let _t = this;
 	let bounds = this.Bounds[0];
+	
+	let drawingDocument = logicDocument.getDrawingDocument();
+	let icons = drawingDocument.contentControls.icons;
+	
+	
 	AscCommon.ExecuteNoHistory(function() {
+		let intGrid = graphics.GetIntegerGrid();
+		graphics.SetIntegerGrid(true);
+		
+		let zoomCoeff = (drawingDocument.m_oWordControl.m_nZoomValue * 1.0 / 100);
+		
+		const imageH_px = 20;
+		const imageW_px = 40;
+		
+		const rPR = AscCommon.AscBrowser.retinaPixelRatio;
+		const offset_px = 10 * Math.round(rPR);
+		const offset_mm = offset_px * g_dKoef_pix_to_mm / zoomCoeff;
+		
+		let imageH_mm = imageH_px * g_dKoef_pix_to_mm / zoomCoeff;
+		let imageW_mm = imageW_px * g_dKoef_pix_to_mm / zoomCoeff;
+		
+		
 		let docContent = new AscWord.CDocumentContent();
 		let p = docContent.GetElement(0);
 		let run = new AscWord.Run();
-		run.SetFontSize(10);
+		run.SetFontSize(12 / zoomCoeff);
 		run.SetRFontsAscii("Arial");
 		run.AddText(_t.GetPlaceholderText());
 		p.AddToContent(0, run);
@@ -621,15 +642,42 @@ CInlineLevelSdt.prototype.DrawSignatureSign = function(graphics)
 			FirstLine : 0
 		});
 		
-		docContent.Reset(0, 0, bounds.W, bounds.H);
+		let docContentW = bounds.W - 3 * offset_mm - imageW_mm;
+		docContent.Reset(0, 0, docContentW, bounds.H);
 		docContent.Recalculate_Page(0, true);
+
+		if (p.getLineCount() > 1)
+		{
+			let contentBounds = docContent.GetPageBounds(0);
+			let contentH = contentBounds.Bottom - contentBounds.Top;
+			docContent.Shift(0, 2 * offset_mm + imageW_mm, (bounds.H - contentH) >> 1);
+
+			docContent.Draw(0, graphics);
+			
+			let image = icons.getImage(AscCommon.CCButtonType.Signature);
+			if (image)
+				graphics.drawImage2(image, offset_mm, bounds.H / 2 - imageH_mm / 2, imageW_mm, imageH_mm);
+		}
+		else
+		{
+			let contentW = p.getRange(0, 0).W;
+			let lineMetrics = p.getLineMetrics(0);
+			let contentH = lineMetrics.Ascent + lineMetrics.Descent + lineMetrics.LineGap;
+			
+			let imageX = bounds.W / 2 - (contentW + offset_mm + imageW_mm) / 2;
+			
+			docContent.Shift(0, imageX + imageW_mm + offset_mm - (docContentW - contentW) / 2, (bounds.H - contentH) >> 1);
+			
+			docContent.Draw(0, graphics);
+			
+			let image = icons.getImage(AscCommon.CCButtonType.Signature);
+			if (image)
+				graphics.drawImage2(image, imageX, bounds.H / 2 - imageH_mm / 2, imageW_mm, imageH_mm);
+		}
 		
-		let contentBounds = docContent.GetPageBounds(0);
-		let contentH = contentBounds.Bottom - contentBounds.Top;
-		if (contentH < bounds.H)
-			docContent.Shift(0, 0, (bounds.H - contentH) >> 1);
 		
-		docContent.Draw(0, graphics);
+		
+		graphics.SetIntegerGrid(intGrid);
 	}, logicDocument);
 };
 CInlineLevelSdt.prototype.IsSkipDraw = function(oGraphics)
