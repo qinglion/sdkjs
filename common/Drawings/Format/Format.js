@@ -20437,5 +20437,15 @@
 		window['AscFormat'].CVarStyle = CVarStyle;
 		window['AscFormat'].CFontProps = CFontProps;
 		window['AscFormat'].CLineStyle = CLineStyle;
+
+		window["AscFormat"].RECT_ALIGN_B = RECT_ALIGN_B;
+		window["AscFormat"].RECT_ALIGN_BL = RECT_ALIGN_BL;
+		window["AscFormat"].RECT_ALIGN_BR = RECT_ALIGN_BR;
+		window["AscFormat"].RECT_ALIGN_CTR = RECT_ALIGN_CTR;
+		window["AscFormat"].RECT_ALIGN_L = RECT_ALIGN_L;
+		window["AscFormat"].RECT_ALIGN_R = RECT_ALIGN_R;
+		window["AscFormat"].RECT_ALIGN_T = RECT_ALIGN_T;
+		window["AscFormat"].RECT_ALIGN_TL = RECT_ALIGN_TL;
+		window["AscFormat"].RECT_ALIGN_TR = RECT_ALIGN_TR;
 	})
 (window);

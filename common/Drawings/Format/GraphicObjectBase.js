@@ -1305,25 +1305,98 @@
 		}
 	};
 	CGraphicObjectBase.prototype.getShdwTransform = function(outerShdw, mainShape) {
-		var oTransform = new AscCommon.CMatrix();
+		const oOldShdwTransform = this.transform;
+		const oOldShdwBounds = this.bounds;
+		this.bounds = new AscFormat.CGraphicBounds(0, 0, 0, 0);
+		const oOldMainBounds = mainShape.bounds;
+		mainShape.bounds = new AscFormat.CGraphicBounds(0, 0, 0, 0);
+
+		const oTxBody = mainShape.txBody;
+		mainShape.txBody = null;
+		mainShape.recalculateBounds();
+		mainShape.txBody = oTxBody;
+
+		const oTransform = new AscCommon.CMatrix();
+		this.transform = oTransform;
+		global_MatrixTransformer.MultiplyAppend(oTransform, mainShape.transform);
+		this.recalculateBounds();
+
+		const nMainW = mainShape.bounds.w;
+		const nMainH = mainShape.bounds.h;
+		const dMainX = mainShape.bounds.x;
+		const dMainY = mainShape.bounds.y;
+
+		const nShdwW = this.bounds.w;
+		const nShdwH = this.bounds.h;
+		const dShdwX = this.bounds.x;
+		const dShdwY = this.bounds.y;
+
+		let dX;
+		let dY;
+		switch (outerShdw.algn) {
+			case AscFormat.RECT_ALIGN_BL: {
+				dX = dMainX - dShdwX;
+				dY = dMainY + nMainH - (dShdwY + nShdwH);
+				break;
+			}
+			case AscFormat.RECT_ALIGN_BR: {
+				dX = (dMainX + nMainW) - (dShdwX + nShdwW);
+				dY = dMainY + nMainH - (dShdwY + nShdwH);
+				break;
+			}
+			case AscFormat.RECT_ALIGN_CTR: {
+				dX = (dMainX + nMainW / 2) - (dShdwX + nShdwW / 2);
+				dY = (dMainY + nMainH / 2) - (dShdwY + nShdwH / 2);
+				break;
+			}
+			case AscFormat.RECT_ALIGN_L: {
+				dX = dMainX - dShdwX;
+				dY = (dMainY + nMainH / 2) - (dShdwY + nShdwH / 2);
+				break;
+			}
+			case AscFormat.RECT_ALIGN_R: {
+				dX = (dMainX + nMainW) - (dShdwX + nShdwW);
+				dY = (dMainY + nMainH / 2) - (dShdwY + nShdwH / 2);
+				break;
+			}
+			case AscFormat.RECT_ALIGN_T: {
+				dX = (dMainX + nMainW / 2) - (dShdwX + nShdwW / 2);
+				dY = dMainY - dShdwY;
+				break;
+			}
+			case AscFormat.RECT_ALIGN_TL: {
+				dX = dMainX - dShdwX;
+				dY = dMainY - dShdwY;
+				break;
+			}
+			case AscFormat.RECT_ALIGN_TR: {
+				dX = (dMainX + nMainW) - (dShdwX + nShdwW);
+				dY = dMainY - dShdwY;
+				break;
+			}
+			case AscFormat.RECT_ALIGN_B:
+			default: {
+				dX = (dMainX + nMainW / 2) - (dShdwX + nShdwW / 2);
+				dY = dMainY + nMainH - (dShdwY + nShdwH);
+				break;
+			}
+		}
 		var dist = outerShdw.dist ? outerShdw.dist / 36000 : 0;
 		var dir = outerShdw.dir ? outerShdw.dir : 0;
-		if(this.extX < mainShape.extX && this.extY < mainShape.extY) {
-			oTransform.tx = dist * Math.cos(AscFormat.cToRad * dir);
-			oTransform.ty = dist * Math.sin(AscFormat.cToRad * dir);
-		}
-		else {
-			oTransform.tx = dist * Math.cos(AscFormat.cToRad * dir) - (this.extX - mainShape.extX) / 2.0;
-			oTransform.ty = dist * Math.sin(AscFormat.cToRad * dir) - (this.extY - mainShape.extY) / 2.0;
-		}
+		dX += dist * Math.cos(AscFormat.cToRad * dir);
+		dY += dist * Math.sin(AscFormat.cToRad * dir);
+		oTransform.tx += dX;
+		oTransform.ty += dY;
 		if(this.flipH) {
 			oTransform.tx -= this.extX;
 		}
 		if(this.flipV) {
 			oTransform.ty += this.extY;
 		}
-		global_MatrixTransformer.MultiplyAppend(oTransform, mainShape.transform);
-		return  oTransform;
+		this.transform = oOldShdwTransform;
+		this.bounds = oOldShdwBounds;
+		mainShape.bounds = oOldMainBounds;
+		return oTransform;
 	};
 	CGraphicObjectBase.prototype.drawAdjustments = function (drawingDocument) {
 	};
