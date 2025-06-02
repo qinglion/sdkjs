@@ -1287,7 +1287,7 @@
 
         oDoc.DoAction(function() {
 			oDoc.MovePages(selectedIndices, toIndex);
-            oDoc.Viewer.navigateToPage(toIndex, undefined, oDoc.viewer.scrollMaxX / 2);
+            oDoc.Viewer.navigateToPage(toIndex, undefined, oDoc.Viewer.scrollMaxX / 2);
 
         }, AscDFH.historydescription_Pdf_MovePage, null, aToCheckLock);
     };
