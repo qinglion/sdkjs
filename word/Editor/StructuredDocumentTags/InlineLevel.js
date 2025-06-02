@@ -595,11 +595,17 @@ CInlineLevelSdt.prototype.Draw_Lines = function(PDSL)
 CInlineLevelSdt.prototype.DrawSignatureSign = function(graphics)
 {
 	let logicDocument = this.GetLogicDocument();
-	if (!this.IsSignatureForm() || !logicDocument || !this.Bounds || !this.Bounds[0])
+	if (!this.IsSignatureForm() || !logicDocument)
 		return;
 	
 	let _t = this;
-	let bounds = this.Bounds[0];
+	
+	let innerDrawings = this.GetAllDrawingObjects();
+	if (!innerDrawings.length)
+		return;
+	
+	let boundsW = innerDrawings[0].GetWidth();
+	let boundsH = innerDrawings[0].GetHeight();
 	
 	let drawingDocument = logicDocument.getDrawingDocument();
 	let icons = drawingDocument.contentControls.icons;
@@ -644,7 +650,7 @@ CInlineLevelSdt.prototype.DrawSignatureSign = function(graphics)
 			FirstLine : 0
 		});
 		
-		let docContentW = bounds.W - 2 * offset_mm - imageW_mm - gap;
+		let docContentW = boundsW - 2 * offset_mm - imageW_mm - gap;
 		docContent.Reset(0, 0, docContentW, AscWord.MAX_MM_VALUE);
 		docContent.Recalculate_Page(0, true);
 
@@ -652,14 +658,14 @@ CInlineLevelSdt.prototype.DrawSignatureSign = function(graphics)
 		{
 			let contentBounds = docContent.GetPageBounds(0);
 			let contentH = contentBounds.Bottom - contentBounds.Top;
-			docContent.Shift(0, offset_mm + imageW_mm + gap, (bounds.H - contentH) >> 1);
-			docContent.Set_ClipInfo(0, clip_offset, bounds.W - 2 * clip_offset, clip_offset, bounds.H - 2 * clip_offset);
+			docContent.Shift(0, offset_mm + imageW_mm + gap, (boundsH - contentH) >> 1);
+			docContent.Set_ClipInfo(0, clip_offset, boundsW - 2 * clip_offset, clip_offset, boundsH - 2 * clip_offset);
 
 			docContent.Draw(0, graphics);
 			
 			let image = icons.getImage(AscCommon.CCButtonType.Signature);
 			if (image)
-				graphics.drawImage2(image, offset_mm, bounds.H / 2 - imageH_mm / 2, imageW_mm, imageH_mm);
+				graphics.drawImage2(image, offset_mm, boundsH / 2 - imageH_mm / 2, imageW_mm, imageH_mm);
 		}
 		else
 		{
@@ -667,15 +673,15 @@ CInlineLevelSdt.prototype.DrawSignatureSign = function(graphics)
 			let lineMetrics = p.getLineMetrics(0);
 			let contentH = lineMetrics.Ascent + lineMetrics.Descent + lineMetrics.LineGap;
 			
-			let imageX = bounds.W / 2 - (contentW + offset_mm + imageW_mm) / 2;
+			let imageX = boundsW / 2 - (contentW + offset_mm + imageW_mm) / 2;
 			
-			docContent.Shift(0, imageX + imageW_mm + gap - (docContentW - contentW) / 2, (bounds.H - contentH) >> 1);
-			docContent.Set_ClipInfo(0, clip_offset, bounds.W - 2 * clip_offset, clip_offset, bounds.H - 2 * clip_offset);
+			docContent.Shift(0, imageX + imageW_mm + gap - (docContentW - contentW) / 2, (boundsH - contentH) >> 1);
+			docContent.Set_ClipInfo(0, clip_offset, boundsW - 2 * clip_offset, clip_offset, boundsH - 2 * clip_offset);
 			docContent.Draw(0, graphics);
 			
 			let image = icons.getImage(AscCommon.CCButtonType.Signature);
 			if (image)
-				graphics.drawImage2(image, imageX, bounds.H / 2 - imageH_mm / 2, imageW_mm, imageH_mm);
+				graphics.drawImage2(image, imageX, boundsH / 2 - imageH_mm / 2, imageW_mm, imageH_mm);
 		}
 		
 		graphics.SetIntegerGrid(intGrid);

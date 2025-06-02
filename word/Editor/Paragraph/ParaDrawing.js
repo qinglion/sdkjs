@@ -228,6 +228,10 @@ ParaDrawing.prototype.Get_Height = function()
 {
 	return this.Height * this.GetScaleCoefficient();
 };
+ParaDrawing.prototype.GetHeight = function()
+{
+	return this.Get_Height();
+};
 ParaDrawing.prototype.getHeight = function()
 {
 	return this.Get_Height();
