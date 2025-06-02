@@ -55,27 +55,35 @@
 
         isDrawCurrentRect : true,
         drawCurrentColor : "#888888",
-        drawCurrentWidth : 2
+        drawCurrentWidth : 2,
+
+        oldRetinaPixelRatio : 0,
+        numberFontHeightValue : 7
     };
 
     var ThumbnailsStyle = {
         backgroundColor : "#F1F1F1"
     };
 
-    PageStyle.numberFontHeight = (function(){
+    PageStyle.numberFontHeight = function() {
         if (window["NATIVE_EDITOR_ENJINE"])
             return 7;
+
+        if (Math.abs(this.oldRetinaPixelRatio - AscCommon.AscBrowser.retinaPixelRatio) < 0.01)
+            return this.numberFontHeightValue;
+
+        this.oldRetinaPixelRatio = AscCommon.AscBrowser.retinaPixelRatio;
+
         var testCanvas = document.createElement("canvas");
         var w = 100;
         var h = 100;
         testCanvas.width = w;
         testCanvas.height = h;
         var ctx = testCanvas.getContext("2d");
-        ctx.font = PageStyle.numberFont;
         ctx.fillStyle = "#FFFFFF";
         ctx.fillRect(0, 0, w, h);
         ctx.fillStyle = "#000000";
-        ctx.font = PageStyle.numberFont;
+        ctx.font = PageStyle.font();
         ctx.fillText("123456789", 0, h);
         var pixels = ctx.getImageData(0, 0, w, h).data;
         var index = 0;
@@ -91,8 +99,9 @@
                 break;
             index += 4;
         }
-        return h - ((index / (4 * w)) >> 0);
-    })();
+        this.numberFontHeightValue = h - ((index / (4 * w)) >> 0);
+        return this.numberFontHeightValue;
+    };
 
     PageStyle.font = function()
     {
@@ -201,7 +210,9 @@
             ctx.strokeRect(pixX + offsetW, pixY + offsetW, pixR - pixX - 2 * offsetW, pixB - pixY - 2 * offsetW);
         }
 
+        ctx.font = PageStyle.font();
         ctx.fillStyle = PageStyle.numberColor;
+        ctx.textAlign = "center";
         ctx.fillText("" + (this.num + 1), this.numRect.x + this.numRect.w / 2, this.numRect.y + this.numRect.h - offsetV);
     };
 
@@ -238,7 +249,7 @@
         let nScaleFactor = parseFloat((nAllMaxPageHeight / maxPageHeight).toFixed(2));
 
         var blockHeight = (maxPageHeight * zoom * nScaleFactor) >> 0;
-        var numberBlockH = AscCommon.AscBrowser.convertToRetinaValue(PageStyle.numberFontOffset + PageStyle.numberFontHeight, true);
+        var numberBlockH = AscCommon.AscBrowser.convertToRetinaValue(PageStyle.numberFontOffset, true) + PageStyle.numberFontHeight();
         blockHeight += numberBlockH;
 
         var currentPosX = startOffset;
@@ -259,7 +270,7 @@
                 pH = tmp;
             }
 
-            var curPageHeight = pH + PageStyle.numberFontOffset + PageStyle.numberFontHeight;
+            var curPageHeight = pH + PageStyle.numberFontOffset + PageStyle.numberFontHeight();
 
             drPage.pageRect.y = this.top + ((blockHeight - curPageHeight) >> 1);
             drPage.pageRect.h = pH;
