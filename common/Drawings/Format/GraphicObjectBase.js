@@ -1306,6 +1306,12 @@
 	};
 	CGraphicObjectBase.prototype.getShdwTransform = function(outerShdw, mainShape) {
 		const oTransform = new AscCommon.CMatrix();
+		if(this.flipH) {
+			AscCommon.global_MatrixTransformer.ScaleAppend(oTransform , -1, 1);
+		}
+		if(this.flipV) {
+			AscCommon.global_MatrixTransformer.ScaleAppend(oTransform , 1, -1);
+		}
 		global_MatrixTransformer.MultiplyAppend(oTransform, mainShape.transform);
 		const oShdwBounds = this.getGeometryBounds(oTransform);
 		const oMainBounds = mainShape.getGeometryBounds(mainShape.transform);
@@ -1370,18 +1376,53 @@
 				break;
 			}
 		}
+		if(this.flipH) {
+			switch (outerShdw.algn) {
+				case AscFormat.RECT_ALIGN_L:
+				case AscFormat.RECT_ALIGN_TL:
+				case AscFormat.RECT_ALIGN_BL: {
+					dX -= nShdwW;
+					break;
+				}
+				case AscFormat.RECT_ALIGN_R:
+				case AscFormat.RECT_ALIGN_TR:
+				case AscFormat.RECT_ALIGN_BR: {
+					dX += nShdwW;
+					break;
+				}
+				default:
+					break;
+			}
+		}
+		if(this.flipV) {
+			switch (outerShdw.algn) {
+				case AscFormat.RECT_ALIGN_CTR:
+				case AscFormat.RECT_ALIGN_L:
+				case AscFormat.RECT_ALIGN_R: {
+					break;
+				}
+				case AscFormat.RECT_ALIGN_T:
+				case AscFormat.RECT_ALIGN_TL:
+				case AscFormat.RECT_ALIGN_TR: {
+					dY -= nShdwH;
+					break;
+				}
+				case AscFormat.RECT_ALIGN_B:
+				case AscFormat.RECT_ALIGN_BL:
+				case AscFormat.RECT_ALIGN_BR:
+				default: {
+					dY += nShdwH;
+					break;
+				}
+			}
+		}
+
 		var dist = outerShdw.dist ? outerShdw.dist / 36000 : 0;
 		var dir = outerShdw.dir ? outerShdw.dir : 0;
 		dX += dist * Math.cos(AscFormat.cToRad * dir);
 		dY += dist * Math.sin(AscFormat.cToRad * dir);
 		oTransform.tx += dX;
 		oTransform.ty += dY;
-		if(this.flipH) {
-			oTransform.tx -= this.extX;
-		}
-		if(this.flipV) {
-			oTransform.ty += this.extY;
-		}
 		return oTransform;
 	};
 	CGraphicObjectBase.prototype.drawAdjustments = function (drawingDocument) {
