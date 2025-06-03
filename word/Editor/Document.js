@@ -11048,6 +11048,7 @@ CDocument.prototype.CheckMouseClickInContentControl = function(x, y, pageIndex)
 	{
 		this.private_UpdateDocumentTracks();
 
+		//let coords = this.DrawingDocument.ConvertCoordsToCursor2(x, y, pageIndex);
 		let pos = this.DrawingDocument.ConvertCoordsFromCursor2(global_mouseEvent.X, global_mouseEvent.Y)
 		
 		this.DrawingDocument.contentControls.onPointerDown(pos);

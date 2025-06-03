@@ -13861,12 +13861,6 @@ background-repeat: no-repeat;\
 			oLogicDocument.UpdateCursorType(oLogicDocument.CurPos.RealX, oLogicDocument.CurPos.RealY, oLogicDocument.CurPage, new AscCommon.CMouseEventHandler());
 		}
 		
-		if (!oLogicDocument.IsFillingFormMode() && oLogicDocument.FocusCC && oLogicDocument.FocusCC.IsForm())
-			oLogicDocument.FocusCC.SelectContentControl();
-
-		oLogicDocument.private_CheckCursorPosInFillingFormMode();
-		oLogicDocument.UpdateSelection();
-		oLogicDocument.UpdateInterface();
 		
 		let oform = oLogicDocument.GetOFormDocument();
 		if (oform)
@@ -13888,6 +13882,13 @@ background-repeat: no-repeat;\
 				drawingDocument.FirePaint();
 			}
 		}
+		
+		if (!oLogicDocument.IsFillingFormMode() && oLogicDocument.FocusCC && oLogicDocument.FocusCC.IsForm())
+			oLogicDocument.FocusCC.SelectContentControl();
+		
+		oLogicDocument.private_CheckCursorPosInFillingFormMode();
+		oLogicDocument.UpdateSelection();
+		oLogicDocument.UpdateInterface();
 		
 		if (oLogicDocument.IsFillingOFormMode())
 			AscCommon.CollaborativeEditing.Remove_AllForeignCursors();
