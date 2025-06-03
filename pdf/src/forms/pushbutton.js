@@ -1662,18 +1662,17 @@
         if (this._buttonPosition == position["iconOnly"])
             return;
 
-        this._buttonPosition = position["iconOnly"];
-        this._buttonCaption  = undefined;
-
         AscCommon.History.StartNoHistoryMode();
 
         let oPara;
         if (this.content.Content.length == 2) {
-            for (let i = 0; i < this.content.Content.length; i++) {
-                oPara = this.content.GetElement(i);
-    
-                if (oPara.GetAllDrawingObjects().length == 0) {
-                    this.content.RemoveFromContent(i, 1, false);
+            switch (this._buttonPosition) {
+                case position["iconTextV"]: {
+                    this.content.RemoveFromContent(1, 1, false);
+                    break;
+                }
+                case position["textIconV"]: {
+                    this.content.RemoveFromContent(0, 1, false);
                     break;
                 }
             }
@@ -1706,6 +1705,8 @@
             oPara.CorrectContent();
         }
 
+        this._buttonPosition = position["iconOnly"];
+        
         AscCommon.History.EndNoHistoryMode();
 
         this.SetNeedUpdateImage(true);
