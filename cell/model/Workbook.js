@@ -16068,13 +16068,14 @@
 									range._foreachNoEmpty(function (cell) {
 										if (cell.isFormula()) {
 											const isRecursiveFormula = cell.checkRecursiveFormula(t);
-											!isRecursiveFormula && cell.initStartCellForIterCalc(t);
+											!isRecursiveFormula && cell.initStartCellForIterCalc();
 											if (g_cCalcRecursion.getStartCellIndex() != null || isRecursiveFormula) {
 												if (!cell.getFormulaParsed().ca) {
 													cell.getFormulaParsed().ca = true;
 												}
 												isCycleCell = true;
 												!isEnabledRecursion && g_cCalcRecursion.addCycleCell(cell);
+												g_cCalcRecursion.getStartCellIndex() && g_cCalcRecursion.setStartCellIndex(null);
 												return true;
 											}
 										}

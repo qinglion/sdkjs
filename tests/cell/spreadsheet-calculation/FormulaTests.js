@@ -2176,6 +2176,15 @@ $(function () {
 		g_cCalcRecursion.setIsEnabledRecursion(true);
 		ws.getRange2("A1131").setValue("=INDIRECT(\"A1131\")+1");
 		assert.strictEqual(ws.getRange2("A1131").getValue(), "15", "Test: Formula INDIRECT - recursive cell with enabled setting. A1131 - 15");
+		// - Case: Formula OFFSET isn't recursive cell with disabled setting.
+		g_cCalcRecursion.setIsEnabledRecursion(false);
+		ws.getRange2("B1132").setValue("5");
+		ws.getRange2("C1132").setValue("0");
+		ws.getRange2("D1132").setValue("0");
+		ws.getRange2("A1132").setValue("=OFFSET(B1132,0,0)-C1132-D1132");
+		ws.getRange2("A1133").setValue("=OFFSET(A1132,0,0)");
+		assert.strictEqual(ws.getRange2("A1133").getValue(), "5", "Test: Formula OFFSET isn't recursive cell with disabled setting. A1133 - 5");
+		assert.strictEqual(ws.getRange2("A1132").getValue(), "5", "Test: Formula OFFSET isn't recursive cell with disabled setting. A1132 - 5");
 		// -- Test changeLinkedCell method.
 		oCell = selectCell("A1000");
 		let oCellNeedEnableRecalc = selectCell("B1000");
