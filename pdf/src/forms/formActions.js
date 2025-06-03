@@ -135,7 +135,8 @@
     }
     CFormTrigger.prototype.Copy = function(oParentField) {
         let aActionsCopies = [];
-        for (let action of this.Actions) {
+        for (let i = 0; i < this.Actions.length; i++) {
+            let action = this.Actions[i];
             aActionsCopies.push(action.Copy());
         }
 
