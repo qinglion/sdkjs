@@ -2656,6 +2656,8 @@
             return false;
         }
 
+        AscCommon.History.StartNoHistoryMode();
+
         let aOrigRect = this.GetRect();
         let aRectMM = aOrigRect ? aOrigRect.map(function(measure) {
             return measure * g_dKoef_pt_to_mm;
@@ -2696,6 +2698,9 @@
 
         this.SetNeedUpdateEditShape(false);
         this.AddToRedraw();
+
+        AscCommon.History.EndNoHistoryMode();
+        
         return true;
     };
     CBaseField.prototype.IsEditMode = function() {
