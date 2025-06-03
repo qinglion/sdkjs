@@ -631,10 +631,14 @@
                 rot(markX + markW,   markY + markH),
                 rot(markX,           markY + markH)
             ];
-            x1 = Math.min(...pts.map(p => p.x));
-            y1 = Math.min(...pts.map(p => p.y));
-            x2 = Math.max(...pts.map(p => p.x));
-            y2 = Math.max(...pts.map(p => p.y));
+            
+            for (let i = 0; i < pts.length; i++) {
+                let p = pts[i];
+                if (p.x < x1) x1 = p.x;
+                if (p.y < y1) y1 = p.y;
+                if (p.x > x2) x2 = p.x;
+                if (p.y > y2) y2 = p.y;
+            }
         }
 
         // 12. Save marker rect in document coordinates
