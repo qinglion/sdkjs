@@ -23297,6 +23297,25 @@
 		this.CustomProperties.AddProperty(sName, AscCommon.c_oVariantTypes.vtBool, Boolean(bValue));
 	};
 
+	/**
+	 * Returns the value of a custom property by its name.
+	 *
+	 * @memberof ApiCustomProperties
+	 * @typeofeditors ["CDE"]
+	 * @param {string} sName
+	 * @returns {string | number | Date | boolean | null} - The value of the custom property or null if the property does not exist.
+	 * @see office-js-api/Examples/{Editor}/ApiCustomProperties/Methods/GetPropertyValueByName.js
+	 */
+	ApiCustomProperties.prototype.GetPropertyValueByName = function (sName) {
+		let property = null;
+		this.CustomProperties.getAllProperties().forEach(function (prop) {
+			if (prop.asc_getName() === sName) {
+				property = prop;
+			}
+		});
+		return property ? property.asc_getValue() : null;
+	};
+
 	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	// Export
 	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -24301,6 +24320,7 @@
 	ApiCustomProperties.prototype["AddNumberProperty"] = ApiCustomProperties.prototype.AddNumberProperty;
 	ApiCustomProperties.prototype["AddDateProperty"] = ApiCustomProperties.prototype.AddDateProperty;
 	ApiCustomProperties.prototype["AddBoolProperty"] = ApiCustomProperties.prototype.AddBoolProperty;
+	ApiCustomProperties.prototype["GetPropertyValueByName"] = ApiCustomProperties.prototype.GetPropertyValueByName;
 
 	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	// Export for internal usage
