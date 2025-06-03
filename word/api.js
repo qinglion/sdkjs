@@ -11247,6 +11247,12 @@ background-repeat: no-repeat;\
 			case Asc.c_oAscContentControlSpecificType.Complex:
 				pr.Complex = true;
 				break;
+			case Asc.c_oAscContentControlSpecificType.DateTime:
+				pr.DateTime = true;
+				break;
+			case Asc.c_oAscContentControlSpecificType.Signature:
+				pr.Signature = true;
+				break;
 			default:
 				pr.Text         = true;
 				pr.ComboBox     = true;
