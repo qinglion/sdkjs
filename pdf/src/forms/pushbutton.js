@@ -947,10 +947,10 @@
 
         if (this._imgData.rollover || sRolloverCaption) {
             AscCommon.History.StartNoHistoryMode();
-
+            
+            let oCaptionRun = this.GetCaptionRun();
             // сначала добавляем текст, т.к. учитывается его размер при добавлении картинки
-            if (sRolloverCaption) {
-                let oCaptionRun = this.GetCaptionRun();
+            if (oCaptionRun && sRolloverCaption) {
                 oCaptionRun.ClearContent();
                 oCaptionRun.AddText(sRolloverCaption);
             }
@@ -979,7 +979,7 @@
             let oCaptionRun         = this.GetCaptionRun();
             let sRolloverCaption    = this.GetCaption(AscPDF.APPEARANCE_TYPES.rollover);
             let sDefaultCaption     = this.GetCaption(AscPDF.APPEARANCE_TYPES.normal);
-            if (sDefaultCaption && sRolloverCaption) {
+            if (oCaptionRun && sDefaultCaption && sRolloverCaption) {
                 oCaptionRun.ClearContent();
                 oCaptionRun.AddText(sDefaultCaption);
             }
