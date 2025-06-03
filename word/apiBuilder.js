@@ -23248,7 +23248,7 @@
 	 * @typeofeditors ["CDE"]
 	 * @param {string} setName
 	 * @param {string} sValue
-	 * @see office-js-api/Examples/{Editor}/ApiCustomProperties/Methods/AddProperty.js
+	 * @see office-js-api/Examples/{Editor}/ApiCustomProperties/Methods/AddStringProperty.js
 	 */
 	ApiCustomProperties.prototype.AddStringProperty = function (sName, sValue) {
 		return this.CustomProperties.AddProperty(sName, AscCommon.c_oVariantTypes.vtLpwstr, '' + sValue);
@@ -23491,6 +23491,8 @@
 	ApiDocument.prototype["AddMathEquation"]             = ApiDocument.prototype.AddMathEquation;
 	ApiDocument.prototype["GroupDrawings"]             	 = ApiDocument.prototype.GroupDrawings;
 	ApiDocument.prototype["MoveCursorToPos"]             = ApiDocument.prototype.MoveCursorToPos;
+	ApiDocument.prototype["GetCore"]                     = ApiDocument.prototype.GetCore;
+	ApiDocument.prototype["GetCustomProperties"]         = ApiDocument.prototype.GetCustomProperties;
 
 	ApiParagraph.prototype["GetClassType"]           = ApiParagraph.prototype.GetClassType;
 	ApiParagraph.prototype["AddText"]                = ApiParagraph.prototype.AddText;
@@ -24262,6 +24264,7 @@
 	ApiChartSeries.prototype["ChangeChartType"]   =  ApiChartSeries.prototype.ChangeChartType;
 	ApiChartSeries.prototype["GetChartType"]      =  ApiChartSeries.prototype.GetChartType;
 
+	ApiCore.prototype["GetClassType"] = ApiCore.prototype.GetClassType;
 	ApiCore.prototype["SetCategory"] = ApiCore.prototype.SetCategory;
 	ApiCore.prototype["GetCategory"] = ApiCore.prototype.GetCategory;
 	ApiCore.prototype["SetContentStatus"] = ApiCore.prototype.SetContentStatus;
@@ -24292,6 +24295,12 @@
 	ApiCore.prototype["GetTitle"] = ApiCore.prototype.GetTitle;
 	ApiCore.prototype["SetVersion"] = ApiCore.prototype.SetVersion;
 	ApiCore.prototype["GetVersion"] = ApiCore.prototype.GetVersion;
+
+	ApiCustomProperties.prototype["GetClassType"] = ApiCustomProperties.prototype.GetClassType;
+	ApiCustomProperties.prototype["AddStringProperty"] = ApiCustomProperties.prototype.AddStringProperty;
+	ApiCustomProperties.prototype["AddNumberProperty"] = ApiCustomProperties.prototype.AddNumberProperty;
+	ApiCustomProperties.prototype["AddDateProperty"] = ApiCustomProperties.prototype.AddDateProperty;
+	ApiCustomProperties.prototype["AddBoolProperty"] = ApiCustomProperties.prototype.AddBoolProperty;
 
 	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	// Export for internal usage
@@ -24332,6 +24341,8 @@
 	window['AscBuilder'].ApiComboBoxForm    = ApiComboBoxForm;
 	window['AscBuilder'].ApiCheckBoxForm    = ApiCheckBoxForm;
 	window['AscBuilder'].ApiComplexForm     = ApiComplexForm;
+	window['AscBuilder'].ApiCore            = ApiCore;
+	window['AscBuilder'].ApiCustomProperties = ApiCustomProperties;
 	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	// Area for internal usage
 	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
