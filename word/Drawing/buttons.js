@@ -1437,7 +1437,7 @@
 		this.ActiveButtonIndex = -2; // -1 => Text, otherwise index in this.Buttons
 
 		this.IsNoButtons = false;
-		if (this.parent.document.m_oWordControl.m_oApi.isViewMode)
+		if (this.parent.document.m_oWordControl.m_oApi.isViewMode || this.base.IsSignatureForm())
 			this.IsNoButtons = true;
 
 		this.IsFillFormsMode = false;
@@ -1507,6 +1507,10 @@
 
 		switch (this.type)
 		{
+			case Asc.c_oAscContentControlSpecificType.Signature:
+			{
+				return false;
+			}
 			case Asc.c_oAscContentControlSpecificType.TOC:
 			{
 				if (this.IsFillFormsMode)
@@ -1640,6 +1644,7 @@
 			case Asc.c_oAscContentControlSpecificType.ComboBox:
 			case Asc.c_oAscContentControlSpecificType.DropDownList:
 			case Asc.c_oAscContentControlSpecificType.DateTime:
+			case Asc.c_oAscContentControlSpecificType.Signature:
 			default:
 				break;
 		}

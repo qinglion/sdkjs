@@ -2741,6 +2741,9 @@ CInlineLevelSdt.prototype.GetSpecificType = function()
 
 	if (this.IsCheckBox())
 		return Asc.c_oAscContentControlSpecificType.CheckBox;
+	
+	if (this.IsSignatureForm())
+		return Asc.c_oAscContentControlSpecificType.Signature;
 
 	if (this.IsPicture())
 		return Asc.c_oAscContentControlSpecificType.Picture;
