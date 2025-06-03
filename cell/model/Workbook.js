@@ -2986,7 +2986,9 @@
 							resStreamInfo = _promises[i].callback(streamInfos[i]);
 						}
 						_promises[i].parserFormula.promiseResult[_promises[i].index] = resStreamInfo;
-						t.wb.dependencyFormulas.addToChangedCell(_promises[i].parserFormula.parent);
+						if (_promises[i].parserFormula.parent) {
+							t.wb.dependencyFormulas.addToChangedCell(_promises[i].parserFormula.parent);
+						}
 						t.addPromiseParserFormula(_promises[i].parserFormula);
 					}
 					//t.wb.buildDependency();
