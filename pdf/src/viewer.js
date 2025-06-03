@@ -1088,7 +1088,7 @@
 			this.checkReady();
 			this.file.onRepaintPages = this.onUpdatePages.bind(this);
 			this.file.onRepaintForms = this.onRepaintForms.bind(this);
-			this.file.onRepaintAnnots = this.onRepaintAnnots.bind(this);
+			this.file.onRepaintAnnotations = this.onRepaintAnnots.bind(this);
 			this.file.onUpdateStatistics = this.onUpdateStatistics.bind(this);
 			this.currentPage = -1;
 			this.structure = this.file.getStructure();
