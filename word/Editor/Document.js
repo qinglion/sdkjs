@@ -10827,6 +10827,7 @@ CDocument.prototype.OnMouseUp = function(e, X, Y, PageIndex)
 		this.Selection.Start = false;
 		this.Selection_SetEnd(X, Y, e);
 		this.CheckComplexFieldsInSelection();
+		this.CheckMouseClickInContentControl(X, Y, PageIndex);
 		isUpdateTarget = this.private_UpdateSelectionOnMouseEvent(X, Y, this.CurPage, e);
 
 		if (this.Api.isFormatPainterOn())
@@ -11036,6 +11037,22 @@ CDocument.prototype.private_HandleMouseRightClickOnHeaderFooter = function(X, Y,
 	}
 
 	return false;
+};
+CDocument.prototype.CheckMouseClickInContentControl = function(x, y, pageIndex)
+{
+	let form = this.CurPos.CC;
+	if (form
+		&& form.IsForm()
+		&& this.IsFillingOFormMode()
+		&& (form.IsPictureForm() || form.IsSignatureForm()))
+	{
+		this.private_UpdateDocumentTracks();
+
+		let pos = this.DrawingDocument.ConvertCoordsFromCursor2(global_mouseEvent.X, global_mouseEvent.Y)
+		
+		this.DrawingDocument.contentControls.onPointerDown(pos);
+		this.DrawingDocument.contentControls.onPointerUp(pos);
+	}
 };
 CDocument.prototype.private_UpdateSelectionOnMouseEvent = function(nX, nY, nCurPage, oMouseEvent)
 {
