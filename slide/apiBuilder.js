@@ -3718,6 +3718,17 @@
 	//------------------------------------------------------------------------------------------------------------------
 
 	/**
+	 * Returns the type of the ApiNotesPage class.
+	 *
+	 * @typeofeditors ["CPE"]
+	 * @returns {"notesPage"}
+	 * @see office-js-api/Examples/{Editor}/ApiNotesPage/Methods/GetClassType.js
+	 */
+	ApiNotesPage.prototype.GetClassType = function () {
+		return "notesPage";
+	};
+
+	/**
 	 * Returns the shape with attribute type="body" from the current notes page
 	 * @typeofeditors ["CPE"]
 	 * @memberof ApiNotesPage
@@ -5232,7 +5243,12 @@
     ApiSlide.prototype["GetDrawingsByPlaceholderType"]    = ApiSlide.prototype.GetDrawingsByPlaceholderType;
     ApiSlide.prototype["Select"]                          = ApiSlide.prototype.Select;
     ApiSlide.prototype["GroupDrawings"]                   = ApiSlide.prototype.GroupDrawings;
+	ApiSlide.prototype["GetNotesPage"]                    = ApiSlide.prototype.GetNotesPage;
+	ApiSlide.prototype["AddNotesText"]                    = ApiSlide.prototype.AddNotesText;
 
+	ApiNotesPage.prototype["GetClassType"]                = ApiNotesPage.prototype.GetClassType;
+	ApiNotesPage.prototype["AddBodyShapeText"]            = ApiNotesPage.prototype.AddBodyShapeText;
+	ApiNotesPage.prototype["GetBodyShape"]                = ApiNotesPage.prototype.GetBodyShape;
 
     ApiDrawing.prototype["GetClassType"]                  = ApiDrawing.prototype.GetClassType;
     ApiDrawing.prototype["SetSize"]                       = ApiDrawing.prototype.SetSize;
