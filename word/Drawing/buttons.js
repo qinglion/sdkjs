@@ -1301,9 +1301,15 @@
 		this.register = function(type, url, baseUrl)
 		{
 			var image = new CCI(baseUrl);
-
 			image.load(type, url);
 			image.loadActive();
+			this.images[type] = image;
+		};
+		
+		this.registerNoActive = function(type, url, baseUrl)
+		{
+			var image = new CCI(baseUrl);
+			image.load(type, url);
 			this.images[type] = image;
 		};
 
@@ -2116,7 +2122,7 @@
 		this.icons = new CCIcons();
 		this.icons.register(AscCommon.CCButtonType.Toc, "toc");
 		this.icons.register(AscCommon.CCButtonType.Image, "img");
-		this.icons.register(AscCommon.CCButtonType.Signature, "signature")
+		this.icons.registerNoActive(AscCommon.CCButtonType.Signature, "signature");
 		this.icons.generateComboImages();
 
 		this.ContentControlObjects = [];
