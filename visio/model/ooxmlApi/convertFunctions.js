@@ -2164,14 +2164,14 @@
 		// set shadow
 		// ShdwPattern = 1 means shadow is visible
 		let shadowPatternCell = this.getCell("ShdwPattern");
-		let shadowPattern = shadowPatternCell.calculateValue(this, pageInfo,
-				visioDocument.themes, undefined, false);
+		let shadowPattern = shadowPatternCell ? shadowPatternCell.calculateValue(this, pageInfo,
+				visioDocument.themes, undefined, false) : 0;
 		let isShadowVisible = shadowPattern === 1;
 
 		let shapeShadowTypeCell = this.getCell("ShapeShdwType");
-		let isShadowTypeSupported = shapeShadowTypeCell.getNumberValue("ShapeShdwType") === 1 ||
+		let isShadowTypeSupported = shapeShadowTypeCell ? (shapeShadowTypeCell.getNumberValue("ShapeShdwType") === 1 ||
 				shapeShadowTypeCell.getNumberValue("ShapeShdwType") === 2 ||
-				shapeShadowTypeCell.getStringValue() === "Themed";
+				shapeShadowTypeCell.getStringValue() === "Themed") : false;
 		if (isShadowVisible && isShadowTypeSupported) {
 			let shadow = new AscFormat.COuterShdw();
 
