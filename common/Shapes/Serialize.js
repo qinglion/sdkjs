@@ -3688,6 +3688,10 @@ function BinaryPPTYLoader()
                     }
                 }, this);
             }
+            else if (_rec === 22)
+            {
+                clrscheme.clrSchemeExtLst.schemeEnum = this.ReadExtSchemeId();
+            }
             else
             {
                 clrscheme.addColor(_rec,this.ReadUniColor());
@@ -3695,6 +3699,42 @@ function BinaryPPTYLoader()
         }
 
         s.Seek2(_e);
+    };
+
+    this.ReadExtSchemeId = function()
+    {
+        let schemeEnum = null;
+        AscFormat.CBaseFormatNoIdObject.prototype.fromPPTY.call({
+            readChildren: AscFormat.CBaseFormatNoIdObject.prototype.readChildren,
+            readAttributes: AscFormat.CBaseFormatNoIdObject.prototype.readAttributes,
+            readAttribute: function(attrType, pReader) {
+                if (attrType === 0) {
+                    schemeEnum = pReader.stream.GetLong();
+                } else if(attrType == 1) {
+                    //todo schemeGUID
+                    pReader.stream.GetString2();
+                } else {
+                    return false;
+                }
+                return true;
+            }
+        }, this);
+        return schemeEnum;
+    };
+
+    this.ReadExtScheme = function()
+    {
+        let schemeEnum = null;
+        AscFormat.CBaseFormatNoIdObject.prototype.fromPPTY.call({
+            readChildren: AscFormat.CBaseFormatNoIdObject.prototype.readChildren,
+            readChild: function(elementType, pReader) {
+                if (elementType === 0) {
+                    schemeEnum = pReader.ReadExtSchemeId();
+                }
+                return false;
+            }
+        }, this);
+        return schemeEnum;
     };
 
     this.ReadClrMap = function(clrmap)
@@ -5131,6 +5171,33 @@ function BinaryPPTYLoader()
                             return false;
                         }
                     }, this);
+                    break;
+                }
+                case 8:
+                {
+                    if (!thelems.themeExt)
+                    {
+                        thelems.themeExt = new AscFormat.CThemeExt();
+                    }
+                    thelems.themeExt.themeSchemeSchemeEnum = this.ReadExtScheme();
+                    break;
+                }
+                case 9:
+                {
+                    if (!thelems.themeExt)
+                    {
+                        thelems.themeExt = new AscFormat.CThemeExt();
+                    }
+                    thelems.themeExt.fmtSchemeExSchemeEnum = this.ReadExtScheme();
+                    break;
+                }
+                case 10:
+                {
+                    if (!thelems.themeExt)
+                    {
+                        thelems.themeExt = new AscFormat.CThemeExt();
+                    }
+                    thelems.themeExt.fmtConnectorSchemeExSchemeEnum = this.ReadExtScheme();
                     break;
                 }
                 default:

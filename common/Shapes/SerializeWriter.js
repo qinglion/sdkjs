@@ -1593,6 +1593,24 @@ function CBinaryFileWriter()
                 }
                 oThis.EndRecord();
             }
+            if (themeExt.themeSchemeSchemeEnum)
+            {
+                oThis.StartRecord(8);
+                oThis.WriteExtScheme(themeExt.themeSchemeSchemeEnum);
+                oThis.EndRecord();
+            }
+            if (themeExt.fmtSchemeExSchemeEnum)
+            {
+                oThis.StartRecord(9);
+                oThis.WriteExtScheme(themeExt.fmtSchemeExSchemeEnum);
+                oThis.EndRecord();
+            }
+            if (themeExt.fmtConnectorSchemeExSchemeEnum)
+            {
+                oThis.StartRecord(10);
+                oThis.WriteExtScheme(themeExt.fmtConnectorSchemeExSchemeEnum);
+                oThis.EndRecord();
+            }
         }
     };
     this.WriteFontScheme = function(fontScheme)
@@ -1769,7 +1787,25 @@ function CBinaryFileWriter()
                 }
                 oThis.EndRecord();
             }
+            if (null !==scheme.clrSchemeExtLst.schemeEnum)
+            {
+                oThis.StartRecord(22);
+                oThis.WriteExtSchemeId(scheme.clrSchemeExtLst.schemeEnum);
+                oThis.EndRecord();
+            }
         }
+    };
+    this.WriteExtSchemeId = function(schemeEnum)
+    {
+        oThis.WriteUChar(g_nodeAttributeStart);
+        oThis._WriteUInt2(0, schemeEnum);
+        oThis.WriteUChar(g_nodeAttributeEnd);
+    };
+    this.WriteExtScheme = function(schemeEnum)
+    {
+        oThis.StartRecord(0);
+        oThis.WriteExtSchemeId(schemeEnum);
+        oThis.EndRecord();
     };
     this.WriteClrMapOvr = function(clrmapovr)
     {
