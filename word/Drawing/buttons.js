@@ -1437,7 +1437,7 @@
 		this.ActiveButtonIndex = -2; // -1 => Text, otherwise index in this.Buttons
 
 		this.IsNoButtons = false;
-		if (this.parent.document.m_oWordControl.m_oApi.isViewMode || this.base.IsSignatureForm())
+		if (this.parent.document.m_oWordControl.m_oApi.isViewMode)
 			this.IsNoButtons = true;
 
 		this.IsFillFormsMode = false;
@@ -1507,16 +1507,13 @@
 
 		switch (this.type)
 		{
-			case Asc.c_oAscContentControlSpecificType.Signature:
-			{
-				return false;
-			}
 			case Asc.c_oAscContentControlSpecificType.TOC:
 			{
 				if (this.IsFillFormsMode)
 					return true;
 				return false;
 			}
+			case Asc.c_oAscContentControlSpecificType.Signature:
 			case Asc.c_oAscContentControlSpecificType.Picture:
 			case Asc.c_oAscContentControlSpecificType.ComboBox:
 			case Asc.c_oAscContentControlSpecificType.DropDownList:
@@ -1636,6 +1633,11 @@
 				this.Buttons.push(AscCommon.CCButtonType.Toc);
 				break;
 			}
+			case Asc.c_oAscContentControlSpecificType.Signature:
+			{
+				this.Buttons.push(AscCommon.CCButtonType.Signature);
+				break;
+			}
 			case Asc.c_oAscContentControlSpecificType.Picture:
 			{
 				this.Buttons.push(AscCommon.CCButtonType.Image);
@@ -1644,7 +1646,6 @@
 			case Asc.c_oAscContentControlSpecificType.ComboBox:
 			case Asc.c_oAscContentControlSpecificType.DropDownList:
 			case Asc.c_oAscContentControlSpecificType.DateTime:
-			case Asc.c_oAscContentControlSpecificType.Signature:
 			default:
 				break;
 		}
@@ -1905,13 +1906,9 @@
 
 	CContentControlTrack.prototype.isFormFullOneButtonHover = function()
 	{
-		if (!this.IsNoUseButtons() &&
-			this.formInfo &&
-			Asc.c_oAscContentControlSpecificType.Picture === this.type)
-		{
-			return true;
-		}
-		return false;
+		return (!this.IsNoUseButtons()
+			&& this.formInfo
+			&& (Asc.c_oAscContentControlSpecificType.Picture === this.type || Asc.c_oAscContentControlSpecificType.Signature === this.type));
 	};
 	CContentControlTrack.prototype.isHitInMoveRect = function(xPos, yPos, koefX, koefY)
 	{
@@ -2668,6 +2665,9 @@
 								// draw buttons
 								for (var nIndexB = 0; nIndexB < _object.Buttons.length; nIndexB++)
 								{
+									if (_object.Buttons[nIndexB] === AscCommon.CCButtonType.Signature)
+										continue;
+									
 									var isFill = false;
 									if (_object.ActiveButtonIndex == nIndexB)
 									{
