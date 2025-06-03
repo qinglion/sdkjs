@@ -2202,10 +2202,10 @@
 					}
 				} else {
 					// check if alpha is set already
-					let alphaMod = shadowColor.Mods.Mods.find(function (mod) {
+					let alphaMod = shadowColor.Mods && shadowColor.Mods.Mods.find(function (mod) {
 						return mod.name === "alpha";
 					});
-					if (alphaMod !== undefined) {
+					if (alphaMod) {
 						alphaMod.val = alphaMod.val * mainFillAlphaCoef;
 					} else {
 						let oMod = new AscFormat.CColorMod("alpha", mainFillAlphaCoef  * 100 * 1000 + 0.5 >> 0);
