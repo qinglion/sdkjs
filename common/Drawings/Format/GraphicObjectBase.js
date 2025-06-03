@@ -1305,31 +1305,20 @@
 		}
 	};
 	CGraphicObjectBase.prototype.getShdwTransform = function(outerShdw, mainShape) {
-		const oOldShdwTransform = this.transform;
-		const oOldShdwBounds = this.bounds;
-		this.bounds = new AscFormat.CGraphicBounds(0, 0, 0, 0);
-		const oOldMainBounds = mainShape.bounds;
-		mainShape.bounds = new AscFormat.CGraphicBounds(0, 0, 0, 0);
-
-		const oTxBody = mainShape.txBody;
-		mainShape.txBody = null;
-		mainShape.recalculateBounds();
-		mainShape.txBody = oTxBody;
-
 		const oTransform = new AscCommon.CMatrix();
-		this.transform = oTransform;
 		global_MatrixTransformer.MultiplyAppend(oTransform, mainShape.transform);
-		this.recalculateBounds();
+		const oShdwBounds = this.getGeometryBounds(oTransform);
+		const oMainBounds = mainShape.getGeometryBounds(mainShape.transform);
 
-		const nMainW = mainShape.bounds.w;
-		const nMainH = mainShape.bounds.h;
-		const dMainX = mainShape.bounds.x;
-		const dMainY = mainShape.bounds.y;
+		const nMainW = oMainBounds.w;
+		const nMainH = oMainBounds.h;
+		const dMainX = oMainBounds.x;
+		const dMainY = oMainBounds.y;
 
-		const nShdwW = this.bounds.w;
-		const nShdwH = this.bounds.h;
-		const dShdwX = this.bounds.x;
-		const dShdwY = this.bounds.y;
+		const nShdwW = oShdwBounds.w;
+		const nShdwH = oShdwBounds.h;
+		const dShdwX = oShdwBounds.x;
+		const dShdwY = oShdwBounds.y;
 
 		let dX;
 		let dY;
@@ -1393,9 +1382,6 @@
 		if(this.flipV) {
 			oTransform.ty += this.extY;
 		}
-		this.transform = oOldShdwTransform;
-		this.bounds = oOldShdwBounds;
-		mainShape.bounds = oOldMainBounds;
 		return oTransform;
 	};
 	CGraphicObjectBase.prototype.drawAdjustments = function (drawingDocument) {
@@ -3942,6 +3928,25 @@
 	};
 	CGraphicObjectBase.prototype.getPen = function() {
 		return this.pen;
+	};
+	CGraphicObjectBase.prototype.getGeometryBounds = function(oTransform) {
+		const oGeometry = this.getGeometry();
+		const oBoundsChecker = new AscFormat.CSlideBoundsChecker();
+		oBoundsChecker.transform3(oTransform);
+		if (!oGeometry || oGeometry.isEmpty() || !oBoundsChecker.IsShapeNeedBounds(oGeometry.preset)) {
+			oBoundsChecker._s();
+			oBoundsChecker._m(0, 0);
+			oBoundsChecker._l(this.extX, 0);
+			oBoundsChecker._l(this.extX, this.extY);
+			oBoundsChecker._l(0, this.extY);
+			oBoundsChecker._e();
+		} else {
+			oGeometry.check_bounds(oBoundsChecker);
+		}
+		const oBounds = oBoundsChecker.Bounds;
+		const oGraphicBounds = new CGraphicBounds(0, 0, 0, 0);
+		oGraphicBounds.reset(oBounds.min_x, oBounds.min_y, oBounds.max_x, oBounds.max_y);
+		return oGraphicBounds;
 	};
 	var ANIM_LABEL_WIDTH_PIX = 22;
 	var ANIM_LABEL_HEIGHT_PIX = 17;
