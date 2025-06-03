@@ -224,65 +224,89 @@
         this.bottom;
     }
 
-    CBlock.prototype.getHeight = function(columnW, startOffset, betweenPages, zoom)
-    {
+    CBlock.prototype.getHeight = function(columnW, startOffset, betweenPages, zoom) {
         let oViewer = Asc.editor.getDocumentRenderer();
-        let oThumbnails = oViewer.thumbnails;
-        let nAllMaxPageHeight = oThumbnails.getMaxPageHeight();
+        let pages = this.pages;
+        let EPS = 1e-3;
 
-        var maxPageHeight = 0;
-        for (var i = 0, len = this.pages.length; i < len; i++)
-        {
-            let isLandscape = oViewer.isLandscapePage(this.pages[i].num);
+        // Height reserved for the page number label
+        let numberBlockH = AscCommon.AscBrowser.convertToRetinaValue(PageStyle.numberFontOffset, true) 
+                        + PageStyle.numberFontHeight();
 
-            if (isLandscape) {
-                if (this.pages[i].page.width > maxPageHeight)
-                    maxPageHeight = this.pages[i].page.width;
-            }
-            else {
-                if (this.pages[i].page.height > maxPageHeight)
-                    maxPageHeight = this.pages[i].page.height;
+        // First pass: find the maximum “oriented” height among all pages
+        let maxOrig = 0;
+        for (let i = 0; i < pages.length; i++) {
+            let drPage = pages[i];
+            let isLandscape = oViewer.isLandscapePage(drPage.num);
+            let origH = isLandscape ? drPage.page.width : drPage.page.height;
+            if (origH > maxOrig) {
+                maxOrig = origH;
             }
         }
 
-       // upscace small pages to big pages
-        let nScaleFactor = parseFloat((nAllMaxPageHeight / maxPageHeight).toFixed(2));
+        // Second pass: compute each page’s rendered width/height (pW, pH),
+        // and track blockHeightRaw (max pH) and blockHeight (max (pH + numberBlockH))
+        let blockHeightRaw = 0;
+        let blockHeight = 0;
+        let sizes = new Array(pages.length);
+        for (let j = 0; j < pages.length; j++) {
+            let drPage = pages[j];
+            let isL2 = oViewer.isLandscapePage(drPage.num);
+            let origH2 = isL2 ? drPage.page.width : drPage.page.height;
 
-        var blockHeight = (maxPageHeight * zoom * nScaleFactor) >> 0;
-        var numberBlockH = AscCommon.AscBrowser.convertToRetinaValue(PageStyle.numberFontOffset, true) + PageStyle.numberFontHeight();
-        blockHeight += numberBlockH;
-
-        var currentPosX = startOffset;
-        for (var i = 0, len = this.pages.length; i < len; i++)
-        {
-            let isLandscape = oViewer.isLandscapePage(this.pages[i].num);
-
-            var drPage = this.pages[i];
-            // upscace small pages to big pages
-            let nScaleFactor = parseFloat((nAllMaxPageHeight / drPage.page.height).toFixed(2));
-
-            var pW = (drPage.page.width * zoom * nScaleFactor) >> 0;
-            var pH = (drPage.page.height * zoom * nScaleFactor) >> 0;
-            if (isLandscape)
-            {
-                let tmp = pW;
-                pW = pH;
-                pH = tmp;
+            // Compute scale so that all pages align by their largest side
+            let localScale = maxOrig / origH2;
+            if (Math.abs(localScale - 1) < EPS) {
+                localScale = 1;
             }
 
-            var curPageHeight = pH + PageStyle.numberFontOffset + PageStyle.numberFontHeight();
+            let s = localScale * zoom;
+            let rawW = drPage.page.width * s;
+            let rawH = drPage.page.height * s;
 
-            drPage.pageRect.y = this.top + ((blockHeight - curPageHeight) >> 1);
-            drPage.pageRect.h = pH;
-            drPage.pageRect.x = currentPosX + ((columnW - pW) >> 1);
-            drPage.pageRect.w = pW;
+            // Swap dimensions if page is landscape
+            if (isL2) {
+                let tmp = rawW;
+                rawW = rawH;
+                rawH = tmp;
+            }
 
-            drPage.numRect.y = (drPage.pageRect.y + drPage.pageRect.h);
+            // Floor to integer
+            let pW = rawW | 0;
+            let pH = rawH | 0;
+            sizes[j] = { w: pW, h: pH };
+
+            if (pH > blockHeightRaw) {
+                blockHeightRaw = pH;
+            }
+            let combinedH = pH + numberBlockH;
+            if (combinedH > blockHeight) {
+                blockHeight = combinedH;
+            }
+        }
+
+        // Third pass: set the pageRect and numRect for each page
+        let currentPosX = startOffset;
+        for (let k = 0; k < pages.length; k++) {
+            let drPage = pages[k];
+            let pW3 = sizes[k].w;
+            let pH3 = sizes[k].h;
+
+            // Center vertically within blockHeightRaw
+            drPage.pageRect.y = this.top + ((blockHeightRaw - pH3) >> 1);
+            drPage.pageRect.h = pH3;
+
+            // Center horizontally within the column width
+            drPage.pageRect.x = currentPosX + ((columnW - pW3) >> 1);
+            drPage.pageRect.w = pW3;
+
+            // Place page number label directly below the thumbnail
+            drPage.numRect.y = drPage.pageRect.y + pH3;
             drPage.numRect.h = numberBlockH;
             drPage.numRect.x = drPage.pageRect.x;
-            drPage.numRect.w = drPage.pageRect.w;
+            drPage.numRect.w = pW3;
 
-            currentPosX += (columnW + betweenPages);
+            currentPosX += columnW + betweenPages;
         }
 
         return blockHeight;
