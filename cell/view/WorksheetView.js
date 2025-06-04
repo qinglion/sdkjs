@@ -317,6 +317,7 @@
         this.textAlign = null;
         this.ctrlKey = null;
         this.shiftKey = null;
+        this.ReadingOrder = null;
     }
 
     CellFlags.prototype.clone = function () {
@@ -326,6 +327,7 @@
         oRes.merged = this.merged ? this.merged.clone() : null;
         oRes.textAlign = this.textAlign;
         oRes.verticalText = this.verticalText;
+        oRes.ReadingOrder = this.ReadingOrder;
         return oRes;
     };
     CellFlags.prototype.isMerged = function () {
@@ -333,6 +335,9 @@
     };
 	CellFlags.prototype.getMergeType = function () {
 	    return getMergeType(this.merged);
+	};
+	CellFlags.prototype.getReadingOrder = function () {
+		return this.ReadingOrder;
 	};
 
     function CellBorderObject(borders, mergeInfo, col, row) {
@@ -19104,7 +19109,7 @@
 					let afterExternalReferences = t.getExternalReferencesByCell(c, true, true);
 					if (afterExternalReferences) {
 						//t.model.workbook.handlers.trigger("asc_onNeedUpdateExternalReference");
-						t.updateExternalReferenceByCell(c, true);
+						t.updateExternalReferenceByCell(c, true, null, true);
 					}
 
 					if (callback) {
@@ -25760,7 +25765,7 @@
 			const table = tableInfo.table;
 			var res = [];
 			for (var j = 0; j < table.TableColumns.length; j++) {
-				res.push(table.TableColumns[j].Name);
+				res.push(table.TableColumns[j].getTableColumnName());
 			}
 			return res;
 		}
@@ -26698,10 +26703,10 @@
 	};
 
 
-	WorksheetView.prototype.updateExternalReferenceByCell = function (c, initStructure, callback) {
+	WorksheetView.prototype.updateExternalReferenceByCell = function (c, initStructure, callback, forceUpdate) {
 		var t = this;
 		var externalReferences = this.getExternalReferencesByCell(c, initStructure);
-		this.workbook.doUpdateExternalReference(externalReferences, callback);
+		this.workbook.doUpdateExternalReference(externalReferences, callback, forceUpdate);
 	};
 
 	WorksheetView.prototype.getExternalReferencesByCell = function (c, initStructure, opt_get_only_ids) {

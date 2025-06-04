@@ -3017,7 +3017,7 @@
 							if (null !== sTableInner) {
 								var _str, j;
 								for (let j = 0; j < table.TableColumns.length; j++) {
-									_str = table.TableColumns[j].Name;
+									_str = table.TableColumns[j].getTableColumnName();
 									_type = c_oAscPopUpSelectorType.TableColumnName;
 
 									let newStr;
@@ -5700,7 +5700,7 @@
 	};
 
 	//external requests
-	WorkbookView.prototype.doUpdateExternalReference = function (externalReferences, callback) {
+	WorkbookView.prototype.doUpdateExternalReference = function (externalReferences, callback, forceUpdate) {
 		var t = this;
 
 		if (externalReferences && externalReferences.length) {
@@ -5912,6 +5912,7 @@
 			this.model.handlers.trigger("asc_onStartUpdateExternalReference", true);
 
 			const oDataUpdater = new AscCommon.CExternalDataLoader(externalReferences, this.Api, doUpdateData);
+			oDataUpdater.props = {forceUpdate: forceUpdate};
 			oDataUpdater.updateExternalData();
 		}
 	};

@@ -1789,6 +1789,13 @@
 			oResult.setLicenseType(licenseType);
 			t.sendEvent('asc_onLicenseChanged', oResult);
 		};
+		this.CoAuthoringApi.onAiPluginSettings = function(data)
+		{
+			if (data) {
+				data.proxy = AscCommon.getBaseUrl() + "../../../../ai-proxy";
+				t.aiPluginSettings = JSON.stringify(data);
+			}
+		};
 		this.CoAuthoringApi.onWarning                 = function(code)
 		{
 			t.sendEvent('asc_onError', code || c_oAscError.ID.Warning, c_oAscError.Level.NoCritical);

@@ -2161,14 +2161,20 @@ ParaRun.prototype.AddText = function(sString, nPos)
  * Добавляем в конец рана заданную инструкцию для сложного поля
  * @param {string} sString
  * @param {number} [nPos=-1] если позиция не задана (или значение -1), то добавляем в конец
+ * @returns {AscWord.ParaInstrText[]}
  */
 ParaRun.prototype.AddInstrText = function(sString, nPos)
 {
+	let items = [];
 	var nCharPos = undefined !== nPos && null !== nPos && -1 !== nPos ? nPos : this.Content.length;
 	for (var oIterator = sString.getUnicodeIterator(); oIterator.check(); oIterator.next())
 	{
-		this.AddToContent(nCharPos++, new ParaInstrText(oIterator.value()));
+		let instrText = new AscWord.ParaInstrText(oIterator.value());
+		this.AddToContent(nCharPos++, instrText);
+		items.push(instrText);
 	}
+	
+	return items;
 };
 
 // Определим строку и отрезок текущей позиции

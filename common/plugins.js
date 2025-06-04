@@ -1294,6 +1294,9 @@
 			if (this.api.CoAuthoringApi)
 				pluginData.setAttribute("jwt", this.api.CoAuthoringApi.get_jwt());
 
+			if (this.api.aiPluginSettings)
+				pluginData.setAttribute("aiPluginSettings", this.api.aiPluginSettings);
+
 			if (this.api.pluginsExternalData)
 				pluginData.setAttribute("externalData", this.api.pluginsExternalData);
 		},

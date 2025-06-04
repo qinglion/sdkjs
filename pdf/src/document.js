@@ -767,11 +767,6 @@ var CPresentation = CPresentation || function(){};
     };
     CPDFDoc.prototype.FillButtonsIconsOnOpen = function() {
 		let oViewer = editor.getDocumentRenderer();
-		if (window["NATIVE_EDITOR_ENJINE"]) {
-			oViewer.IsOpenFormsInProgress = false;
-			return;
-		}
-		
         let oDoc = this;
 
         let aIconsToLoad = [];
@@ -780,11 +775,11 @@ var CPresentation = CPresentation || function(){};
             "View": []
         };
 
-        for (let i = 0; i < oViewer.pagesInfo.pages.length; i++) {
-            let oPage = oViewer.drawingPages[i];
-
-            let w = (oPage.W * AscCommon.AscBrowser.retinaPixelRatio) >> 0;
-            let h = (oPage.H * AscCommon.AscBrowser.retinaPixelRatio) >> 0;
+        for (let i = 0; i < oViewer.file.pages.length; i++) {
+            let oPage = oViewer.file.pages[i];
+            
+            let w = (((oPage.W * 96 / oPage.Dpi) >> 0) * AscCommon.AscBrowser.retinaPixelRatio) >> 0;
+            let h = (((oPage.H * 96 / oPage.Dpi) >> 0) * AscCommon.AscBrowser.retinaPixelRatio) >> 0;
 
             let oFile = oViewer.file;
             let oPageIconsInfo = oFile.nativeFile["getButtonIcons"](i, w, h, undefined, true);
@@ -826,9 +821,7 @@ var CPresentation = CPresentation || function(){};
             return;
         }
 
-        editor.ImageLoader.LoadImagesWithCallback(aIconsToLoad.map(function(info) {
-            return info.src;
-        }), function() {
+        function onLoadImages() {
             // выставляем только ImageData. Форму пересчитаем и добавим картинку после того, как форма изменится, чтобы не грузить шрифты
             for (let nBtn = 0; nBtn < oIconsInfo["MK"].length; nBtn++) {
                 let oBtnField = oDoc.GetFieldByApIdx(oIconsInfo["MK"][nBtn]["i"]);
@@ -845,7 +838,16 @@ var CPresentation = CPresentation || function(){};
             }
             oViewer.isRepaint = true;
             oViewer.IsOpenFormsInProgress = false;
-        });
+        }
+        
+        if (window["NATIVE_EDITOR_ENJINE"]) {
+			onLoadImages();
+		}
+        else {
+            Asc.editor.ImageLoader.LoadImagesWithCallback(aIconsToLoad.map(function(info) {
+                return info.src;
+            }), onLoadImages);
+        }
     };
     
     ////////////////////////////////////
@@ -1268,7 +1270,7 @@ var CPresentation = CPresentation || function(){};
         let oViewer = this.Viewer;
         if (!oViewer.canInteract()) {
             let oDoc = this;
-            oViewer.onRepaintFinishCallbacks.push(function() {
+            oViewer.paint(null, function() {
                 oDoc.OnMouseDown(x, y, e);
             });
             return;
@@ -2244,7 +2246,7 @@ var CPresentation = CPresentation || function(){};
         let oDoc = this;
 
         if (!oViewer.canInteract()) {
-            oViewer.scheduleRepaint(function() {
+            oViewer.paint(null, function() {
                 oDoc.OnMouseUp(x, y, e);
             });
             return;
@@ -2665,34 +2667,18 @@ var CPresentation = CPresentation || function(){};
 	 * @returns {boolean}
 	 */
     CPDFDoc.prototype.RemovePage = function(nPos) {
-        let oThis       = this;
         let oViewer     = editor.getDocumentRenderer();
         let oFile       = oViewer.file;
         let oController = this.GetController();
         
+        this.BlurActiveObject();
+
         if (oFile.pages.length == 1)
             return null;
         if (!AscCommon.isNumber(nPos) || nPos < 0)
             nPos = 0;
 
         oFile.removeSelection();
-        
-        // сначала удаляем все объекты со страницы
-        if (oViewer.pagesInfo.pages[nPos].fields) {
-            oViewer.pagesInfo.pages[nPos].fields.slice().forEach(function(field) {
-                oThis.RemoveField(field.GetId());
-            });
-        }
-        if (oViewer.pagesInfo.pages[nPos].annots) {
-            oViewer.pagesInfo.pages[nPos].annots.slice().forEach(function(annot) {
-                oThis.RemoveAnnot(annot.GetId());
-            });
-        }
-        if (oViewer.pagesInfo.pages[nPos].drawings) {
-            oViewer.pagesInfo.pages[nPos].drawings.slice().forEach(function(drawing) {
-                oThis.RemoveDrawing(drawing.GetId());
-            });
-        }
         
         // убираем информацию о странице
         let aPages = oFile.removePage(nPos);
@@ -5308,7 +5294,14 @@ var CPresentation = CPresentation || function(){};
         let oThumbnails = this.Viewer.thumbnails;
         if (oThumbnails && oThumbnails.isInFocus) {
             if (oSelContent.MergePagesInfo && oSelContent.MergePagesInfo.binaryData) {
-                let nInsertPos = Math.min.apply(null, oThumbnails.selectedPages) + 1;
+                let nInsertPos;
+                if (true === Asc.editor.pastePageBefore) {
+                    nInsertPos = Math.min.apply(null, oThumbnails.selectedPages);
+                    delete Asc.editor.pastePageBefore;
+                }
+                else {
+                    nInsertPos = Math.max.apply(null, oThumbnails.selectedPages) + 1;
+                }
                 
                 this.MergePagesBinary(nInsertPos, oSelContent.MergePagesInfo.binaryData);
 
@@ -6262,6 +6255,7 @@ var CPresentation = CPresentation || function(){};
     CPDFDoc.prototype.MergePagesBinary = function(nInsertPos, aUint8Array) {
         let oFile = this.Viewer.file;
         let sMergeName = "Merged_" + this.mergedPagesData.length;
+        let nNavigateTo = nInsertPos;
 
         this.UpdateMaxApIdx(oFile.nativeFile["getStartID"]());
         this.SetMergedBinaryData(aUint8Array, AscCommon.g_oIdCounter.m_nIdCounterEdit, sMergeName);
@@ -6270,7 +6264,6 @@ var CPresentation = CPresentation || function(){};
 
         if (res) {
             let aPages = oFile.nativeFile["getPagesInfo"]();
-            
             for (let i = oFile.originalPagesCount; i < aPages.length; i++) {
                 let page = aPages[i];
                 
@@ -6289,7 +6282,8 @@ var CPresentation = CPresentation || function(){};
         }
 
         this.Viewer.checkLoadCMap();
-        
+        this.Viewer.navigateToPage(nNavigateTo);
+
         return res;
     };
     CPDFDoc.prototype.SetMergedBinaryData = function(aUint8Array, nMaxIdx, sMergeName) {

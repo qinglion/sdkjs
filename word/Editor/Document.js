@@ -9065,7 +9065,7 @@ CDocument.prototype.OnKeyDown = function(e)
 			}
 			else if ((inlineSdt = oSelectedInfo.GetInlineLevelSdt()) && inlineSdt.IsForm())
 			{
-				if (inlineSdt.IsMultiLineForm())
+				if (inlineSdt.IsTextForm() && inlineSdt.IsMultiLineForm())
 					this.executeShortcut(Asc.c_oAscDocumentShortcutType.InsertLineBreak);
 				else
 					this.Api.asc_MoveToFillingForm(true);

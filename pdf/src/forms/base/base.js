@@ -1543,7 +1543,8 @@
     };
 
     CBaseField.prototype.DrawEdit = function(oGraphicsWord) {
-        if (this.IsEditMode() && !oGraphicsWord.isSkipEditShapes) {
+        let oDoc = this.GetDocument();
+        if (oDoc.IsEditFieldsMode() && !oGraphicsWord.isSkipEditShapes) {
             this.editShape.Draw(oGraphicsWord);
         }
     };
@@ -2326,7 +2327,7 @@
 			this.contentFormat.SetFont(sFontName);
         
         this.SetWasChanged(true);
-        this.SetNeedRecalc();
+        this.SetNeedRecalc(true);
     };
     CBaseField.prototype.GetTextFontActual = function() {
         return this._textFontActual;
@@ -2373,7 +2374,7 @@
         }
 
         this.SetWasChanged(true);
-        this.SetNeedRecalc();
+        this.SetNeedRecalc(true);
     };
     CBaseField.prototype.GetTextSize = function() {
         return this._textSize;
@@ -2655,6 +2656,8 @@
             return false;
         }
 
+        AscCommon.History.StartNoHistoryMode();
+
         let aOrigRect = this.GetRect();
         let aRectMM = aOrigRect ? aOrigRect.map(function(measure) {
             return measure * g_dKoef_pt_to_mm;
@@ -2695,6 +2698,9 @@
 
         this.SetNeedUpdateEditShape(false);
         this.AddToRedraw();
+
+        AscCommon.History.EndNoHistoryMode();
+        
         return true;
     };
     CBaseField.prototype.IsEditMode = function() {
