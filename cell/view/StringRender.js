@@ -280,7 +280,6 @@
 			this.chars = [];
 			this.charWidths = [];
 			this.charProps = [];
-			this.origChars = [];
 			this.lines = [];
 			this.angle = 0;
 
@@ -625,7 +624,6 @@
 			this.charWidths = [];
 			this.charProps = [];
 			this.lines = [];
-			this.origChars = [];
 		};
 
 		/**
@@ -1249,15 +1247,18 @@
 				let fontSize = prop.font.getSize();
 				y = y1 + bl + dh;
 
-
+				let startX = drawState.x;
+				x1 = startX;
 				if (align !== AscCommon.align_Justify || dx < 0.000001) {
-					renderGraphemes(begin, end, x1, y, fontSize);
+					renderGraphemes(begin, end, drawState.x, y, fontSize);
 				} else {
 					for (i = b = begin; i < end; ++i) {
 						cp = self.charProps[i];
 						if (cp && cp.wrd && i > b) {
+							x1 = drawState.x;
 							renderGraphemes(b, i, drawState.x, y, fontSize);
-							drawState.x += self._calcCharsWidth(b, i - 1) + dx;
+							x1 += self._calcCharsWidth(b, i - 1) + dx;
+							drawState.x = x1;
 							dw += dx;
 							b = i;
 						}
@@ -1272,7 +1273,7 @@
 					if (angle && window["IS_NATIVE_EDITOR"])
 						ctx.nativeTextDecorationTransform(true);
 
-					x2 = x1 + dw;
+					x2 = startX + dw;
 					fsz = prop.font.getSize();
 					lw = asc_round(fsz * ppiy / 72 / 18) || 1;
 					ctx.setStrokeStyle(prop.c || textColor)
@@ -1282,12 +1283,12 @@
 					dy = dy >> 0;
 					if (ul) {
 						y = asc_round(y1 + bl + prop.lm.d * 0.4 * zoom);
-						ctx.lineHor(x1, y + dy, x2 + 1);
+						ctx.lineHor(startX, y + dy, x2 + 1);
 					}
 					if (isSO) {
 						dy += 1;
 						y = asc_round(y1 + bl - prop.lm.a * 0.275 * zoom);
-						ctx.lineHor(x1, y - dy, x2 + 1);
+						ctx.lineHor(startX, y - dy, x2 + 1);
 					}
 					ctx.stroke();
 
@@ -1310,7 +1311,7 @@
 
 				if (p && (p.font || p.nl || p.hp || p.skip > 0)) {
 					if (strBeg < i) {
-						x1 += renderFragment(strBeg, i, p_, this.angle);
+						renderFragment(strBeg, i, p_, this.angle);
 						strBeg = i;
 					}
 					if (p.nl) {
@@ -1322,7 +1323,7 @@
 					}
 					if (p.skip > 0) {
 						j = i + p.skip - 1;
-						x1 += this._calcCharsWidth(i, j);
+						drawState.x += this._calcCharsWidth(i, j);
 						strBeg = j + 1;
 						i = j;
 						continue;
@@ -1330,10 +1331,10 @@
 					if (p.nl || p.hp) {
 						y1 += asc_round(l.th * zoom);
 						l = self.lines[++n];
-						x1 = self.initStartX(i, l, x, maxWidth);
+						drawState.x = self.initStartX(i, l, x, maxWidth);
 						dx = computeWordDeltaX();
 						drawState.endLine();
-						drawState.beginLine(l, x1, y);
+						drawState.beginLine(l, drawState.x, y);
 					}
 				}
 			}
@@ -1365,9 +1366,7 @@
 				chars: this.chars,
 				charWidths: this.charWidths,
 				charProps: this.charProps,
-				lines: this.lines,
-
-				origChars: this.origChars
+				lines: this.lines
 			};
 		};
 		StringRender.prototype.restoreInternalState = function (state) {
@@ -1376,7 +1375,6 @@
 			this.charWidths = state.charWidths;
 			this.charProps = state.charProps;
 			this.lines = state.lines;
-			this.origChars = state.origChars;
 			return this;
 		};
 		StringRender.prototype._setFont = function (ctx, font) {
