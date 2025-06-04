@@ -9020,6 +9020,10 @@ drawAreaChart.prototype = {
 		let points = this.points;
 		let isStacked = this.subType === "stackedPer" || this.subType === "stacked";
 
+		if (!points) {
+			return;
+		}
+
 		for (let i = 0; i < points.length; i++) {
 			if (!this.paths.series) {
 				this.paths.series = [];
@@ -10119,6 +10123,10 @@ drawAreaChart.prototype = {
 			this.chartProp.chartGutter._left / this.chartProp.pxToMM,
 			(this.chartProp.chartGutter._top - 1) / this.chartProp.pxToMM,
 			this.chartProp.trueWidth / this.chartProp.pxToMM, this.chartProp.trueHeight / this.chartProp.pxToMM);
+
+		if (!this.paths.series) {
+			return;
+		}
 
 		for (var i = 0; i < this.chart.series.length; i++) {
 			seria = this.chart.series[i];
