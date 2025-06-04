@@ -1186,7 +1186,7 @@
 					oSpPr.ln = AscFormat.CreateNoFillLine();
 				}
 				let penW = 0;
-				if (this.pen) {
+				if (this.pen && this.pen.isVisible() && this.brush && this.brush.isVisible()) {
 					penW = this.pen.w ? this.pen.w / 36000.0 : 12700.0 / 36000.0;
 				}
 				let W = this.extX + penW;
@@ -1206,8 +1206,10 @@
 
 				let dist = outerShdw.dist ? outerShdw.dist / 36000 : 0;
 				if(AscFormat.fApproxEqual(W, W0) && AscFormat.fApproxEqual(H, H0) && AscFormat.fApproxEqual(dist, 0)) {
-					W += 1;
-					H += 1;
+					const nAppendValue = 1;
+					W += nAppendValue;
+					H += nAppendValue;
+					penW += nAppendValue;
 				}
 				let oXfrm = oSpPr.xfrm;
 				oXfrm.setExtX(W);
@@ -1220,6 +1222,7 @@
 					shape.setParent(this.parent);
 				}
 				shape.recalculate();
+				shape.shdwPenW = penW;
 				this.shdwSp = shape;
 			}, this, []);
 		}
@@ -1321,10 +1324,11 @@
 		const dMainX = oMainBounds.x;
 		const dMainY = oMainBounds.y;
 
-		const nShdwW = oShdwBounds.w;
-		const nShdwH = oShdwBounds.h;
-		const dShdwX = oShdwBounds.x;
-		const dShdwY = oShdwBounds.y;
+		const nShwdPenW = this.shdwPenW || 0;
+		const nShdwW = oShdwBounds.w - nShwdPenW;
+		const nShdwH = oShdwBounds.h - nShwdPenW;
+		const dShdwX = oShdwBounds.x + nShwdPenW / 2;
+		const dShdwY = oShdwBounds.y + nShwdPenW / 2;
 
 		let dX;
 		let dY;
