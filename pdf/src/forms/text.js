@@ -516,6 +516,9 @@
     CTextField.prototype.DrawMarker = function(oCtx) {
         if (this.IsHidden()) return;  // don't draw if field is hidden
 
+        oCtx.globalAlpha = 1;
+        oCtx.globalCompositeOperation = "source-over";
+        
         // 1. Base parameters
         let oViewer   = editor.getDocumentRenderer();
         let nPage     = this.GetPage();
