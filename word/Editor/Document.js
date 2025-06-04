@@ -10877,7 +10877,7 @@ CDocument.prototype.OnMouseUp = function(e, X, Y, PageIndex)
 		this.Selection.Start = false;
 		this.Selection_SetEnd(X, Y, e);
 		this.CheckComplexFieldsInSelection();
-		this.CheckMouseClickInContentControl(X, Y, PageIndex);
+		this.CheckMouseClickInContentControl(X, Y, PageIndex, e);
 		isUpdateTarget = this.private_UpdateSelectionOnMouseEvent(X, Y, this.CurPage, e);
 
 		if (this.Api.isFormatPainterOn())
@@ -11088,7 +11088,7 @@ CDocument.prototype.private_HandleMouseRightClickOnHeaderFooter = function(X, Y,
 
 	return false;
 };
-CDocument.prototype.CheckMouseClickInContentControl = function(x, y, pageIndex)
+CDocument.prototype.CheckMouseClickInContentControl = function(x, y, pageIndex, e)
 {
 	let form = this.CurPos.CC;
 	if (form
@@ -11099,7 +11099,7 @@ CDocument.prototype.CheckMouseClickInContentControl = function(x, y, pageIndex)
 		this.private_UpdateDocumentTracks();
 
 		//let coords = this.DrawingDocument.ConvertCoordsToCursor2(x, y, pageIndex);
-		let pos = this.DrawingDocument.ConvertCoordsFromCursor2(AscCommon.global_mouseEvent.X, AscCommon.global_mouseEvent.Y)
+		let pos = this.DrawingDocument.ConvertCoordsFromCursor2(e.X, e.Y)
 		
 		this.DrawingDocument.contentControls.onPointerDown(pos);
 		this.DrawingDocument.contentControls.onPointerUp(pos);
