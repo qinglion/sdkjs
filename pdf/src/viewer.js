@@ -329,6 +329,12 @@
 
         oDoc.History.Add(new CChangesPDFDocumentRotatePage(this, oFile.pages[nIndex].Rotate, nAngle));
 		oFile.pages[nIndex].Rotate = nAngle;
+
+		if (oDoc.IsEditFieldsMode()) {
+			this.fields.forEach(function(field) {
+				field.UpdateEditShape();
+			});
+		}
 	};
 	CPageInfo.prototype.GetRotate = function() {
 		let oDoc		= this.GetDocument();
@@ -538,9 +544,8 @@
 
 		var oThis = this;
 
-		this.onRepaintFormsCallbacks = [];
-		this.onRepaintAnnotsCallbacks = [];
-		this.onRepaintFinishCallbacks = [];
+		this.onRepaintCallbacks = [];
+		this.onAfterPaintCallback = [];
 
 		this.updateSkin = function()
 		{
@@ -888,29 +893,20 @@
 
 			this.scheduleRepaint();
 		};
-		this.scheduleRepaint = function(formsCallBack, annotsCallback, otherCallback) {
+		this.scheduleRepaint = function(onRepaintCallback, onAfterPaintCallback) {
 			let oThis = this;
 			if (this.scheduledRepaintTimer == null) {
 				this.scheduledRepaintTimer = setTimeout(function() {
 					oThis.scheduledRepaintTimer = null;
 					oThis.isRepaint = false;
 
-					let nFormsCallbacks = oThis.onRepaintFormsCallbacks.length;
-					let nAnnotCallbacks = oThis.onRepaintAnnotsCallbacks.length;
-					let nFinishCallbacks = oThis.onRepaintFinishCallbacks.length;
+					let nCallbacks = oThis.onRepaintCallbacks.length;
 
-					oThis.onRepaintFormsCallbacks.forEach(function(callback) {
+					oThis.onRepaintCallbacks.forEach(function(callback) {
 						callback();
 					});
-					oThis.onRepaintAnnotsCallbacks.forEach(function(callback) {
-						callback();
-					});
-					oThis.onRepaintFinishCallbacks.forEach(function(callback) {
-						callback();
-					});
-					oThis.onRepaintFormsCallbacks.splice(0, nFormsCallbacks);
-					oThis.onRepaintAnnotsCallbacks.splice(0, nAnnotCallbacks);
-					oThis.onRepaintFinishCallbacks .splice(0, nFinishCallbacks);
+					
+					oThis.onRepaintCallbacks.splice(0, nCallbacks);
 
 					if (oThis.Api && oThis.Api.printPreview)
 						oThis.Api.printPreview.update();
@@ -919,12 +915,10 @@
 				});
 			}
 			
-			if (formsCallBack)
-				this.onRepaintFormsCallbacks.push(formsCallBack);
-			if (annotsCallback)
-				this.onRepaintAnnotsCallbacks.push(annotsCallback);
-			if (otherCallback)
-				this.onRepaintFinishCallbacks.push(otherCallback);
+			if (onRepaintCallback)
+				this.onRepaintCallbacks.push(onRepaintCallback);
+			if (onAfterPaintCallback)
+				this.onAfterPaintCallback.push(onAfterPaintCallback);
 		};
 
 		this.onRepaintForms = function(pages) {
@@ -1073,7 +1067,7 @@
 					_t.startTimer();
 				}
 
-				if (_t.isStarted && _t.pageDetector && !oDoc.fontLoader.isWorking() && _t.IsOpenFormsInProgress == false) {
+				if (_t.isStarted && _t.pageDetector && !oDoc.fontLoader.isWorking() && _t.IsOpenFormsInProgress == false && _t.initPaintDone) {
 					_t.sendEvent("onFileOpened");
 
 					_t.sendEvent("onPagesCount", _t.file.pages.length);
@@ -1094,7 +1088,7 @@
 			this.checkReady();
 			this.file.onRepaintPages = this.onUpdatePages.bind(this);
 			this.file.onRepaintForms = this.onRepaintForms.bind(this);
-			this.file.onRepaintAnnots = this.onRepaintAnnots.bind(this);
+			this.file.onRepaintAnnotations = this.onRepaintAnnots.bind(this);
 			this.file.onUpdateStatistics = this.onUpdateStatistics.bind(this);
 			this.currentPage = -1;
 			this.structure = this.file.getStructure();
@@ -1855,12 +1849,12 @@
 				posX = this.scrollMaxX;
 
 			let oDoc		= this.getPDFDoc();
-			let oActiveObj	= oDoc.GetActiveObject();
-			let nPage		= oActiveObj ? oActiveObj.GetPage() : undefined;
+			let oActiveForm	= oDoc.activeForm;
+			let nPage		= oActiveForm ? oActiveForm.GetPage() : undefined;
 
 			this.checkVisiblePages();
 			// выход из активного объекта если сместились на другую страницу
-			if (oActiveObj && !(nPage >= this.startVisiblePage && nPage <= this.endVisiblePage)) {
+			if (!oDoc.IsEditFieldsMode() && oActiveForm && !(nPage >= this.startVisiblePage && nPage <= this.endVisiblePage)) {
 				oDoc.BlurActiveObject();
 			}
 
@@ -1869,15 +1863,15 @@
 		};
 		this.scrollToXY = function(posY, posX) {
 			let oDoc		= this.getPDFDoc();
-			let oActiveObj	= oDoc.GetActiveObject();
-			let nPage		= oActiveObj ? oActiveObj.GetPage() : undefined;
+			let oActiveForm	= oDoc.activeForm;
+			let nPage		= oActiveForm ? oActiveForm.GetPage() : undefined;
 
 			this.m_oScrollVerApi.scrollToY(posY);
 			this.m_oScrollVerApi.scrollToX(posX);
 
 			this.checkVisiblePages();
 			// выход из активного объекта если сместились на другую страницу
-			if (oActiveObj && !(nPage >= this.startVisiblePage && nPage <= this.endVisiblePage)) {
+			if (!oDoc.IsEditFieldsMode() && oActiveForm && !(nPage >= this.startVisiblePage && nPage <= this.endVisiblePage)) {
 				oDoc.BlurActiveObject();
 			}
 		};
@@ -1900,7 +1894,7 @@
 				var url = link["link"];
 				var typeUrl = AscCommon.getUrlType(url);
 				url = AscCommon.prepareUrl(url, typeUrl);
-				this.sendEvent("onHyperlinkClick", url);
+				Asc.editor.sync_HyperlinkClickCallback(url);
 			}
 
 			//console.log(link["link"]);
@@ -2660,9 +2654,9 @@
 			}
 		};
 
-		this.paint = function(formsCallBack, annotsCallback)
+		this.paint = function(onRepaintCallback, onAfterPaintCallback)
 		{
-			this.scheduleRepaint(formsCallBack, annotsCallback);
+			this.scheduleRepaint(onRepaintCallback, onAfterPaintCallback);
 		};
 		
 		this.getStructure = function()
@@ -3125,19 +3119,18 @@
 			
 			this.isClearPages = false;
 			this.updateCurrentPage(this.pageDetector.getCurrentPage(this.currentPage));
-			let oActiveObj = oDoc.GetActiveObject();
+			let oActiveForm	= oDoc.activeForm;
 
 			// выход из активного объекта если сместились на другую страницу
-			if (oActiveObj && this.pageDetector.pages.map(function(item) {
+			if (!oDoc.IsEditFieldsMode() && oActiveForm && this.pageDetector.pages.map(function(item) {
 				return item.num;
-			}).includes(oActiveObj.GetPage()) == false) {
+			}).includes(oActiveForm.GetPage()) == false) {
 				oDoc.BlurActiveObject();
 			}
 
 			this._paintAnnots();
 			this._paintForms();
 			this._paintFormsHighlight();
-			this._paintFormsMarkers();
 			oDoc.UpdateInterface(true);
 			oDoc.UpdateInterfaceTracks();
 			
@@ -3145,7 +3138,17 @@
 			this._checkTargetUpdate();
 
 			this.initPaintDone = true;
+
+			this.afterPaintCallbacks();
 		};
+		this.afterPaintCallbacks = function() {
+			this.onAfterPaintCallback.forEach(function(callback) {
+				callback();
+			});
+			
+			// clear used callbacks
+			this.onAfterPaintCallback.length = 0;
+		}
 		this.updatePageDetector = function() {
 			this.pageDetector = new CCurrentPageDetector(this.canvas.width, this.canvas.height);
 
@@ -4148,39 +4151,13 @@
 					if (field.GetType() == AscPDF.FIELD_TYPES.combobox)
 						field.DrawMarker(oCtx);
 					else if (field.GetType() == AscPDF.FIELD_TYPES.text && field.IsDateFormat()) {
-						field.IsNeedDrawHighlight() == false && field.DrawDateMarker(oCtx);
+						field.IsNeedDrawHighlight() == false && field.DrawMarker(oCtx);
 					}
 				});
 			}
 		}
 
 		oCtx.restore();
-	};
-	CHtmlPage.prototype._paintFormsMarkers = function()
-	{
-		return;
-		let oCtx = this.canvasForms.getContext("2d");
-		for (let i = this.startVisiblePage; i <= this.endVisiblePage; i++)
-		{
-			let page = this.drawingPages[i];
-			if (!page)
-				break;
-
-			let aForms = this.pagesInfo.pages[i].fields != null ? this.pagesInfo.pages[i].fields : null;
-			
-			if (!aForms)
-				continue;
-			
-			if (this.pagesInfo.pages[i].fields != null) {
-				this.pagesInfo.pages[i].fields.forEach(function(field) {
-					if (field.GetType() == AscPDF.FIELD_TYPES.combobox)
-						field.DrawMarker(oCtx);
-					else if (field.GetType() == AscPDF.FIELD_TYPES.text && field.IsDateFormat()) {
-						field.IsNeedDrawHighlight() == false && field.DrawDateMarker(oCtx);
-					}
-				});
-			}
-		}
 	};
 	// возвращает видимый рект страницы (процентах от полной), не учитывая поворот
 	CHtmlPage.prototype.getViewingRect = function(nPage) {

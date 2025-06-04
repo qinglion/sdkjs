@@ -779,6 +779,9 @@ AscFormat.InitClass(Slide, AscFormat.CBaseFormatObject, AscDFH.historyitem_type_
                     if (matching_shape == null && layout.cSld.spTree[j]) {
                         var sp = layout.cSld.spTree[j].copy(undefined);
                         sp.setParent(this);
+											if (sp.txBody) {
+												sp.txBody.setBodyPr(new AscFormat.CBodyPr());
+											}
                         !bIsSpecialPh && sp.clearContent && sp.clearContent();
                         this.addToSpTreeToPos(this.cSld.spTree.length, sp)
                     }

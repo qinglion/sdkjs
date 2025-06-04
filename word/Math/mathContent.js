@@ -3609,33 +3609,20 @@ CMathContent.prototype.Add_Text = function(text, paragraph, mathStyle, oAddition
 		return;
 
 	let oMathRun = this.Content[this.Content.length - 1];
-
 	if (oMathRun && oMathRun.Content.length === 0 && this.Content.length > 1)
 	{
 		this.Content.splice(this.Content.length - 1, 1);
 		oMathRun = this.Content[this.Content.length - 1];
 	}
 
-	let isEscapedSlash = oAdditionalData
-		?  oAdditionalData.GetMathMetaData().getIsEscapedSlash()
-		: false;
-	let oLastContent = oMathRun
-		? oMathRun.GetTextOfElement().GetLastContent()
-		: false;
-	let isPrevEscapedSlash = oLastContent
-		? oLastContent.GetAdditionalData().GetMathMetaData().getIsEscapedSlash()
-		: false;
-
-	if (isEscapedSlash
-		|| isPrevEscapedSlash
-		|| !oMathRun
-		|| !(oMathRun instanceof AscWord.Run)
-		|| (oAdditionalData	&& !oAdditionalData.IsStyleEqual(oMathRun)))
+	if (!oMathRun || !(oMathRun instanceof AscWord.Run) || (oAdditionalData	&& !oAdditionalData.IsStyleEqual(oMathRun)))
 		oMathRun = new AscWord.Run(undefined, true);
 
 	AscWord.TextToMathRunElements(text, function(item)
 	{
 		oMathRun.private_AddItemToRun(oMathRun.State.ContentPos, item);
+		if (oAdditionalData)
+			oMathRun.math_autocorrection = oAdditionalData.metaData;
 	});
 
 	if (this.Content[this.Content.length - 1] === oMathRun)
@@ -3668,7 +3655,7 @@ CMathContent.prototype.Add_Text = function(text, paragraph, mathStyle, oAddition
 	if (this.Content[this.Content.length - 1] !== oMathRun)
 	{
 		this.AddToContent(this.Content.length, oMathRun, false);
-		this.CurPos = this.Content.length + 1;
+		this.CurPos = this.Content.length;
 	}
 };
 CMathContent.prototype.Add_ToPrevParaRun = function(text)

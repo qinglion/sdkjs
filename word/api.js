@@ -14434,7 +14434,8 @@ background-repeat: no-repeat;\
 	asc_docs_api.prototype.onPluginClose = function(guid)
 	{
 		AscCommon.baseEditorsApi.prototype.onPluginClose.call(this, guid);
-		this.WordControl.m_oLogicDocument.DrawingDocument.contentControls.removePluginButtons(guid);
+		if (this.WordControl && this.WordControl.m_oLogicDocument && this.WordControl.m_oLogicDocument.DrawingDocument)
+			this.WordControl.m_oLogicDocument.DrawingDocument.contentControls.removePluginButtons(guid);
 	};
 	asc_docs_api.prototype.onAttachPluginEvent = function(guid, name)
 	{
@@ -14447,8 +14448,6 @@ background-repeat: no-repeat;\
 	};
 	asc_docs_api.prototype.initBroadcastChannelListeners = function() {
 		let oThis = this;
-		let docInfo = this.DocInfo;
-		let wb = oThis.wbModel;
 		let broadcastChannel = this.broadcastChannel;
 		if (broadcastChannel) {
 			broadcastChannel.onmessage = function(event) {

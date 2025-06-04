@@ -1438,7 +1438,9 @@
 	window['AscDFH'].historyitem_type_Endnotes           = 69 << 16;
 	window['AscDFH'].historyitem_type_ParagraphPermStart = 70 << 16;
 	window['AscDFH'].historyitem_type_ParagraphPermEnd   = 71 << 16;
-	
+	window['AscDFH'].historyitem_type_CustomXmlManager   = 72 << 16;
+	window['AscDFH'].historyitem_type_CustomXml          = 73 << 16;
+
 	window['AscDFH'].historyitem_type_CommonShape            = 1000 << 16; // Этот класс добавлен для элементов, у которых нет конкретного класса
 
 	window['AscDFH'].historyitem_type_ColorMod               = 1001 << 16;
@@ -1641,6 +1643,9 @@
 	window['AscDFH'].historyitem_type_ChartStyleEntry        = 1198 << 16;
 	window['AscDFH'].historyitem_type_MarkerLayout           = 1199 << 16;
 	window['AscDFH'].historyitem_type_TimelineSlicerView     = 1200 << 16;
+	window['AscDFH'].historyitem_type_ImageBlipFillPart      = 1201 << 16;
+	window['AscDFH'].historyitem_type_ImageBlipStart         = 1202 << 16;
+	window['AscDFH'].historyitem_type_ImageBlipEnd           = 1203 << 16;
 
 
 	window['AscDFH'].historyitem_type_Address                          = 1201 << 16;
@@ -3330,8 +3335,6 @@
 	//------------------------------------------------------------------------------------------------------------------
 	window['AscDFH'].historyitem_DocumentMacros_Data = window['AscDFH'].historyitem_type_DocumentMacros | 1;
 
-
-
 	//------------------------------------------------------------------------------------------------------------------
 	// Типы изменений класса CCore
 	//------------------------------------------------------------------------------------------------------------------
@@ -4063,8 +4066,9 @@
 	AscDFH.historyitem_Pdf_List_Form_Parent_Cur_Idxs		= AscDFH.historyitem_type_Pdf_Listbox_Field | 2;
 	AscDFH.historyitem_Pdf_List_Form_Top_Idx				= AscDFH.historyitem_type_Pdf_Listbox_Field | 3;
 	AscDFH.historyitem_Pdf_List_Form_Option					= AscDFH.historyitem_type_Pdf_Listbox_Field | 4;
-	AscDFH.historyitem_Pdf_List_Form_Commit_On_Sel_Change	= AscDFH.historyitem_type_Pdf_Listbox_Field | 5;
-	AscDFH.historyitem_Pdf_List_Form_Multiple_Selection		= AscDFH.historyitem_type_Pdf_Listbox_Field | 6;
+	AscDFH.historyitem_Pdf_List_Form_Content_Option			= AscDFH.historyitem_type_Pdf_Listbox_Field | 5;
+	AscDFH.historyitem_Pdf_List_Form_Commit_On_Sel_Change	= AscDFH.historyitem_type_Pdf_Listbox_Field | 6;
+	AscDFH.historyitem_Pdf_List_Form_Multiple_Selection		= AscDFH.historyitem_type_Pdf_Listbox_Field | 7;
 
 	// button
 	AscDFH.historyitem_Pdf_Pushbutton_Image				= AscDFH.historyitem_type_Pdf_Pushbutton | 1;
@@ -5709,6 +5713,14 @@
 	{
 		return false;
 	}
+	window['AscDFH'].InheritBaseChange = function(changeClass, baseChange, type)
+	{
+		window['AscDFH'].changesFactory[type] = changeClass;
+		
+		changeClass.prototype             = Object.create(baseChange.prototype);
+		changeClass.prototype.constructor = changeClass;
+		changeClass.prototype.Type        = type;
+	};
 	window['AscDFH'].InheritPropertyChange = function(changeClass, baseChange, type, setFunction, needRecalculate)
 	{
 		window['AscDFH'].changesFactory[type]   = changeClass;
@@ -5720,7 +5732,6 @@
 
 		if (undefined !== needRecalculate && !needRecalculate)
 			changeClass.prototype.IsNeedRecalculate = DoNotRecalculate;
-
 	};
 
 })(window);

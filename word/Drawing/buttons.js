@@ -87,6 +87,15 @@
 			wordControl.StartUpdateOverlay();
 			wordControl.OnUpdateOverlay();
 			wordControl.EndUpdateOverlay();
+			
+			// TODO: Пока временно сделаем так, в будущем надо отделить загрузку и обновление картинок, которые
+			//       рисуются не на оверлее
+			let drawingDocument = wordControl.m_oDrawingDocument;
+			if (drawingDocument)
+			{
+				drawingDocument.ClearCachePages();
+				drawingDocument.FirePaint();
+			}
 		}
 	};
 	StorageBaseImageCtrl.prototype.resize = function()
@@ -1156,7 +1165,8 @@
 		Toc : 1,
 		Image : 2,
 		Combo : 3,
-		Date : 4
+		Date : 4,
+		Signature : 5
 	};
 
 	var exportObj = AscCommon.CCButtonType;
@@ -1165,6 +1175,7 @@
 	exportObj["Toc"] = exportObj.Toc;
 	exportObj["Combo"] = exportObj.Combo;
 	exportObj["Date"] = exportObj.Date;
+	exportObj["Signature"] = exportObj.Signature;
 
 	AscCommon.ContentControlTrack = {
 		Hover : 0,
@@ -2103,6 +2114,7 @@
 		this.icons = new CCIcons();
 		this.icons.register(AscCommon.CCButtonType.Toc, "toc");
 		this.icons.register(AscCommon.CCButtonType.Image, "img");
+		this.icons.register(AscCommon.CCButtonType.Signature, "signature")
 		this.icons.generateComboImages();
 
 		this.ContentControlObjects = [];

@@ -85,6 +85,10 @@
         this.DrawEdit(oGraphicsWord);
     };
     CComboBoxField.prototype.Recalculate = function() {
+        if (this.IsNeedUpdateEditShape()) {
+            this.UpdateEditShape();
+        }
+        
         if (this.IsNeedRecalc() == false)
             return;
 
@@ -109,6 +113,10 @@
             });
         }
         
+        if (this.IsNeedRecalcTextTransform()) {
+            this.RecalculateTextTransform();
+        }
+
         this.SetNeedRecalc(false);
     };
     CComboBoxField.prototype.RecalculateContentRect = function() {
@@ -173,90 +181,7 @@
             H: (nHeight - oMargins.top - oMargins.bottom) * g_dKoef_pt_to_mm,
             Page: this.GetPage()
         }
-    };
-    CComboBoxField.prototype.DrawMarker = function(oCtx) {
-        if (this.IsHidden())
-            return;
-
-        let oViewer     = editor.getDocumentRenderer();
-        let nPage       = this.GetPage();
-        let nScale      = AscCommon.AscBrowser.retinaPixelRatio * oViewer.zoom * oViewer.getDrawingPageScale(nPage);
-        let aOrigRect   = this.GetOrigRect();
-
-        let xCenter = oViewer.width >> 1;
-        if (oViewer.documentWidth > oViewer.width)
-		{
-			xCenter = (oViewer.documentWidth >> 1) - (oViewer.scrollX) >> 0;
-		}
-		let yPos    = oViewer.scrollY >> 0;
-        let page    = oViewer.drawingPages[nPage];
-        let w       = (page.W * AscCommon.AscBrowser.retinaPixelRatio) >> 0;
-        let h       = (page.H * AscCommon.AscBrowser.retinaPixelRatio) >> 0;
-        let indLeft = ((xCenter * AscCommon.AscBrowser.retinaPixelRatio) >> 0) - (w >> 1);
-        let indTop  = ((page.Y - yPos) * AscCommon.AscBrowser.retinaPixelRatio) >> 0;
-
-        let isLandscape = oViewer.isLandscapePage(nPage);
-        if (isLandscape) {
-            indLeft = indLeft + (w - h) / 2;
-        }
-        
-        let X       = aOrigRect[0] * nScale + indLeft;
-        let Y       = aOrigRect[1] * nScale + indTop;
-        let nWidth  = (aOrigRect[2] - aOrigRect[0]) * nScale;
-        let nHeight = (aOrigRect[3] - aOrigRect[1]) * nScale;
-        
-        let oMargins = this.GetBordersWidth();
-        
-        let nMarkWidth  = 18;
-        let nMarkX      = (X + nWidth) - oMargins.left * nScale - nMarkWidth;
-        let nMarkHeight = nHeight - 2 * oMargins.top * nScale;
-        let nMarkY      = Y + oMargins.top * nScale;
-
-        // marker rect
-        oCtx.setLineDash([]);
-        oCtx.beginPath();
-        oCtx.globalAlpha = 1;
-        oCtx.fillStyle = "rgb(240, 240, 240)";
-        oCtx.fillRect(nMarkX, nMarkY, nMarkWidth, nMarkHeight);
-
-        // marker border right part
-        oCtx.beginPath();
-        oCtx.strokeStyle = "rgb(100, 100, 100)";
-        oCtx.lineWidth = 1;
-        oCtx.moveTo(nMarkX, nMarkY + nMarkHeight);
-        oCtx.lineTo(nMarkX + nMarkWidth, nMarkY + nMarkHeight);
-        oCtx.lineTo(nMarkX + nMarkWidth, nMarkY);
-        oCtx.stroke();
-
-        // marker border left part
-        oCtx.beginPath();
-        oCtx.strokeStyle = "rgb(255, 255, 255)";
-        oCtx.moveTo(nMarkX, nMarkY + nMarkHeight);
-        oCtx.lineTo(nMarkX, nMarkY);
-        oCtx.lineTo(nMarkX + nMarkWidth, nMarkY);
-        oCtx.stroke();
-
-        // marker icon
-        let nIconW = 5 * 1.5;
-        let nIconH = 3 * 1.5;
-        let nStartIconX = nMarkX + nMarkWidth/2 - (nIconW)/2;
-        let nStartIconY = nMarkY + nMarkHeight/2 - (nIconH)/2;
-
-        oCtx.beginPath();
-        oCtx.fillStyle = "rgb(0, 0, 0)";
-        
-        oCtx.moveTo(nStartIconX, nStartIconY);
-        oCtx.lineTo(nStartIconX + nIconW, nStartIconY);
-        oCtx.lineTo(nStartIconX + nIconW/2, nStartIconY + nIconH);
-        oCtx.lineTo(nStartIconX, nStartIconY);
-        oCtx.fill();
-
-        this._markRect = {
-            x1: (nMarkX - indLeft) / nScale,
-            y1: (nMarkY - indTop) / nScale,
-            x2: ((nMarkX - indLeft) + (nMarkWidth)) / nScale,
-            y2: ((nMarkY - indTop) + (nMarkHeight)) / nScale
-        }
+        return this.contentClipRect;
     };
     CComboBoxField.prototype.onMouseDown = function(x, y, e) {
         let oViewer         = editor.getDocumentRenderer();
@@ -341,6 +266,11 @@
         let oPara = this.content.GetElement(0);
         let oRun = oPara.GetElement(0);
 
+        // use history only in local form history
+        if (oDoc.History == AscCommon.History) {
+            AscCommon.History.StartNoHistoryMode();
+        }
+
         oRun.ClearContent();
         let aOptions = this.GetOptions();
         if (aOptions[nIdx]) {
@@ -350,6 +280,10 @@
             else {
                 oRun.AddText(aOptions[nIdx]);
             }
+        }
+
+        if (oDoc.History == AscCommon.History) {
+            AscCommon.History.EndNoHistoryMode();
         }
 
         this.SetNeedRecalc(true);
@@ -368,7 +302,7 @@
     CComboBoxField.prototype.SetCurIdxs = function(aIdxs) {
         if (this.IsWidget()) {
             let oDoc = this.GetDocument();
-            oDoc.History.Add(new CChangesPDFListFormCurIdxs(this, this.GetParentCurIdxs(), aIdxs));
+            oDoc.History.Add(new CChangesPDFListFormCurIdxs(this, this.GetCurIdxs(), aIdxs));
 
             if (undefined !== aIdxs[0]) {
                 this.SelectOption(aIdxs[0]);
@@ -673,10 +607,13 @@
 
         if (Number.isInteger(nPos) && nPos >= 0 && nPos < this._options.length) {
             if (this.GetCurIdxs().includes(nPos)) {
+                AscCommon.History.StartNoHistoryMode();
+
                 let oPara = this.content.GetElement(0);
                 let oRun = oPara.GetElement(0);
-
                 oRun.ClearContent();
+
+                AscCommon.History.EndNoHistoryMode();
             }
 
             let option = this._options.splice(nPos, 1);
@@ -741,17 +678,10 @@
         return [];
     };
     CComboBoxField.prototype.SyncValue = function() {
-        let aFields = this.GetDocument().GetAllWidgets(this.GetFullName());
+        this.SetCurIdxs(this.GetParentCurIdxs());
+        this.SetFormatValue(this.GetFormatValue());
         
-        for (let i = 0; i < aFields.length; i++) {
-            if (aFields[i] != this) {
-                this.SetCurIdxs(aFields[i].GetParentCurIdxs());
-                this.SetFormatValue(aFields[i].GetFormatValue());
-                
-                this.SetNeedRecalc(true);
-                break;
-            }
-        }
+        this.SetNeedRecalc(true);
     };
 
     CComboBoxField.prototype.ProcessAutoFitContent = function(oContent) {
@@ -917,6 +847,7 @@
     CComboBoxField.prototype.SetArbitaryMask        = AscPDF.CTextField.prototype.SetArbitaryMask;
     CComboBoxField.prototype.ClearFormat            = AscPDF.CTextField.prototype.ClearFormat;
     CComboBoxField.prototype.SetDrawFromStream      = AscPDF.CTextField.prototype.SetDrawFromStream;
+    CComboBoxField.prototype.DrawMarker             = AscPDF.CTextField.prototype.DrawMarker;
 
 	window["AscPDF"].CComboBoxField = CComboBoxField;
 })();

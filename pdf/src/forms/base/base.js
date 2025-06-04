@@ -297,6 +297,10 @@
 
         this._kids.push(oField);
         oField._parent = this;
+
+        if (oField.IsWidget()) {
+            oField.SyncValue();
+        }
     };
     CBaseField.prototype.GetKids = function() {
         return this._kids;
@@ -386,24 +390,18 @@
         return this._partialName ? this._partialName : "";
     };
     CBaseField.prototype.SetPartialName = function(sName) {
-        this._partialName = sName;
         AscCommon.History.Add(new CChangesPDFFormPartialName(this, this._partialName, sName));
 
-        this.SetWasChanged(true);
+        this._partialName = sName;
 
-        if (this.IsEditMode()) {
-            AscCommon.History.StartNoHistoryMode();
-            let oShape = this.GetEditShape();
-            let oContent = oShape.GetDocContent();
-            let oPara = oContent.GetElement(0);
-            let oRun = oPara.GetElement(0);
-            oRun.Remove_FromContent(0, oRun.Content.length);
-            oRun.AddText(this.GetFullName());
-            oShape.recalcContent();
-            oShape.recalculate();
-            this.AddToRedraw();
-            AscCommon.History.EndNoHistoryMode();
-        }
+        this.SetWasChanged(true);
+        this.SetNeedUpdateEditShape(true);
+    };
+    CBaseField.prototype.SetNeedUpdateEditShape = function(bUpdate) {
+        this._needUpdateEditShape = bUpdate;
+    };
+    CBaseField.prototype.IsNeedUpdateEditShape = function() {
+        return this._needUpdateEditShape;
     };
     CBaseField.prototype.GetPartialName = function() {
         return this._partialName;
@@ -1472,18 +1470,17 @@
 
             if (bParentInherit) {
                 oParentField.DrainLogicFrom(oExistsField);
+
+                aWidgetForms.forEach(function(widget) {
+                    widget.SetPartialName(undefined);
+                    oParentField.AddKid(widget);
+                });
             }
 
-            aWidgetForms.forEach(function(widget) {
-                oParentField.AddKid(widget);
-                widget.SetPartialName(undefined);
-            });
-
-            oParentField.AddKid(this);
             this.SetPartialName(undefined);
+            oParentField.AddKid(this);
         }
 
-        this.SyncValue();
         return true;
     };
     CBaseField.prototype.IsNeedRecalc = function() {
@@ -1546,7 +1543,8 @@
     };
 
     CBaseField.prototype.DrawEdit = function(oGraphicsWord) {
-        if (this.IsEditMode() && !oGraphicsWord.isSkipEditShapes) {
+        let oDoc = this.GetDocument();
+        if (oDoc.IsEditFieldsMode() && !oGraphicsWord.isSkipEditShapes) {
             this.editShape.Draw(oGraphicsWord);
         }
     };
@@ -2329,7 +2327,7 @@
 			this.contentFormat.SetFont(sFontName);
         
         this.SetWasChanged(true);
-        this.SetNeedRecalc();
+        this.SetNeedRecalc(true);
     };
     CBaseField.prototype.GetTextFontActual = function() {
         return this._textFontActual;
@@ -2371,8 +2369,12 @@
             }
         }
         
+        if (this.GetType() == AscPDF.FIELD_TYPES.button) {
+            this.SetNeedUpdateImage(true);
+        }
+
         this.SetWasChanged(true);
-        this.SetNeedRecalc();
+        this.SetNeedRecalc(true);
     };
     CBaseField.prototype.GetTextSize = function() {
         return this._textSize;
@@ -2383,22 +2385,10 @@
         this._origRect = aOrigRect;
         this.SetWasChanged(true);
         this.SetNeedRecalc(true);
+		this.RecalcTextTransform();
 
         if (this.IsEditMode()) {
-            let oShape = this.GetEditShape();
-
-            if (aOrigRect) {
-                let offX = aOrigRect[0] * g_dKoef_pt_to_mm;
-                let offY = aOrigRect[1] * g_dKoef_pt_to_mm;
-                let extX = (aOrigRect[2] - aOrigRect[0]) * g_dKoef_pt_to_mm;
-                let extY = (aOrigRect[3] - aOrigRect[1]) * g_dKoef_pt_to_mm;
-
-                let oXfrm = oShape.getXfrm();
-                oXfrm.setExtX(extX);
-                oXfrm.setExtY(extY);
-                oXfrm.setOffX(offX);
-                oXfrm.setOffY(offY);
-            }
+            this.SetNeedUpdateEditShape(true);
         }
 
         if (this.GetType() == AscPDF.FIELD_TYPES.text && this.IsComb()) {
@@ -2603,6 +2593,18 @@
         let nExtX = aRectMM[2] - aRectMM[0];
         let nExtY = aRectMM[3] - aRectMM[1];
 
+        let oDoc = this.GetDocument();
+        let nPage = this.GetPage();
+        let nPageRotate = oDoc.Viewer.getPageRotate(nPage);
+        if (nPageRotate === 90 || nPageRotate === 270) {
+            let tmp = nExtX;
+            nExtX = nExtY;
+            nExtY = tmp;
+
+            nOffX -= (nExtX - nExtY) / 2;
+            nOffY -= (nExtY - nExtX) / 2;
+        }
+
         oPdfShape.setSpPr(new AscFormat.CSpPr());
         oPdfShape.spPr.setLn(new AscFormat.CLn());
         oPdfShape.setFLocksText(true);
@@ -2619,7 +2621,8 @@
         oPdfShape.spPr.xfrm.setOffY(nOffY);
         oPdfShape.spPr.xfrm.setExtX(nExtX);
         oPdfShape.spPr.xfrm.setExtY(nExtY);
-        
+        oPdfShape.spPr.xfrm.setRot(-nPageRotate * (Math.PI / 180));
+
         oPdfShape.spPr.setGeometry(AscFormat.CreateGeometry("rect"));
 
         oPdfShape.createTextBody();
@@ -2647,6 +2650,59 @@
 
         this.AddToRedraw();
     };
+    CBaseField.prototype.UpdateEditShape = function() {
+        if (!this.editShape) {
+            this.SetNeedUpdateEditShape(false);
+            return false;
+        }
+
+        AscCommon.History.StartNoHistoryMode();
+
+        let aOrigRect = this.GetRect();
+        let aRectMM = aOrigRect ? aOrigRect.map(function(measure) {
+            return measure * g_dKoef_pt_to_mm;
+        }) : [];
+
+        let nOffX = aRectMM[0];
+        let nOffY = aRectMM[1];
+        let nExtX = aRectMM[2] - aRectMM[0];
+        let nExtY = aRectMM[3] - aRectMM[1];
+
+        let oDoc = this.GetDocument();
+        let nPage = this.GetPage();
+        let nPageRotate = oDoc.Viewer.getPageRotate(nPage);
+        if (nPageRotate === 90 || nPageRotate === 270) {
+            let tmp = nExtX;
+            nExtX = nExtY;
+            nExtY = tmp;
+
+            nOffX -= (nExtX - nExtY) / 2;
+            nOffY -= (nExtY - nExtX) / 2;
+        }
+
+        let oPdfShape = this.GetEditShape();
+        oPdfShape.spPr.xfrm.setOffX(nOffX);
+        oPdfShape.spPr.xfrm.setOffY(nOffY);
+        oPdfShape.spPr.xfrm.setExtX(nExtX);
+        oPdfShape.spPr.xfrm.setExtY(nExtY);
+        oPdfShape.spPr.xfrm.setRot(-nPageRotate * (Math.PI / 180));
+
+        let oContent = oPdfShape.GetDocContent();
+		let oPara = oContent.GetElement(0);
+		let oRun = oPara.GetElement(0);
+		oRun.Remove_FromContent(0, oRun.Content.length);
+		oRun.AddText(this.GetFullName());
+
+        oPdfShape.recalcContent();
+        oPdfShape.recalculate();
+
+        this.SetNeedUpdateEditShape(false);
+        this.AddToRedraw();
+
+        AscCommon.History.EndNoHistoryMode();
+        
+        return true;
+    };
     CBaseField.prototype.IsEditMode = function() {
         return !!this.editShape;
     };
@@ -2661,11 +2717,67 @@
         AscCommon.History.Add(new CChangesPDFFormRotate(this, this._rotate, nAngle));
 
         this._rotate = nAngle;
+        this.SetWasChanged(true);
+        this.SetNeedRecalc(true);
+        
+        if (this.GetType() == AscPDF.FIELD_TYPES.button) {
+            this.SetNeedUpdateImage(true);
+        }
+        
         this.RecalcTextTransform();
     };
     CBaseField.prototype.GetRotate = function() {
         return this._rotate;
     };
+	CBaseField.prototype._isCenterAlign = function() {
+		return true;
+	};
+	CBaseField.prototype.GetRotateTransform = function() {
+		let angle = this.GetRotate();
+		if (0 === angle)
+			return null;
+		
+		let clipRect = this.CalculateContentClipRect();
+		
+		let t = new AscCommon.CMatrix();
+		
+		if (this._isCenterAlign()) {
+			if (90 === angle) {
+				global_MatrixTransformer.TranslateAppend(t, -clipRect.X, -clipRect.Y - clipRect.H / 2);
+				global_MatrixTransformer.RotateRadAppend(t, 0.5 * Math.PI);
+				global_MatrixTransformer.TranslateAppend(t, clipRect.X + clipRect.W / 2, clipRect.Y + clipRect.H);
+			}
+			else if (180 === angle) {
+				global_MatrixTransformer.TranslateAppend(t, -clipRect.X, -clipRect.Y - clipRect.H / 2);
+				global_MatrixTransformer.RotateRadAppend(t, Math.PI);
+				global_MatrixTransformer.TranslateAppend(t, clipRect.X + clipRect.W, clipRect.Y + clipRect.H / 2);
+			}
+			else if (270 === angle) {
+				global_MatrixTransformer.TranslateAppend(t, -clipRect.X, -clipRect.Y - clipRect.H / 2);
+				global_MatrixTransformer.RotateRadAppend(t, -0.5 * Math.PI);
+				global_MatrixTransformer.TranslateAppend(t, clipRect.X + clipRect.W / 2, clipRect.Y);
+			}
+		}
+		else {
+			if (90 === angle) {
+				global_MatrixTransformer.TranslateAppend(t, -clipRect.X, -clipRect.Y);
+				global_MatrixTransformer.RotateRadAppend(t, 0.5 *  Math.PI);
+				global_MatrixTransformer.TranslateAppend(t, clipRect.X, clipRect.Y + clipRect.H);
+			}
+			else if (180 === angle) {
+				global_MatrixTransformer.TranslateAppend(t, -clipRect.X, -clipRect.Y);
+				global_MatrixTransformer.RotateRadAppend(t, Math.PI);
+				global_MatrixTransformer.TranslateAppend(t, clipRect.X + clipRect.W, clipRect.Y + clipRect.H);
+			}
+			else if (270 === angle) {
+				global_MatrixTransformer.TranslateAppend(t, -clipRect.X, -clipRect.Y);
+				global_MatrixTransformer.RotateRadAppend(t, -0.5 * Math.PI);
+				global_MatrixTransformer.TranslateAppend(t, clipRect.X + clipRect.W, clipRect.Y);
+			}
+		}
+		
+		return t;
+	};
     CBaseField.prototype.RecalculateTextTransform = function() {
 		
 		if (!this._needRecalcTxTransform)
@@ -2675,11 +2787,13 @@
 		if (!clipRect)
 			return;
 		
+		let transform = this.GetRotateTransform();
+		
 		if (this.content)
-			this.content.SetFieldRotate(this._rotate, clipRect);
+			this.content.SetTransform(transform);
 		
 		if (this.contentFormat)
-			this.contentFormat.SetFieldRotate(this._rotate, clipRect);
+			this.contentFormat.SetTransform(transform);
 		
 		this._needRecalcTxTransform = false;
     };
@@ -2807,6 +2921,8 @@
         //
         // rotate
         //
+        memory.fieldDataFlags |= (1 <<6);
+        memory.WriteLong(this.GetRotate());
 
         let aBgColor = this.GetBackgroundColor();
         if (aBgColor && aBgColor.length != 0) {
@@ -3024,7 +3140,10 @@
         memory.Skip(4);
 
         let oContentToDraw = this.GetTrigger(AscPDF.FORMS_TRIGGERS_TYPES.Format) ? this.contentFormat : this.content;
+        let oldTrMatrix = oContentToDraw.transform;
+        oContentToDraw.transform = new AscCommon.CMatrix();
         oContentToDraw.Draw(0, memory.docRenderer);
+        oContentToDraw.transform = oldTrMatrix;
 
         // запись длины комманд
         let nEndPos = memory.GetCurPosition();

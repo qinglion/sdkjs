@@ -228,6 +228,10 @@ ParaDrawing.prototype.Get_Height = function()
 {
 	return this.Height * this.GetScaleCoefficient();
 };
+ParaDrawing.prototype.GetHeight = function()
+{
+	return this.Get_Height();
+};
 ParaDrawing.prototype.getHeight = function()
 {
 	return this.Get_Height();
@@ -1828,6 +1832,10 @@ ParaDrawing.prototype.Get_DrawingType = function()
 };
 ParaDrawing.prototype.Is_Inline = function()
 {
+	if (Asc.editor.isPdfEditor()) {
+		return drawing_Inline === this.DrawingType;
+	}
+
 	if(this.Parent &&
 		this.Parent.Get_ParentTextTransform &&
 		this.Parent.Get_ParentTextTransform())

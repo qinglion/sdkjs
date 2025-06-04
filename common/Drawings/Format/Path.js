@@ -260,9 +260,88 @@ function (window, undefined) {
 					p.addPathCommand({id: close});
 					break;
 				}
+				case ellipticalArcTo: {
+					let a = command.a;
+					let b = command.b;
+					let c = command.c;
+					let d = command.d;
+					let x = command.x;
+					let y = command.y;
+					p.addPathCommand({id: ellipticalArcTo, a: a, b: b, c: c, d: d, x: x,
+						y: y});
+					break;
+				}
+				case nurbsTo: {
+					let nurbsToCopy = cloneSplineObject(command);
+					p.addPathCommand(nurbsToCopy);
+					break;
+				}
 			}
 		}
 		return p;
+
+
+		/**
+		 * Deep clones a NURBS/spline-like object with the structure shown in the screenshot
+		 * Object contains:
+		 * - controlPoints: Array of {x: Number, y: Number} points
+		 * - degree: Number
+		 * - id: Number/String
+		 * - knots: Array of Numbers
+		 * - weights: Array of Numbers
+		 *
+		 * @param {Object} splineObj - The spline object to clone
+		 * @return {Object} A deep copy of the spline object
+		 */
+		function cloneSplineObject(splineObj) {
+			let clone = {};
+
+			// Clone controlPoints if they exist
+			if (Array.isArray(splineObj.controlPoints)) {
+				clone.controlPoints = [];
+				for (let i = 0; i < splineObj.controlPoints.length; i++) {
+					let point = splineObj.controlPoints[i];
+					let pointClone = {};
+
+					// Copy all properties from the point (typically x and y)
+					for (let prop in point) {
+						if (point.hasOwnProperty(prop)) {
+							pointClone[prop] = point[prop];
+						}
+					}
+
+					clone.controlPoints.push(pointClone);
+				}
+			}
+
+			// Clone degree property
+			if (splineObj.hasOwnProperty('degree')) {
+				clone.degree = splineObj.degree;
+			}
+
+			// Clone id property
+			if (splineObj.hasOwnProperty('id')) {
+				clone.id = splineObj.id;
+			}
+
+			// Clone knots array if it exists
+			if (Array.isArray(splineObj.knots)) {
+				clone.knots = [];
+				for (let i = 0; i < splineObj.knots.length; i++) {
+					clone.knots.push(splineObj.knots[i]);
+				}
+			}
+
+			// Clone weights array if it exists
+			if (Array.isArray(splineObj.weights)) {
+				clone.weights = [];
+				for (let i = 0; i < splineObj.weights.length; i++) {
+					clone.weights.push(splineObj.weights[i]);
+				}
+			}
+
+			return clone;
+		}
 	};
 	Path.prototype.setStroke = function (pr) {
 		AscCommon.History.CanAddChanges() && AscCommon.History.Add(new AscDFH.CChangesDrawingsBool(this, AscDFH.historyitem_PathSetStroke, this.stroke, pr));

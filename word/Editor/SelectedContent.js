@@ -935,11 +935,16 @@
 			return this.private_InsertInline();
 		}
 
-		if ((!oForm.IsTextForm() && !oForm.IsComboBox()))
+		if ((!oForm.IsTextForm() && !oForm.IsComboBox() && !oForm.IsDatePicker()))
 			return;
 
 		let newLineSep = oForm.IsMultiLineForm() ? "\n" : "";
-		let sInsertedText = this.GetText({ParaSeparator : "", NewLineSeparator : newLineSep});
+		let sInsertedText = this.GetText({
+			ParaSeparator : "",
+			TableCellSeparator : "",
+			TableRowSeparator : "",
+			NewLineSeparator : newLineSep
+		});
 		if (!sInsertedText || !sInsertedText.length)
 			return;
 

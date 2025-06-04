@@ -3846,6 +3846,13 @@
 				}
 			}
 		};
+		CBlipFill.prototype.createDuplicateNoRaster = function(transparent) {
+			let sId = this.RasterImageId;
+			this.RasterImageId = null;
+			let copy = this.createDuplicate();
+			this.RasterImageId = sId;
+			return copy;
+		};
 
 //-----Effects-----
 		var EFFECT_TYPE_NONE = 0;

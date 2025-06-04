@@ -884,20 +884,28 @@ CNary.prototype.GetTextOfElement = function(oMathText)
 		else
 			strStartCode = String.fromCharCode(this.Pr.chr);
 
-		let oLastPos = oMathText.AddText(new AscMath.MathText(strStartCode, this));
+		let startChar = new AscMath.MathText(strStartCode, this);
+		if (this.Pr.limLoc === NARY_UndOvr)
+		{
+			let oAddData	= startChar.GetAdditionalData();
+			let oMetaData	= oAddData.GetMathMetaData();
+			oMetaData.setIsLimitNary();
+		}
+
+		let oLastPos = oMathText.AddText(startChar);
 
 		if (oLower)
 		{
 			oMathText.SetGlobalStyle(this);
+			oMathText.AddText(new AscMath.MathText("_", oLower));
 			oLastPos = oMathText.Add(oLower, true);
-			oMathText.AddBefore(oLastPos, new AscMath.MathText("_", oLower));
 		}
 
 		if (oUpper)
 		{
 			oMathText.SetGlobalStyle(this);
+			oMathText.AddText(new AscMath.MathText("^", oUpper));
 			oLastPos = oMathText.Add(oUpper, true);
-			oMathText.AddBefore(oLastPos, new AscMath.MathText("^", oUpper));
 		}
 
 		if (oBase)

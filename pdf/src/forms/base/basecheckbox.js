@@ -57,6 +57,10 @@
     CBaseCheckBoxField.prototype.constructor = CBaseCheckBoxField;
 
     CBaseCheckBoxField.prototype.Draw = function(oGraphicsPDF, oGraphicsWord) {
+        if (this.IsNeedUpdateEditShape()) {
+            this.UpdateEditShape();
+        }
+        
         if (this.IsHidden() && !this.IsEditMode())
             return;
 
@@ -86,7 +90,8 @@
         this._hovered = bValue;
     };
     CBaseCheckBoxField.prototype.DrawCheckedSymbol = function(oGraphicsPDF) {
-        let aOrigRect       = this.GetOrigRect();
+        let aOrigRect = this.GetOrigRect();
+        let nRotAngle = this.GetRotate();
 
         let X       = aOrigRect[0];
         let Y       = aOrigRect[1];
@@ -101,6 +106,8 @@
         oGraphicsPDF.SetFillStyle(oRGB.r, oRGB.g, oRGB.b);
         oGraphicsPDF.SetLineWidth(1);
         oGraphicsPDF.SetLineDash([]);
+
+        let rot = -nRotAngle * Math.PI/180;
 
         let nStyle = this.GetStyle();
         switch (nStyle) {
@@ -169,33 +176,24 @@
             }
                 
             case AscPDF.CHECKBOX_STYLES.star: {
-                // set the position of the center of the star
-                let nCenterX = X + nWidth / 2;
-                let nCenterY = Y + nHeight / 2;
+                let cx    = X + nWidth/2;
+                let cy    = Y + nHeight/2;
+                let R     = Math.min(nWidth, nHeight)/2 - oMargins.bottom - Math.min(nWidth, nHeight)/20;
+                let r     = R/2.5;
+                let pts   = 5;
+                let step  = Math.PI/pts;
+                let start = -Math.PI/2 + rot;  // «вверх» + учёт поворота страницы
 
-                // set the outer and inner radius of the star
-                let outerRadius = Math.min(nWidth, nHeight) / 2 - oMargins.bottom - Math.min(nWidth, nHeight) / 20;
-                let innerRadius = outerRadius / 2.5;
-
-                // set the number of points of the star
-                let numPoints = 5;
-
-                // create a path for the star
                 oGraphicsPDF.BeginPath();
-                for (let i = 0; i < numPoints * 2; i++) {
-                    let radius = i % 2 === 0 ? outerRadius : innerRadius;
-                    let angle = Math.PI / numPoints * i;
-                    let pointX = nCenterX + radius * Math.sin(angle);
-                    let pointY = nCenterY - radius * Math.cos(angle);
-                    if (i === 0) {
-                    oGraphicsPDF.MoveTo(pointX, pointY);
-                    } else {
-                    oGraphicsPDF.LineTo(pointX, pointY);
-                    }
+                for (let i = 0; i < pts*2; i++) {
+                    let curR  = (i % 2 === 0 ? R : r);
+                    let angle = start + i * step;
+                    let px    = cx + curR * Math.cos(angle);
+                    let py    = cy + curR * Math.sin(angle);
+                    if (i === 0) oGraphicsPDF.MoveTo(px, py);
+                    else         oGraphicsPDF.LineTo(px, py);
                 }
                 oGraphicsPDF.ClosePath();
-
-                // fill the star with a color
                 oGraphicsPDF.Fill();
                 break;
             }
@@ -230,7 +228,7 @@
                 context.fillRect(0, 0, canvas.width, canvas.height);
 
                 oGraphicsPDF.SetIntegerGrid(true);
-                oGraphicsPDF.DrawImageXY(canvas, x, y);
+                oGraphicsPDF.DrawImageXY(canvas, x, y, rot);
                 oGraphicsPDF.SetIntegerGrid(false);
             }
         }
@@ -639,21 +637,13 @@
 	 * @typeofeditors ["PDF"]
 	 */
     CBaseCheckBoxField.prototype.SyncValue = function() {
-        let aFields = this.GetDocument().GetAllWidgets(this.GetFullName());
-        
-        for (let i = 0; i < aFields.length; i++) {
-            if (aFields[i] != this) {
-                if (this.GetExportValue() == aFields[i].GetParentValue()) {
-                    this.SetChecked(true);
-                    this.AddToRedraw();
-                }
-                else {
-                    this.SetChecked(false);
-                    this.AddToRedraw();
-                }
-
-                break;
-            }
+        if (this.GetExportValue() == this.GetParentValue()) {
+            this.SetChecked(true);
+            this.AddToRedraw();
+        }
+        else {
+            this.SetChecked(false);
+            this.AddToRedraw();
         }
     };
     CBaseCheckBoxField.prototype.DrainLogicFrom = function(oFieldToInherit, bClearFrom) {

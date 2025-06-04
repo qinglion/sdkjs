@@ -89,7 +89,7 @@
 
 		let oViewer		= this.DocumentRenderer;
 		let oFile		= oViewer.file;
-		let nPt2Px		= g_dKoef_pt_to_mm * g_dKoef_mm_to_pix;
+		let nPt2Px		= AscCommonWord.g_dKoef_pt_to_mm * AscCommonWord.g_dKoef_mm_to_pix;
 
 		let nWidthPx	= oFile.pages[nPage].W * nPt2Px;
 		let nHeightPx	= oFile.pages[nPage].H * nPt2Px;
@@ -180,6 +180,36 @@
 
 		return true;
     };
+	/**
+	 * Returns all the comments from the document.
+	 * @memberof Api
+	 * @typeofeditors ["PDFE"]
+	 * @alias GetAllComments
+	 * @returns {comment[]} - An array of comment objects containing the comment data.
+	 * @see office-js-api/Examples/Plugins/PDF/Api/Methods/GetAllComments.js
+	 */
+	Api.prototype["pluginMethod_GetAllComments"] = function() {
+		let oDoc = this.getPDFDoc();
+		if (!oDoc)
+			return;
+
+		let arrResult = [];
+
+		let aAnnots = oDoc.annots;
+		for (let i = 0; i < aAnnots.length; i++) {
+			let annot = aAnnots[i];
+
+			let oAscCommData = annot.GetAscCommentData();
+			let oCommData = oAscCommData ? new AscCommon.CCommentData() : undefined;
+			oCommData && oCommData.Read_FromAscCommentData(oAscCommData);
+
+			if (oCommData) {
+				arrResult.push({"Id" : annot.GetId(), "Data" : oCommData.ConvertToSimpleObject()});
+			}
+		}
+
+		return arrResult;
+	};
 })(window);
 
 

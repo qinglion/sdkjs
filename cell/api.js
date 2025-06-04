@@ -8505,7 +8505,7 @@ var editor;
 				checkPassword([AscCommonExcel.getPasswordHash(props.temporaryPassword, true)]);
 			} else {
 				var checkHash = {password: props.temporaryPassword, salt: props.workbookSaltValue, spinCount: props.workbookSpinCount,
-					alg: AscCommon.fromModelAlgorithmName(props.algorithmName)};
+					alg: AscCommon.fromModelAlgorithmName(props.workbookAlgorithmName)};
 				AscCommon.calculateProtectHash([checkHash], checkPassword);
 			}
 		} else {

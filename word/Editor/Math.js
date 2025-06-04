@@ -3333,6 +3333,10 @@ ParaMath.prototype.ProcessingOldEquationConvert = function()
 ParaMath.fromLatex = function(latex, textPr)
 {
 	let paraMath = new ParaMath();
+
+	latex = latex.replaceAll('&amp;', '&');
+	latex = latex.replaceAll('&lt;', '<');
+	latex = latex.replaceAll('&gt;', '>');
 	
 	let run = new AscWord.Run(null, true);
 	run.AddText(latex);

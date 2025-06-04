@@ -5127,6 +5127,18 @@ function CThumbnailsManager(editorPage)
 
 		ctx.beginPath();
 	};
+	this.OutlineRect = function(_color, ctx, x, y, r, b)
+	{
+			ctx.beginPath();
+			ctx.strokeStyle = "#C0C0C0";
+			const lineW = Math.max(1, Math.round(1 * AscCommon.AscBrowser.retinaPixelRatio));
+			ctx.lineWidth = lineW;
+			const extend = lineW / 2;
+			ctx.rect(x - extend, y - extend, r - x + (2 * extend), b - y + (2 * extend));
+			ctx.stroke();
+
+			ctx.beginPath();
+	};
 
 	this.DrawAnimLabel = function(oGraphics, nX, nY, oColor)
 	{
@@ -5543,6 +5555,8 @@ function CThumbnailsManager(editorPage)
 
 			if (color) {
 				this.FocusRectFlat(color, context, page.left, page.top, page.right, page.bottom, isFocus);
+			} else {
+				this.OutlineRect(color, context, page.left, page.top, page.right, page.bottom);
 			}
 		}
 	};

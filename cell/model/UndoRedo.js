@@ -3083,6 +3083,21 @@ function (window, undefined) {
 				}
 
 				if (externalReferenceIndex !== null) {
+					for (let ws in to.worksheets) {
+						let externalSheet = to.worksheets[ws];
+						if (externalSheet) {
+							let externalSheetId = externalSheet.getId();
+							wb.dependencyFormulas.forEachSheetListeners(externalSheetId, function (parsed) {
+								let cell = parsed && parsed.parent;
+								if (cell && cell && cell.nCol != null && cell.nRow != null) {
+									// endListeningRange for previous external source
+									let bbox = new Asc.Range(cell.nCol, cell.nRow, cell.nCol, cell.nRow);
+									parsed._buildDependenciesRef(externalSheetId, bbox, null, null);
+								}
+							});
+						}
+					}
+
 					from.worksheets = wb.externalReferences[externalReferenceIndex - 1].worksheets;
 					from.initWorksheetsFromSheetDataSet();
 					from.putToChangedCells();

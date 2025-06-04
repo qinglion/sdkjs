@@ -682,6 +682,8 @@ function CPresentation(DrawingDocument) {
 
 	this.cachedGridCanvas = null;
 	this.cachedGridSpacing = null;
+
+	this.cachedAnimationLabelText = {};
 }
 
 AscFormat.InitClass(CPresentation, AscFormat.CBaseFormatObject, AscDFH.historyitem_type_Presentation);
@@ -9009,6 +9011,9 @@ CPresentation.prototype.addNextSlideAction = function (layoutIndex) {
 				(_ph_type === AscFormat.phType_sldNum && (hf.sldNum !== false)))) {
 				sp = oSp.copy(undefined);
 				sp.setParent(new_slide);
+				if (sp.txBody) {
+					sp.txBody.setBodyPr(new AscFormat.CBodyPr());
+				}
 				!bIsSpecialPh && sp.clearContent && sp.clearContent();
 				new_slide.addToSpTreeToPos(new_slide.cSld.spTree.length, sp);
 			}

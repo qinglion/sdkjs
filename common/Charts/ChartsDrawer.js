@@ -5086,6 +5086,8 @@ CChartsDrawer.prototype =
 		var posY = this.calcProp.chartGutter._top;
 		var posMinorX;
 		var points = axis.xPoints;
+		let axisMin = axis.scaling && AscFormat.isRealNumber(axis.scaling.min) ? axis.scaling.min : null;
+		let axisMax = axis.scaling && AscFormat.isRealNumber(axis.scaling.max) ? axis.scaling.max : null;
 
 		if (!points) {
 			return;
@@ -5109,6 +5111,9 @@ CChartsDrawer.prototype =
 		var i;
 		for (i = 0; i < points.length; i++) {
 			if((isCatAxis && points[i].val < 0) && !isChartEx) {
+				continue;
+			}
+			if ((axisMin && points[i].val < axisMin) || (axisMax && points[i].val > axisMax)) {
 				continue;
 			}
 
@@ -12614,6 +12619,7 @@ drawPieChart.prototype = {
 
 	_drawPie3D: function () {
 		var numCache = this._getFirstRealNumCache(true);
+		let alpha = Math.min(6, Math.max(1, Math.log2(numCache.ptCount + 1) * 0.7));
 		var t = this;
 		var shade = "shade";
 		var shadeValue = 35000;
@@ -12652,6 +12658,10 @@ drawPieChart.prototype = {
 				var point = numCache.getPtByIndex(i);
 				var brush = point ? point.brush : null;
 				var pen = point ? point.pen : null;
+				let realPenW = pen && pen.w;
+				if (pen){
+					pen.w /= alpha;
+				}
 				var path = t.paths.series[i];
 
 				if (path) {
@@ -12660,12 +12670,13 @@ drawPieChart.prototype = {
 							drawPath(path[j].downPath, pen, null);
 						} else if (side === sides.inside) {
 							//выставляю закругленные соединения
-							if (pen && pen.Join) {
-								pen = pen.createDuplicate();
-								pen.Join.type = Asc['c_oAscLineJoinType'].Round;
+							let _duplicatedPen = pen;
+							if (_duplicatedPen && _duplicatedPen.Join) {
+								_duplicatedPen = _duplicatedPen.createDuplicate();
+								_duplicatedPen.Join.type = Asc['c_oAscLineJoinType'].Round;
 							}
 
-							drawPath(path[j].insidePath, pen, brush, null, true);
+							drawPath(path[j].insidePath, _duplicatedPen, brush, null, true);
 						} else if (side === sides.up) {
 							drawPath(path[j].upPath, pen, brush);
 						} else if (side === sides.front) {
@@ -12674,6 +12685,10 @@ drawPieChart.prototype = {
 							}
 						}
 					}
+				}
+
+				if (pen && realPenW){
+					pen.w = realPenW;
 				}
 			}
 		};
@@ -13931,6 +13946,9 @@ drawScatterChart.prototype = {
 		let dispBlanksAs =  this.cChartSpace.chart.dispBlanksAs;
 		let isLog;
 		const catMin = this.catAx && this.catAx.scaling ? this.catAx.scaling.min : null;
+		const catMax = this.catAx && this.catAx.scaling ? this.catAx.scaling.max : null;
+		const valMin = this.valAx && this.valAx.scaling ? this.valAx.scaling.min : null;
+		const valMax = this.valAx && this.valAx.scaling ? this.valAx.scaling.max : null;
 
 		let t = this;
 		let _initObjs = function (_index) {
@@ -13990,11 +14008,17 @@ drawScatterChart.prototype = {
 
 					_initObjs(i);
 
-					if (yVal != null && ((isLog && yVal !== 0) || !isLog) && !(catMin && yVal <= catMin)) {
+					if (yVal != null && ((isLog && yVal !== 0) || !isLog)) {
+						// points should not be drawn if yVal is not bounded by valMax and valMin, the same for xVal
+						const isPassedValMax = !valMax || yVal <= valMax;
+						const isPassedValMin = !valMin || yVal >= valMin;
+						const isPassedCatMax = !catMax || xVal <= catMax;
+						const isPassedCatMin = !catMin || xVal >= catMin;
 						let x = this.cChartDrawer.getYPosition(xVal, this.catAx, true);
 						let y = this.cChartDrawer.getYPosition(yVal, this.valAx, true);
-						this.paths.points[i].push(this.cChartDrawer.calculatePoint(x, y, compiledMarkerSize, compiledMarkerSymbol));
-
+						if (isPassedCatMax && isPassedCatMin && isPassedValMax && isPassedValMin) {
+							this.paths.points[i].push(this.cChartDrawer.calculatePoint(x, y, compiledMarkerSize, compiledMarkerSymbol));
+						}
 						let errBars = this.chart.series[i].errBars[0];
 						if (errBars) {
 							this.cChartDrawer.errBars.putPoint(x, y, xVal, yVal, seria.idx, idx);
@@ -14216,6 +14240,7 @@ drawScatterChart.prototype = {
 		//draw lines
 		//this.cChartDrawer.drawPathsByIdx(this.paths, this.chart.series, true, true);
 		this.cChartDrawer.drawPaths(this.paths, this.chart.series, true, true);
+
 		//end clip rect
 		this.cChartDrawer.cShapeDrawer.Graphics.RestoreGrState();
 
@@ -16081,13 +16106,6 @@ axisChart.prototype = {
 		}
 		this.cChartDrawer.cShapeDrawer.bDrawSmartAttack = true;
 
-		this.cChartDrawer.cShapeDrawer.Graphics.SaveGrState();
-		var left = (this.chartProp.chartGutter._left - 1) / this.chartProp.pxToMM;
-		var top = (this.chartProp.chartGutter._top - 1) / this.chartProp.pxToMM;
-		var right = this.chartProp.trueWidth / this.chartProp.pxToMM;
-		var bottom = this.chartProp.trueHeight / this.chartProp.pxToMM;
-		this.cChartDrawer.cShapeDrawer.Graphics.AddClipRect(left, top, right + 1, bottom + 1);
-
 		if (this.paths.minorGridLines) {
 			path = this.paths.minorGridLines;
 			pen = this.axis.compiledMinorGridLines;
@@ -16098,8 +16116,6 @@ axisChart.prototype = {
 			path = this.paths.gridLines;
 			this.cChartDrawer.drawPath(path, pen);
 		}
-
-		this.cChartDrawer.cShapeDrawer.Graphics.RestoreGrState();
 
 		this.cChartDrawer.cShapeDrawer.bDrawSmartAttack = false;
 	},
