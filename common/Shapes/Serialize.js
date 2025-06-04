@@ -9115,6 +9115,40 @@ function BinaryPPTYLoader()
         return rPr;
     };
 
+	this.CorrectHyperlink = function (hyper) {
+		if (hyper.action == null || hyper.action == "") {
+			return;
+		}
+
+		switch (hyper.action) {
+			case "ppaction://hlinkshowjump?jump=firstslide":
+			case "ppaction://hlinkshowjump?jump=lastslide":
+			case "ppaction://hlinkshowjump?jump=nextslide":
+			case "ppaction://hlinkshowjump?jump=previousslide":
+				hyper.id = hyper.action;
+				break;
+
+			case "ppaction://hlinksldjump":
+				if (hyper.id == null || hyper.id.indexOf("slide") != 0) {
+					hyper.id = null;
+					break;
+				}
+
+				const regex = /^slide(\d+)\.xml$/;
+				const match = hyper.id.match(regex);
+
+				let slideNum = match ? parseInt(match[1]) : 1;
+				if (isNaN(slideNum))
+					slideNum = 1;
+
+				hyper.id = hyper.action + "slide" + (slideNum - 1);
+				break;
+
+			default:
+				hyper.id = null;
+		}
+	};
+
     this.ReadHyperlink = function()
     {
         var hyper = new AscFormat.CT_Hyperlink();
@@ -9178,44 +9212,7 @@ function BinaryPPTYLoader()
 
         s.Seek2(_end_rec);
 
-        // correct hyperlink
-        if (hyper.action != null && hyper.action != "")
-        {
-            if (hyper.action == "ppaction://hlinkshowjump?jump=firstslide")
-                hyper.id = "ppaction://hlinkshowjump?jump=firstslide";
-            else if (hyper.action == "ppaction://hlinkshowjump?jump=lastslide")
-                hyper.id = "ppaction://hlinkshowjump?jump=lastslide";
-            else if (hyper.action == "ppaction://hlinkshowjump?jump=nextslide")
-                hyper.id = "ppaction://hlinkshowjump?jump=nextslide";
-            else if (hyper.action == "ppaction://hlinkshowjump?jump=previousslide")
-                hyper.id = "ppaction://hlinkshowjump?jump=previousslide";
-            else if (hyper.action == "ppaction://hlinksldjump")
-            {
-                if (hyper.id != null && hyper.id.indexOf("slide") == 0)
-                {
-                    var _url = hyper.id.substring(5);
-                    var _indexXml = _url.indexOf(".");
-                    if (-1 != _indexXml)
-                        _url = _url.substring(0, _indexXml);
-
-                    var _slideNum = parseInt(_url);
-                    if (isNaN(_slideNum))
-                        _slideNum = 1;
-
-                    --_slideNum;
-
-                    hyper.id = hyper.action + "slide" + _slideNum;
-                }
-                else
-                {
-                    hyper.id = null;
-                }
-            }
-            else
-            {
-                hyper.id = null;
-            }
-        }
+		this.CorrectHyperlink(hyper);
 
         if (hyper.id == null)
             return null;
