@@ -1626,6 +1626,31 @@
 		return oDocInfo;
 	};
 
+	/**
+	 * Returns the core properties interface for the current presentation.
+	 * Use this to view or modify standard metadata such as title, author, and keywords.
+	 *
+	 * @memberof ApiPresentation
+	 * @returns {ApiCore}
+	 * @typeofeditors ["CPE"]
+	 * @see office-js-api/Examples/{Editor}/ApiPresentation/Methods/GetCore.js
+	 */
+	ApiPresentation.prototype.GetCore = function () {
+		return new AscBuilder.ApiCore(this.Presentation.Core);
+	};
+
+	/**
+	 * Returns the custom properties of the presentation.
+	 *
+	 * @memberof ApiPresentation
+	 * @returns {ApiCustomProperties}
+	 * @typeofeditors ["CPE"]
+	 * @see office-js-api/Examples/{Editor}/ApiPresentation/Methods/GetCustomProperties.js
+	 */
+	ApiPresentation.prototype.GetCustomProperties = function () {
+		return new AscBuilder.ApiCustomProperties(this.Presentation.CustomProperties);
+	};
+
 	//------------------------------------------------------------------------------------------------------------------
     //
     // ApiMaster
@@ -5132,6 +5157,8 @@
     ApiPresentation.prototype["GetAllShapes"]             = ApiPresentation.prototype.GetAllShapes;
     ApiPresentation.prototype["GetAllImages"]             = ApiPresentation.prototype.GetAllImages;
     ApiPresentation.prototype["GetAllDrawings"]           = ApiPresentation.prototype.GetAllDrawings;
+    ApiPresentation.prototype["GetCore"]                  = ApiPresentation.prototype.GetCore;
+    ApiPresentation.prototype["GetCustomProperties"]      = ApiPresentation.prototype.GetCustomProperties;
 
     ApiMaster.prototype["GetClassType"]                   = ApiMaster.prototype.GetClassType;
     ApiMaster.prototype["GetLayout"]                      = ApiMaster.prototype.GetLayout;

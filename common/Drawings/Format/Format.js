@@ -14019,6 +14019,89 @@
 			this.title = oProps.title;
 			this.version = oProps.version;
 		};
+
+		CCore.prototype.setCategory = function (sCategory) {
+			const coreCopy = this.copy();
+			coreCopy.asc_putCategory(sCategory);
+			this.setProps(coreCopy);
+		};
+		CCore.prototype.setContentStatus = function (sContentStatus) {
+			const coreCopy = this.copy();
+			coreCopy.asc_putContentStatus(sContentStatus);
+			this.setProps(coreCopy);
+		};
+		CCore.prototype.setCreated = function (oCreatedDate) {
+			if (oCreatedDate instanceof Date && !isNaN(oCreatedDate)) {
+				const coreCopy = this.copy();
+				coreCopy.asc_putCreated(oCreatedDate);
+				this.setProps(coreCopy);
+			}
+		};
+		CCore.prototype.setCreator = function (sCreator) {
+			const coreCopy = this.copy();
+			coreCopy.asc_putCreator(sCreator);
+			this.setProps(coreCopy);
+		};
+		CCore.prototype.setDescription = function (sDescription) {
+			const coreCopy = this.copy();
+			coreCopy.asc_putDescription(sDescription);
+			this.setProps(coreCopy);
+		};
+		CCore.prototype.setIdentifier = function (sIdentifier) {
+			const coreCopy = this.copy();
+			coreCopy.asc_putIdentifier(sIdentifier);
+			this.setProps(coreCopy);
+		};
+		CCore.prototype.setKeywords = function (sKeywords) {
+			const coreCopy = this.copy();
+			coreCopy.asc_putKeywords(sKeywords);
+			this.setProps(coreCopy);
+		};
+		CCore.prototype.setLanguage = function (sLanguage) {
+			const coreCopy = this.copy();
+			coreCopy.asc_putLanguage(sLanguage);
+			this.setProps(coreCopy);
+		};
+		CCore.prototype.setLastModifiedBy = function (sLastModifiedBy) {
+			const coreCopy = this.copy();
+			coreCopy.asc_putLastModifiedBy(sLastModifiedBy);
+			this.setProps(coreCopy);
+		};
+		CCore.prototype.setLastPrinted = function (oLastPrintedDate) {
+			if (oLastPrintedDate instanceof Date && !isNaN(oLastPrintedDate)) {
+				const coreCopy = this.copy();
+				coreCopy.asc_putLastPrinted(oLastPrintedDate);
+				this.setProps(coreCopy);
+			}
+		};
+		CCore.prototype.setModified = function (oModifiedDate) {
+			if (oModifiedDate instanceof Date && !isNaN(oModifiedDate)) {
+				const coreCopy = this.copy();
+				coreCopy.asc_putModified(oModifiedDate);
+				this.setProps(coreCopy);
+			}
+		};
+		CCore.prototype.setRevision = function (sRevision) {
+			const coreCopy = this.copy();
+			coreCopy.asc_putRevision(sRevision);
+			this.setProps(coreCopy);
+		};
+		CCore.prototype.setSubject = function (sSubject) {
+			const coreCopy = this.copy();
+			coreCopy.asc_putSubject(sSubject);
+			this.setProps(coreCopy);
+		};
+		CCore.prototype.setTitle = function (sTitle) {
+			const coreCopy = this.copy();
+			coreCopy.asc_putTitle(sTitle);
+			this.setProps(coreCopy);
+		};
+		CCore.prototype.setVersion = function (sVersion) {
+			const coreCopy = this.copy();
+			coreCopy.asc_putVersion(sVersion);
+			this.setProps(coreCopy);
+		};
+
 		CCore.prototype.Refresh_RecalcData = function () {
 		};
 		CCore.prototype.Refresh_RecalcData2 = function () {
@@ -14094,6 +14177,21 @@
 		prot["asc_putSubject"] = prot.asc_putSubject;
 		prot["asc_putVersion"] = prot.asc_putVersion;
 
+		prot["setCategory"] = prot.setCategory;
+		prot["setContentStatus"] = prot.setContentStatus;
+		prot["setCreated"] = prot.setCreated;
+		prot["setCreator"] = prot.setCreator;
+		prot["setDescription"] = prot.setDescription;
+		prot["setIdentifier"] = prot.setIdentifier;
+		prot["setKeywords"] = prot.setKeywords;
+		prot["setLanguage"] = prot.setLanguage;
+		prot["setLastModifiedBy"] = prot.setLastModifiedBy;
+		prot["setLastPrinted"] = prot.setLastPrinted;
+		prot["setModified"] = prot.setModified;
+		prot["setRevision"] = prot.setRevision;
+		prot["setSubject"] = prot.setSubject;
+		prot["setTitle"] = prot.setTitle;
+		prot["setVersion"] = prot.setVersion;
 
 		function PartTitle() {
 			CBaseNoIdObject.call(this);
