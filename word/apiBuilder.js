@@ -24575,7 +24575,7 @@
 	 * Returns a type of the ApiCore class.
 	 *
 	 * @memberof ApiCore
-	 * @typeofeditors ["CDE"]
+	 * @typeofeditors ["CDE", "CSE", "CPE"]
 	 * @returns {"core"}
 	 * @see office-js-api/Examples/{Editor}/ApiCore/Methods/GetClassType.js
 	 */
@@ -24587,7 +24587,7 @@
 	 * Sets the document category.
 	 *
 	 * @memberof ApiCore
-	 * @typeofeditors ["CDE"]
+	 * @typeofeditors ["CDE", "CSE", "CPE"]
 	 * @param {string} sCategory
 	 * @see office-js-api/Examples/{Editor}/ApiCore/Methods/SetCategory.js
 	 */
@@ -24599,7 +24599,7 @@
 	 * Returns the document category.
 	 *
 	 * @memberof ApiCore
-	 * @typeofeditors ["CDE"]
+	 * @typeofeditors ["CDE", "CSE", "CPE"]
 	 * @returns {string}
 	 * @see office-js-api/Examples/{Editor}/ApiCore/Methods/GetCategory.js
 	 */
@@ -24611,7 +24611,7 @@
 	 * Sets the document status.
 	 *
 	 * @memberof ApiCore
-	 * @typeofeditors ["CDE"]
+	 * @typeofeditors ["CDE", "CSE", "CPE"]
 	 * @param {string} sStatus
 	 * @see office-js-api/Examples/{Editor}/ApiCore/Methods/SetContentStatus.js
 	 */
@@ -24623,7 +24623,7 @@
 	 * Returns the document status.
 	 *
 	 * @memberof ApiCore
-	 * @typeofeditors ["CDE"]
+	 * @typeofeditors ["CDE", "CSE", "CPE"]
 	 * @returns {string}
 	 * @see office-js-api/Examples/{Editor}/ApiCore/Methods/GetContentStatus.js
 	 */
@@ -24635,7 +24635,7 @@
 	 * Sets the document creation date.
 	 *
 	 * @memberof ApiCore
-	 * @typeofeditors ["CDE"]
+	 * @typeofeditors ["CDE", "CSE", "CPE"]
 	 * @param {Date} oCreated
 	 * @see office-js-api/Examples/{Editor}/ApiCore/Methods/SetCreated.js
 	 */
@@ -24647,7 +24647,7 @@
 	 * Returns the document creation date.
 	 *
 	 * @memberof ApiCore
-	 * @typeofeditors ["CDE"]
+	 * @typeofeditors ["CDE", "CSE", "CPE"]
 	 * @returns {Date}
 	 * @see office-js-api/Examples/{Editor}/ApiCore/Methods/GetCreated.js
 	 */
@@ -24659,7 +24659,7 @@
 	 * Sets the document author.
 	 *
 	 * @memberof ApiCore
-	 * @typeofeditors ["CDE"]
+	 * @typeofeditors ["CDE", "CSE", "CPE"]
 	 * @param {string} sCreator
 	 * @see office-js-api/Examples/{Editor}/ApiCore/Methods/SetCreator.js
 	 */
@@ -24671,7 +24671,7 @@
 	 * Returns the document author.
 	 *
 	 * @memberof ApiCore
-	 * @typeofeditors ["CDE"]
+	 * @typeofeditors ["CDE", "CSE", "CPE"]
 	 * @returns {string}
 	 * @see office-js-api/Examples/{Editor}/ApiCore/Methods/GetCreator.js
 	 */
@@ -24683,7 +24683,7 @@
 	 * Sets the document description.
 	 *
 	 * @memberof ApiCore
-	 * @typeofeditors ["CDE"]
+	 * @typeofeditors ["CDE", "CSE", "CPE"]
 	 * @param {string} sDescription
 	 * @see office-js-api/Examples/{Editor}/ApiCore/Methods/SetDescription.js
 	 */
@@ -24695,7 +24695,7 @@
 	 * Returns the document description.
 	 *
 	 * @memberof ApiCore
-	 * @typeofeditors ["CDE"]
+	 * @typeofeditors ["CDE", "CSE", "CPE"]
 	 * @returns {string}
 	 * @see office-js-api/Examples/{Editor}/ApiCore/Methods/GetDescription.js
 	 */
@@ -24707,7 +24707,7 @@
 	 * Sets the document identifier.
 	 *
 	 * @memberof ApiCore
-	 * @typeofeditors ["CDE"]
+	 * @typeofeditors ["CDE", "CSE", "CPE"]
 	 * @param {string} sIdentifier
 	 * @see office-js-api/Examples/{Editor}/ApiCore/Methods/SetIdentifier.js
 	 */
@@ -24719,7 +24719,7 @@
 	 * Returns the document identifier.
 	 *
 	 * @memberof ApiCore
-	 * @typeofeditors ["CDE"]
+	 * @typeofeditors ["CDE", "CSE", "CPE"]
 	 * @returns {string}
 	 * @see office-js-api/Examples/{Editor}/ApiCore/Methods/GetIdentifier.js
 	 */
@@ -24731,7 +24731,7 @@
 	 * Sets the document tags.
 	 *
 	 * @memberof ApiCore
-	 * @typeofeditors ["CDE"]
+	 * @typeofeditors ["CDE", "CSE", "CPE"]
 	 * @param {string} sKeywords - A string of keywords.
 	 * @see office-js-api/Examples/{Editor}/ApiCore/Methods/SetKeywords.js
 	 *
@@ -24744,7 +24744,7 @@
 	 * Returns the document tags.
 	 *
 	 * @memberof ApiCore
-	 * @typeofeditors ["CDE"]
+	 * @typeofeditors ["CDE", "CSE", "CPE"]
 	 * @returns {string}
 	 * @see office-js-api/Examples/{Editor}/ApiCore/Methods/GetKeywords.js
 	 */
@@ -24756,7 +24756,7 @@
 	 * Sets the document language.
 	 *
 	 * @memberof ApiCore
-	 * @typeofeditors ["CDE"]
+	 * @typeofeditors ["CDE", "CSE", "CPE"]
 	 * @param {string} sLanguage
 	 * @see office-js-api/Examples/{Editor}/ApiCore/Methods/SetLanguage.js
 	 */
@@ -24768,7 +24768,7 @@
 	 * Returns the document language.
 	 *
 	 * @memberof ApiCore
-	 * @typeofeditors ["CDE"]
+	 * @typeofeditors ["CDE", "CSE", "CPE"]
 	 * @returns {string}
 	 * @see office-js-api/Examples/{Editor}/ApiCore/Methods/GetLanguage.js
 	 */
@@ -24780,7 +24780,7 @@
 	 * Sets the name of the user who last modified the document.
 	 *
 	 * @memberof ApiCore
-	 * @typeofeditors ["CDE"]
+	 * @typeofeditors ["CDE", "CSE", "CPE"]
 	 * @param {string} sLastModifiedBy
 	 * @see office-js-api/Examples/{Editor}/ApiCore/Methods/SetLastModifiedBy.js
 	 */
@@ -24792,7 +24792,7 @@
 	 * Returns the name of the user who last modified the document.
 	 *
 	 * @memberof ApiCore
-	 * @typeofeditors ["CDE"]
+	 * @typeofeditors ["CDE", "CSE", "CPE"]
 	 * @returns {string}
 	 * @see office-js-api/Examples/{Editor}/ApiCore/Methods/GetLastModifiedBy.js
 	 */
@@ -24804,7 +24804,7 @@
 	 * Sets the date when the document was last printed.
 	 *
 	 * @memberof ApiCore
-	 * @typeofeditors ["CDE"]
+	 * @typeofeditors ["CDE", "CSE", "CPE"]
 	 * @param {Date} oLastPrinted
 	 * @see office-js-api/Examples/{Editor}/ApiCore/Methods/SetLastPrinted.js
 	 */
@@ -24816,7 +24816,7 @@
 	 * Returns the date when the document was last printed.
 	 *
 	 * @memberof ApiCore
-	 * @typeofeditors ["CDE"]
+	 * @typeofeditors ["CDE", "CSE", "CPE"]
 	 * @returns {Date}
 	 * @see office-js-api/Examples/{Editor}/ApiCore/Methods/GetLastPrinted.js
 	 */
@@ -24828,7 +24828,7 @@
 	 * Sets the document modified date.
 	 *
 	 * @memberof ApiCore
-	 * @typeofeditors ["CDE"]
+	 * @typeofeditors ["CDE", "CSE", "CPE"]
 	 * @param {Date} oModified
 	 * @see office-js-api/Examples/{Editor}/ApiCore/Methods/SetModified.js
 	 */
@@ -24840,7 +24840,7 @@
 	 * Returns the document modified date.
 	 *
 	 * @memberof ApiCore
-	 * @typeofeditors ["CDE"]
+	 * @typeofeditors ["CDE", "CSE", "CPE"]
 	 * @returns {Date}
 	 * @see office-js-api/Examples/{Editor}/ApiCore/Methods/GetModified.js
 	 */
@@ -24852,7 +24852,7 @@
 	 * Sets the document revision.
 	 *
 	 * @memberof ApiCore
-	 * @typeofeditors ["CDE"]
+	 * @typeofeditors ["CDE", "CSE", "CPE"]
 	 * @param {string} sRevision
 	 * @see office-js-api/Examples/{Editor}/ApiCore/Methods/SetRevision.js
 	 */
@@ -24864,7 +24864,7 @@
 	 * Returns the document revision.
 	 *
 	 * @memberof ApiCore
-	 * @typeofeditors ["CDE"]
+	 * @typeofeditors ["CDE", "CSE", "CPE"]
 	 * @returns {string}
 	 * @see office-js-api/Examples/{Editor}/ApiCore/Methods/GetRevision.js
 	 */
@@ -24876,7 +24876,7 @@
 	 * Sets the document subject.
 	 *
 	 * @memberof ApiCore
-	 * @typeofeditors ["CDE"]
+	 * @typeofeditors ["CDE", "CSE", "CPE"]
 	 * @param {string} sSubject
 	 * @see office-js-api/Examples/{Editor}/ApiCore/Methods/SetSubject.js
 	 */
@@ -24888,7 +24888,7 @@
 	 * Returns the document subject.
 	 *
 	 * @memberof ApiCore
-	 * @typeofeditors ["CDE"]
+	 * @typeofeditors ["CDE", "CSE", "CPE"]
 	 * @returns {string}
 	 * @see office-js-api/Examples/{Editor}/ApiCore/Methods/GetSubject.js
 	 */
@@ -24900,7 +24900,7 @@
 	 * Sets the document title.
 	 *
 	 * @memberof ApiCore
-	 * @typeofeditors ["CDE"]
+	 * @typeofeditors ["CDE", "CSE", "CPE"]
 	 * @param {string} sTitle
 	 * @see office-js-api/Examples/{Editor}/ApiCore/Methods/SetTitle.js
 	 */
@@ -24912,7 +24912,7 @@
 	 * Returns the document title.
 	 *
 	 * @memberof ApiCore
-	 * @typeofeditors ["CDE"]
+	 * @typeofeditors ["CDE", "CSE", "CPE"]
 	 * @returns {string}
 	 * @see office-js-api/Examples/{Editor}/ApiCore/Methods/GetTitle.js
 	 */
@@ -24924,7 +24924,7 @@
 	 * Sets the document version.
 	 *
 	 * @memberof ApiCore
-	 * @typeofeditors ["CDE"]
+	 * @typeofeditors ["CDE", "CSE", "CPE"]
 	 * @param {string} sVersion
 	 * @see office-js-api/Examples/{Editor}/ApiCore/Methods/SetVersion.js
 	 */
@@ -24936,7 +24936,7 @@
 	 * Returns the document version.
 	 *
 	 * @memberof ApiCore
-	 * @typeofeditors ["CDE"]
+	 * @typeofeditors ["CDE", "CSE", "CPE"]
 	 * @returns {string}
 	 * @see office-js-api/Examples/{Editor}/ApiCore/Methods/GetVersion.js
 	 */
@@ -24954,7 +24954,7 @@
 	 * Returns a type of the ApiCustomProperties class.
 	 *
 	 * @memberof ApiCustomProperties
-	 * @typeofeditors ["CDE"]
+	 * @typeofeditors ["CDE", "CSE", "CPE"]
 	 * @returns {"customProperties"}
 	 * @see office-js-api/Examples/{Editor}/ApiCustomProperties/Methods/GetClassType.js
 	 */
@@ -24966,7 +24966,7 @@
 	 * Adds a custom string property to the document.
 	 *
 	 * @memberof ApiCustomProperties
-	 * @typeofeditors ["CDE"]
+	 * @typeofeditors ["CDE", "CSE", "CPE"]
 	 * @param {string} setName
 	 * @param {string} sValue
 	 * @see office-js-api/Examples/{Editor}/ApiCustomProperties/Methods/AddStringProperty.js
@@ -24979,7 +24979,7 @@
 	 * Adds a custom number property to the document.
 	 *
 	 * @memberof ApiCustomProperties
-	 * @typeofeditors ["CDE"]
+	 * @typeofeditors ["CDE", "CSE", "CPE"]
 	 * @param {string} sName
 	 * @param {number} nValue
 	 * @see office-js-api/Examples/{Editor}/ApiCustomProperties/Methods/AddNumberProperty.js
@@ -24994,7 +24994,7 @@
 	 * Adds a custom date property to the document.
 	 *
 	 * @memberof ApiCustomProperties
-	 * @typeofeditors ["CDE"]
+	 * @typeofeditors ["CDE", "CSE", "CPE"]
 	 * @param {string} sName
 	 * @param {Date} oValue
 	 * @see office-js-api/Examples/{Editor}/ApiCustomProperties/Methods/AddDateProperty.js
@@ -25009,7 +25009,7 @@
 	 * Adds a custom boolean property to the document.
 	 *
 	 * @memberof ApiCustomProperties
-	 * @typeofeditors ["CDE"]
+	 * @typeofeditors ["CDE", "CSE", "CPE"]
 	 * @param {string} sName
 	 * @param {boolean} bValue
 	 * @see office-js-api/Examples/{Editor}/ApiCustomProperties/Methods/AddBoolProperty.js
@@ -25022,7 +25022,7 @@
 	 * Returns the value of a custom property by its name.
 	 *
 	 * @memberof ApiCustomProperties
-	 * @typeofeditors ["CDE"]
+	 * @typeofeditors ["CDE", "CSE", "CPE"]
 	 * @param {string} sName
 	 * @returns {string | number | Date | boolean | null} - The value of the custom property or null if the property does not exist.
 	 * @see office-js-api/Examples/{Editor}/ApiCustomProperties/Methods/GetPropertyValueByName.js
