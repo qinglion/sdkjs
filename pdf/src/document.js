@@ -5014,12 +5014,12 @@ var CPresentation = CPresentation || function(){};
 
         const oFile = this.Viewer.file;
         const nOriginIndex = oFile.pages[nPage].originIndex;
-        if (nOriginIndex == undefined) {
+        if (nOriginIndex === undefined) {
             return false;
         }
 
-        const isOOXML = Asc.editor["asc_isSupportFeature"]("ooxml");
-        if(aSpsXmls && !isOOXML)
+        const isOOXML = Asc.editor.getShapeSerializeType() === "xml";
+        if (aSpsXmls && !isOOXML)
             return false;
 
         this.BlurActiveObject();
@@ -5059,7 +5059,7 @@ var CPresentation = CPresentation || function(){};
         }
 
         const aResetBuilderImages = [];
-        if(isOOXML) {
+        if (isOOXML) {
             if (!aSpsXmls)
                 aSpsXmls = oFile.nativeFile["scanPage"](nOriginIndex, 1);
 
@@ -5116,13 +5116,9 @@ var CPresentation = CPresentation || function(){};
                 }
             }
 
-            const aUrls = [];
-            const aBase64Img = [];
             const imageMap = oParserContext.imageMap;
-
-            for(const sImg in imageMap) {
-                if(imageMap.hasOwnProperty(sImg) && "data:" === sImg.substring(0, 5)) {
-                    aUrls.push(sImg);
+            for (const sImg in imageMap) {
+                if (imageMap.hasOwnProperty(sImg) && "data:" === sImg.substring(0, 5)) {
                     allImages.push(sImg);
                     const aImg = imageMap[sImg];
                     for(let nIdx = 0; nIdx < aImg.length; ++nIdx) {
@@ -5157,12 +5153,12 @@ var CPresentation = CPresentation || function(){};
 
             const allBuilderImages = aReaderImages.concat(aLoaderImages);
 
-            for(let imgIdx = 0; imgIdx < allBuilderImages.length; ++imgIdx) {
+            for (let imgIdx = 0; imgIdx < allBuilderImages.length; ++imgIdx) {
                 let embed = null;
                 const builderImage = allBuilderImages[imgIdx];
                 const blipFill = builderImage.BlipFill;
 
-                if(blipFill && blipFill.embed) {
+                if (blipFill && blipFill.embed) {
                     embed = blipFill.embed;
                     const url = _this.Viewer.file.nativeFile["getImageBase64"](parseInt(embed.substring(3)));
                     builderImage.BlipFill.RasterImageId = url;
@@ -5175,11 +5171,10 @@ var CPresentation = CPresentation || function(){};
                     }
                 }
             }
-
         }
 
         const fEndCallback = function() {
-            for(let idx = 0; idx < aPageDrawings.length; idx++) {
+            for (let idx = 0; idx < aPageDrawings.length; idx++) {
                 const drawing = aPageDrawings[idx];
                 drawing.SetFromScan(true);
                 _this.AddDrawing(drawing, nPage, idx);
@@ -5194,16 +5189,13 @@ var CPresentation = CPresentation || function(){};
             Asc.editor.canSave = true;
         };
 
-        if(allImages.length > 0) {
+        if (allImages.length > 0) {
             AscCommon.sendImgUrls(Asc.editor, allImages, function(data) {
-                let oObjectsForDownload;
-
-
-                oObjectsForDownload = AscCommon.GetObjectsForImageDownload(aResetBuilderImages);
+                let oObjectsForDownload = AscCommon.GetObjectsForImageDownload(aResetBuilderImages);
                 AscCommon.ResetNewUrls(data, allImages, oObjectsForDownload.aBuilderImagesByUrl, oImageMap);
 
                 const aLoadUrls = [];
-                for(let nIdx = 0; nIdx < data.length; ++nIdx) {
+                for (let nIdx = 0; nIdx < data.length; ++nIdx) {
                     if(data[nIdx].url) {
                         aLoadUrls.push(data[nIdx].url);
                     }

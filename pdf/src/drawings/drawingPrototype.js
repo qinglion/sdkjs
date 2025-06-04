@@ -446,7 +446,11 @@
     ////////////////////////////
 
     CPdfDrawingPrototype.prototype.WriteToBinary = function(memory) {
-        this.toXml(memory, '');
+        if (Asc.editor.getShapeSerializeType() === "xml") {
+            this.toXml(memory, '');
+        } else {
+            // Write base64 binaryData
+        }
     };
 
     window["AscPDF"].CPdfDrawingPrototype = CPdfDrawingPrototype;
