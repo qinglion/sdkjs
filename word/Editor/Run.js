@@ -11846,6 +11846,23 @@ ParaRun.prototype.CollectTextToUnicode = function(ListForUnicode, oSettings)
 		}
 	}
 };
+ParaRun.prototype.SetMathMetaData = function(oMathMetaData)
+{
+	if (!oMathMetaData)
+		return;
+
+	if (this.math_autocorrection)
+	{
+		let oOldMetaData = oMathMetaData.Copy();
+		this.math_autocorrection.Set(oMathMetaData);
+		AscCommon.History.Add(new CChangesRunMathMetaData(this, oOldMetaData, this.math_autocorrection));
+	}
+	else
+	{
+		this.math_autocorrection = oMathMetaData.Copy();
+		AscCommon.History.Add(new CChangesRunMathMetaData(this, false, this.math_autocorrection));
+	}
+};
 ParaRun.prototype.UpdateBookmarks = function(oManager)
 {
 	for (var nIndex = 0, nCount = this.Content.length; nIndex < nCount; ++nIndex)

@@ -95,7 +95,7 @@
 					if (this.isMathRm)
 					{
 						let metaData = oStyle.GetMathMetaData();
-						metaData.setIsMathRm();
+						metaData.setIsMathRm(true);
 					}
 				}
 
@@ -766,7 +766,7 @@
 		let oContent = this.GetTextArgument();
 
 		let metaData = style.GetMathMetaData();
-		metaData.setIsText();
+		metaData.setIsText(true);
 
 		return {
 			type: Struc.char,
