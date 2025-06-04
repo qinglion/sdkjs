@@ -4271,8 +4271,9 @@
 							ctx.drawImage(canvas, xPos, yPos);
 						}
 					}
-
-					if (this.isImage)
+					
+					// Hover and normal states are rendering in the main context
+					if (this.isImage && 0 === object.ActiveButtonIndex)
 					{
 						_x1 = (drPage.left + koefX * (this.bounds.x + object.OffsetX)) * rPR;
 						_y1 = (drPage.top + koefY * (this.bounds.y + object.OffsetY)) * rPR;
@@ -4284,26 +4285,12 @@
 						var xPos = (_x1 + _x4 - imageW) >> 1;
 						var yPos = (_y1 + _y4 - imageH) >> 1;
 
-						var isFill = false;
-						if (object.ActiveButtonIndex === 0)
-						{
-							ctx.fillStyle = AscCommon.GlobalSkin.ContentControlsActive;
-							isFill = true;
-						}
-						else if (object.HoverButtonIndex === 0)
-						{
-							ctx.fillStyle = AscCommon.GlobalSkin.ContentControlsHover;
-							isFill = true;
-						}
+						ctx.fillStyle = AscCommon.GlobalSkin.ContentControlsActive;
+						ctx.rect(xPos, yPos, imageW, imageH);
+						ctx.fill();
+						ctx.beginPath();
 
-						if (isFill)
-						{
-							ctx.rect(xPos, yPos, imageW, imageH);
-							ctx.fill();
-							ctx.beginPath();
-						}
-
-						var image = icons.getImage(AscCommon.CCButtonType.Image, 0 === object.ActiveButtonIndex);
+						var image = icons.getImage(AscCommon.CCButtonType.Image, true);
 						if (image)
 							ctx.drawImage(image, xPos, yPos, imageW, imageH);
 					}
@@ -4548,33 +4535,20 @@
 						}
 					}
 
-					if (this.isImage)
+					// Hover and normal states now are rendering in the main context
+					if (this.isImage && 0 === object.ActiveButtonIndex)
 					{
 						var imageW = CONTENT_CONTROL_TRACK_H / koefX; // 1x scale!
 						var imageH = CONTENT_CONTROL_TRACK_H / koefY;
 						var xPos = this.bounds.x + (this.bounds.w - imageW) / 2;
 						var yPos = this.bounds.y + (this.bounds.h - imageH) / 2;
 
-						var isFill = false;
-						if (object.ActiveButtonIndex === 0)
-						{
-							ctx.fillStyle = AscCommon.GlobalSkin.ContentControlsActive;
-							isFill = true;
-						}
-						else if (object.HoverButtonIndex === 0)
-						{
-							ctx.fillStyle = AscCommon.GlobalSkin.ContentControlsHover;
-							isFill = true;
-						}
+						ctx.fillStyle = AscCommon.GlobalSkin.ContentControlsActive;
+						ctx.rect(xPos, yPos, imageW, imageH);
+						ctx.fill();
+						ctx.beginPath();
 
-						if (isFill)
-						{
-							ctx.rect(xPos, yPos, imageW, imageH);
-							ctx.fill();
-							ctx.beginPath();
-						}
-
-						var image = icons.getImage(AscCommon.CCButtonType.Image, 0 === object.ActiveButtonIndex);
+						var image = icons.getImage(AscCommon.CCButtonType.Image, true);
 						if (image)
 							ctx.drawImage(image, xPos, yPos, imageW, imageH);
 					}

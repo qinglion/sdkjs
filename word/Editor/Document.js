@@ -1932,6 +1932,51 @@ function CDocument(DrawingDocument, isMainLogicDocument)
 
 	// TODO: Пока временно так сделаем, в будущем надо переделать в общий класс позиции документа
 	this.FocusCC = null;
+	
+	let _t = this;
+	this.HoverCC = {
+		
+		document : _t,
+		prev : null,
+		curr : null,
+		
+		start : function()
+		{
+			this.prev = this.curr;
+			this.curr = null;
+		},
+		
+		addCC : function(cc)
+		{
+			this.curr = cc;
+		},
+		
+		end : function()
+		{
+			if (this.prev === this.curr)
+				return;
+			
+			let pages = {};
+			if (this.prev && this.prev.IsPictureForm())
+			{
+				let bounds = this.prev.GetBoundingRect();
+				pages[bounds.Page] = true;
+				this.prev.isHover = false;
+			}
+			
+			if (this.curr && this.curr.IsPictureForm())
+			{
+				let bounds = this.curr.GetBoundingRect();
+				pages[bounds.Page] = true;
+				this.curr.isHover = true;
+			}
+			
+			for (let p in pages)
+			{
+				this.document.Redraw(p, p);
+			}
+		}
+	};
 
 	this.MathTrackHandler = new AscWord.CMathTrackHandler(DrawingDocument, this.Api);
 
@@ -8668,6 +8713,7 @@ CDocument.prototype.UpdateCursorType = function(X, Y, PageAbs, MouseEvent)
 
 	this.Api.sync_MouseMoveStartCallback();
 	
+	this.HoverCC.start();
 	this.DrawingDocument.removeContentControlTrackHover();
 	
 	if (undefined !== X && null !== X)
@@ -8691,7 +8737,8 @@ CDocument.prototype.UpdateCursorType = function(X, Y, PageAbs, MouseEvent)
 				this.LogicDocumentController.UpdateCursorType(X, Y, PageAbs, MouseEvent);
 		}
 	}
-
+	
+	this.HoverCC.end();
 	this.Api.sync_MouseMoveEndCallback();
 };
 CDocument.prototype.CloseAllWindowsPopups = function()
