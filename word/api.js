@@ -10062,6 +10062,7 @@ background-repeat: no-repeat;\
 	asc_docs_api.prototype._onEndBuilderScript = function(callback)
 	{
 		let logicDocument = this.getLogicDocument();
+		logicDocument.CollaborativeEditing.Clear_DocumentPositions();
 		logicDocument.Recalculate();
 		logicDocument.UpdateSelection();
 		logicDocument.UpdateInterface();

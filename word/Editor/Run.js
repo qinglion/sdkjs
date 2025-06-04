@@ -2086,6 +2086,7 @@ ParaRun.prototype.ConcatToContent = function(arrNewItems)
  * Добавляем в конец рана заданную строку
  * @param {string} sString
  * @param {number} [nPos=-1] если позиция не задана (или значение -1), то добавляем в конец
+ * @returns {number} Позиция после добавленных элементов
  */
 ParaRun.prototype.AddText = function(sString, nPos)
 {
@@ -2156,6 +2157,7 @@ ParaRun.prototype.AddText = function(sString, nPos)
 				this.AddToContent(nCharPos++, new AscWord.CRunText(nCharCode), true);
 		}
 	}
+	return nCharPos;
 };
 /**
  * Добавляем в конец рана заданную инструкцию для сложного поля
@@ -10834,6 +10836,12 @@ ParaRun.prototype.SetThisElementCurrentInParagraph = function()
 
 	oContentPos.Add(this.State.ContentPos);
 	this.Paragraph.Set_ParaContentPos(oContentPos, true, -1, -1, false);
+};
+ParaRun.prototype.GetDocumentPositionForCurrentPosition = function()
+{
+	let docPos = this.GetDocumentPositionFromObject();
+	docPos.push({Class : this, Position : this.State.ContentPos});
+	return docPos;
 };
 ParaRun.prototype.GetAllParagraphs = function(Props, ParaArray)
 {
