@@ -298,8 +298,10 @@
         this._kids.push(oField);
         oField._parent = this;
 
-        if (oField.IsWidget()) {
-            oField.SyncValue();
+        if (false == Asc.editor.getDocumentRenderer().IsOpenFormsInProgress) {
+            if (oField.IsWidget()) {
+                oField.SyncValue();
+            }
         }
     };
     CBaseField.prototype.GetKids = function() {
