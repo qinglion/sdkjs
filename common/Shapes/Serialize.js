@@ -9144,6 +9144,10 @@ function BinaryPPTYLoader()
 				hyper.id = hyper.action + "slide" + (slideNum - 1);
 				break;
 
+			case "ppaction://hlinkfile":
+				hyper.id = hyper.action + '?file=' + hyper.id;
+				break;
+
 			default:
 				hyper.id = null;
 		}
