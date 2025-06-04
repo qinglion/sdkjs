@@ -23080,7 +23080,7 @@
 				{
 					date = new Date(date);
 				}
-				catch
+				catch (err)
 				{
 					date = new Date();
 				}

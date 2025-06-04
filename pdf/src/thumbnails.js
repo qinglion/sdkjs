@@ -225,8 +225,9 @@
     }
 
     CBlock.prototype.getHeight = function(columnW, startOffset, betweenPages, zoom) {
+        let oDoc = Asc.editor.getPDFDoc();
+        let oThumnails = oDoc.GetThumbnails();
         let oViewer = Asc.editor.getDocumentRenderer();
-        let pages = this.pages;
         let EPS = 1e-3;
 
         // Height reserved for the page number label
@@ -235,10 +236,10 @@
 
         // First pass: find the maximum “oriented” height among all pages
         let maxOrig = 0;
-        for (let i = 0; i < pages.length; i++) {
-            let drPage = pages[i];
+        for (let i = 0; i < oThumnails.pages.length; i++) {
+            let drPage = oThumnails.pages[i];
             let isLandscape = oViewer.isLandscapePage(drPage.num);
-            let origH = isLandscape ? drPage.page.width : drPage.page.height;
+            let origH = isLandscape ? drPage.width : drPage.height;
             if (origH > maxOrig) {
                 maxOrig = origH;
             }
@@ -248,14 +249,13 @@
         // and track blockHeightRaw (max pH) and blockHeight (max (pH + numberBlockH))
         let blockHeightRaw = 0;
         let blockHeight = 0;
-        let sizes = new Array(pages.length);
-        for (let j = 0; j < pages.length; j++) {
-            let drPage = pages[j];
-            let isL2 = oViewer.isLandscapePage(drPage.num);
-            let origH2 = isL2 ? drPage.page.width : drPage.page.height;
+        let sizes = new Array(this.pages.length);
+        for (let j = 0; j < this.pages.length; j++) {
+            let drPage = this.pages[j];
+            let isLandscape = oViewer.isLandscapePage(drPage.num);
 
             // Compute scale so that all pages align by their largest side
-            let localScale = maxOrig / origH2;
+            let localScale = maxOrig / drPage.page.height;
             if (Math.abs(localScale - 1) < EPS) {
                 localScale = 1;
             }
@@ -265,7 +265,7 @@
             let rawH = drPage.page.height * s;
 
             // Swap dimensions if page is landscape
-            if (isL2) {
+            if (isLandscape) {
                 let tmp = rawW;
                 rawW = rawH;
                 rawH = tmp;
@@ -287,8 +287,8 @@
 
         // Third pass: set the pageRect and numRect for each page
         let currentPosX = startOffset;
-        for (let k = 0; k < pages.length; k++) {
-            let drPage = pages[k];
+        for (let k = 0; k < this.pages.length; k++) {
+            let drPage = this.pages[k];
             let pW3 = sizes[k].w;
             let pH3 = sizes[k].h;
 
@@ -1138,7 +1138,7 @@
                     selected = [this.dragPageIndex];
                 }
                 // Сортируем и убираем дубли, если нужно
-                selected = Array.from(new Set(selected)).sort((a, b) => a - b);
+                selected = Array.from(new Set(selected)).sort(function(a, b) { return a - b });
     
                 this.reorderPagesMultiple(selected, this.dropInsertPosition);
             }
