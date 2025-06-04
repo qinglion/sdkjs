@@ -186,9 +186,9 @@
 	/**
 	 * This element specifies the information which shall be used to establish a mapping to an XML element stored within a Custom XML.
 	 * @typedef {Object} XmlMapping
-	 * @property {string} prefixMapping Specifies the set of prefix mappings which shall be used to interpret the XPath expression specified on the xpath.
-	 * @property {string} xpath Local timestamp of the comment.
-	 * @property {string} storeItemID Specifies the custom XML data identifier.
+	 * @property {string} prefixMapping The set of prefix mappings which shall be used to interpret the XPath expression specified in xpath.
+	 * @property {string} xpath The XPath expression.
+	 * @property {string} storeItemID The custom XML data identifier.
 	 * @example
 	 * {
 	 *   "prefixMapping": "xmlns:ns0='http://example.com/example'",
@@ -2965,7 +2965,7 @@
 	 * Moves a cursor to a specified position of the current range object.
 	 * If there is any selection in the document, it will be removed.
 	 * @memberof ApiRange
-	 * @param {number} [nPos=0] - Desired cursor position.
+	 * @param {number} [nPos=0] - The desired cursor position.
 	 * @typeofeditors ["CDE"]
 	 * @returns {boolean}
 	 * @since 9.0.0
@@ -2983,10 +2983,11 @@
 	};
 
 	/**
-	 * Adds the field by instruction line to current range.
-	 * <note> This method removes text within range. </note>
+	 * Adds a field to the specified range by the field instruction code.
+	 * <note> This method removes text within a range. </note>
 	 * @memberof ApiRange
 	 * @typeofeditors ["CDE"]
+	 * @param {string} sCode - The field instruction code.
 	 * @returns {boolean}
 	 * @since 9.0.0
 	 * @see office-js-api/Examples/{Editor}/ApiRange/Methods/AddField.js
@@ -3162,7 +3163,7 @@
 	ApiTextForm.prototype.constructor = ApiTextForm;
 
 	/**
-	 * Class representing a document combo box / dropdown list.
+	 * Class representing a document combo box / drop-down list.
 	 * @constructor
 	 * @typeofeditors ["CDE", "CFE"]
 	 * @extends {ApiFormBase}
@@ -3739,7 +3740,7 @@
 	}
 
 	/**
-	 * Class representing a list of values of the combo box / dropdown list content control.
+	 * Class representing a list of values of the combo box / drop-down list content control.
 	 * @constructor
 	 */
 	function ApiContentControlList(Parent)
@@ -3749,7 +3750,7 @@
 	}
 
 	/**
-	 * Class representing an entry of the combo box / dropdown list content control.
+	 * Class representing an entry of the combo box / drop-down list content control.
 	 * @constructor
 	 */
 	function ApiContentControlListEntry(Sdt, Parent, Text, Value)
@@ -4292,7 +4293,8 @@
 	 */
 
 	/**
-	 * @typedef {string} Base64Img Base64 image string
+	 * The Base64 image string.
+	 * @typedef {string} Base64Img
 	 * @example "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgA..."
 	 */
 
@@ -4812,6 +4814,7 @@
 	};
 
 	/**
+	 * The checkbox content control properties
 	 * @typedef {Object} ContentControlCheckBoxPr
 	 * @property {boolean} [checked] Indicates whether the checkbox is checked by default.
 	 * @property {string} [checkedSymbol] A custom symbol to display when the checkbox is checked (e.g., "☒").
@@ -4819,12 +4822,12 @@
 	 */
 
 	/**
-	 * Creates a check box content control.
+	 * Creates a checkbox content control.
 	 * @memberof Api
 	 * @typeofeditors ["CDE"]
 	 * @since 9.0.0
-	 * @param {ContentControlCheckBoxPr} checkBoxPr Configuration object for the checkbox.
-	 * @returns {ApiInlineLvlSdt} Inline-level content control that represents a check box.
+	 * @param {ContentControlCheckBoxPr} checkBoxPr The configuration object with the checkbox properties.
+	 * @returns {ApiInlineLvlSdt} An inline-level content control that represents a checkbox.
 	 * @see office-js-api/Examples/{Editor}/Api/Methods/CreateCheckBoxContentControl.js
 	 */
 	Api.prototype.CreateCheckBoxContentControl = function(checkBoxPr)
@@ -4836,14 +4839,13 @@
 	};
 
 	/**
-	 * Create a new picture container.
-	 *
+	 * Creates a new picture container.
 	 * @memberof Api
 	 * @typeofeditors ["CDE"]
 	 * @since 9.0.0
-	 * @param {EMU} [width] - Optional width of the image.
-	 * @param {EMU} [height] - Optional height of the image.
-	 * @return {ApiInlineLvlSdt} Inline-level content control that represents a picture container.
+	 * @param {EMU} [width] - The optional image width.
+	 * @param {EMU} [height] - The optional image height.
+	 * @return {ApiInlineLvlSdt} An inline-level content control that represents a picture container.
 	 * @see office-js-api/Examples/{Editor}/Api/Methods/CreatePictureContentControl.js
 	 */
 	Api.prototype.CreatePictureContentControl = function(width, height)
@@ -4861,19 +4863,20 @@
 	};
 
 	/**
+	 * The object representing the items in the combo box or drop-down list.
 	 * @typedef {Object} ContentControlListItem
-	 * @property {string} display - The text to be displayed in the combo box or dropdown.
+	 * @property {string} display - The text to be displayed in the combo box or drop-down list.
 	 * @property {string} value - The value associated with the item.
 	 */
 
 	/**
-	 * Create a new combo box container with the given list of options.
+	 * Creates a new combo box container with the given list of options.
 	 * @memberof Api
 	 * @typeofeditors ["CDE"]
 	 * @since 9.0.0
 	 * @param {Array<ContentControlListItem>} [list] - An array of objects representing the items in the combo box.
-	 * @param {number} [selected=-1] - Index of the selected item.
-	 * @return {ApiInlineLvlSdt} Inline-level content control that represents a combo box.
+	 * @param {number} [selected=-1] - The selected item index.
+	 * @return {ApiInlineLvlSdt} An inline-level content control that represents a combo box.
 	 * @see office-js-api/Examples/{Editor}/Api/Methods/CreateComboBoxContentControl.js
 	 */
 	Api.prototype.CreateComboBoxContentControl = function(list, selected)
@@ -4891,14 +4894,13 @@
 	};
 
 	/**
-	 * Create a new dropdown list container with the given list of options.
-	 *
+	 * Creates a new drop-down list container with the given list of options.
 	 * @memberof Api
 	 * @typeofeditors ["CDE"]
 	 * @since 9.0.0
 	 * @param {Array<ContentControlListItem>} [list] - An array of objects representing the items in the drop-down list.
-	 * @param {number} [selected=-1] - Index of the selected item.
-	 * @return {ApiInlineLvlSdt} Inline-level content control that represents a drop down list.
+	 * @param {number} [selected=-1] - The selected item index.
+	 * @return {ApiInlineLvlSdt} An inline-level content control that represents a drop-down list.
 	 * @see office-js-api/Examples/{Editor}/Api/Methods/CreateDropDownListContentControl.js
 	 */
 	Api.prototype.CreateDropDownListContentControl = function(list, selected)
@@ -4916,19 +4918,20 @@
 	};
 	
 	/**
+	 * The date picker content control properties.
 	 * @typedef {Object} ContentControlDatePr
-	 * @property {string} format - The date format, ex: mm.dd.yyyy
+	 * @property {string} format - The date format. Example: "mm.dd.yyyy".
 	 * @property {string} lang   - The date language. Possible value for this parameter is a language identifier as defined by
 	 * RFC 4646/BCP 47. Example: "en-CA".
 	 */
 
 	/**
-	 * Create a new date picker content control.
+	 * Creates a new date picker content control.
 	 * @memberof Api
 	 * @typeofeditors ["CDE"]
 	 * @since 9.0.0
-	 * @param {ContentControlDatePr} [datePickerPr] - Optional date picker properties.
-	 * @return {ApiInlineLvlSdt} Inline-level content control that represents a date-time picker.
+	 * @param {ContentControlDatePr} [datePickerPr] - The optional date picker properties.
+	 * @return {ApiInlineLvlSdt} An inline-level content control that represents a date-time picker.
 	 * @see office-js-api/Examples/{Editor}/Api/Methods/CreateDatePickerContentControl.js
 	 */
 	Api.prototype.CreateDatePickerContentControl = function(datePickerPr)
@@ -5891,7 +5894,7 @@
 
 	/**
 	 * Class representing a custom XML manager, which provides methods to manage custom XML parts in the document.
-	 * @param doc
+	 * @param doc - The current document.
 	 * @constructor
 	 * @typeofeditors ["CDE"]
 	 */
@@ -5903,7 +5906,7 @@
 	ApiCustomXmlParts.prototype.constructor = ApiCustomXmlParts;
 
 	/**
-	 * Add a new custom XML part to the XML manager.
+	 * Adds a new custom XML part to the XML manager.
 	 * @memberof ApiCustomXmlParts
 	 * @typeofeditors ["CDE"]
 	 * @since 9.0.0
@@ -5930,11 +5933,11 @@
 	};
 
 	/**
-	 * Get custom XML part by its ID from the XML manager.
+	 * Returns a custom XML part by its ID from the XML manager.
 	 * @memberof ApiCustomXmlParts
 	 * @typeofeditors ["CDE"]
 	 * @since 9.0.0
-	 * @param {string} xmlPartId - The ID of the XML part.
+	 * @param {string} xmlPartId - The XML part ID.
 	 * @returns {ApiCustomXmlPart|null} The corresponding ApiCustomXmlPart object if found, or null if no match is found.
 	 * @see office-js-api/Examples/{Editor}/ApiCustomXmlParts/Methods/GetById.js
 	 */
@@ -5948,7 +5951,7 @@
 	};
 
 	/**
-	 * Get custom XML parts by namespace from the XML manager.
+	 * Returns custom XML parts by namespace from the XML manager.
 	 * @memberof ApiCustomXmlParts
 	 * @typeofeditors ["CDE"]
 	 * @since 9.0.0
@@ -5970,11 +5973,11 @@
 	};
 
 	/**
-	 * Get the count of custom XML parts in the XML manager.
+	 * Returns a number of custom XML parts in the XML manager.
 	 * @memberof ApiCustomXmlParts
 	 * @typeofeditors ["CDE"]
 	 * @since 9.0.0
-	 * @returns {number} The count of custom XML parts.
+	 * @returns {number} The number of custom XML parts.
 	 * @see office-js-api/Examples/{Editor}/ApiCustomXmlParts/Methods/GetCount.js
 	 */
 	ApiCustomXmlParts.prototype.GetCount = function()
@@ -5983,11 +5986,11 @@
 	};
 
 	/**
-	 * Get all custom XML parts from the XML manager.
+	 * Returns all custom XML parts from the XML manager.
 	 * @memberof ApiCustomXmlParts
 	 * @typeofeditors ["CDE"]
 	 * @since 9.0.0
-	 * @returns {ApiCustomXmlPart[]} Array of all custom XML parts.
+	 * @returns {ApiCustomXmlPart[]} An array of all custom XML parts.
 	 * @see office-js-api/Examples/{Editor}/ApiCustomXmlParts/Methods/GetAll.js
 	 */
 	ApiCustomXmlParts.prototype.GetAll = function()
@@ -6052,7 +6055,7 @@
 	 * @since 9.0.0
 	 * @param {string} xPath - The XPath expression to search for nodes.
 	 * @returns {ApiCustomXmlNode[]} An array of ApiCustomXmlNode objects corresponding to the found nodes.
-	 * @see office-js-api/Examples/{Editor}/ApiCustomXmlParts/Methods/GetNodes.js
+	 * @see office-js-api/Examples/{Editor}/ApiCustomXmlPart/Methods/GetNodes.js
 	 */
 	ApiCustomXmlPart.prototype.GetNodes = function(xPath)
 	{
@@ -6074,7 +6077,7 @@
 	 * @typeofeditors ["CDE"]
 	 * @since 9.0.0
 	 * @returns {string} The XML string.
-	 * @see office-js-api/Examples/{Editor}/ApiCustomXmlParts/Methods/GetXml.js
+	 * @see office-js-api/Examples/{Editor}/ApiCustomXmlPart/Methods/GetXml.js
 	 */
 	ApiCustomXmlPart.prototype.GetXml = function()
 	{
@@ -6087,7 +6090,7 @@
 	 * @typeofeditors ["CDE"]
 	 * @since 9.0.0
 	 * @returns {boolean} True if the XML was successfully deleted.
-	 * @see office-js-api/Examples/{Editor}/ApiCustomXmlParts/Methods/Delete.js
+	 * @see office-js-api/Examples/{Editor}/ApiCustomXmlPart/Methods/Delete.js
 	 */
 	ApiCustomXmlPart.prototype.Delete = function()
 	{
@@ -6102,7 +6105,7 @@
 	 * @param {string} xPath - The XPath of the node from which to delete the attribute.
 	 * @param {string} name - The name of the attribute to delete.
 	 * @returns {boolean} True if the attribute was successfully deleted.
-	 * @see office-js-api/Examples/{Editor}/ApiCustomXmlParts/Methods/DeleteAttribute.js
+	 * @see office-js-api/Examples/{Editor}/ApiCustomXmlPart/Methods/DeleteAttribute.js
 	 */
 	ApiCustomXmlPart.prototype.DeleteAttribute = function(xPath, name)
 	{
@@ -6118,7 +6121,7 @@
 	 * @param {string} name - The name of the attribute to insert.
 	 * @param {string} value - The value of the attribute to insert.
 	 * @returns {boolean} True if the attribute was successfully inserted.
-	 * @see office-js-api/Examples/{Editor}/ApiCustomXmlParts/Methods/InsertAttribute.js
+	 * @see office-js-api/Examples/{Editor}/ApiCustomXmlPart/Methods/InsertAttribute.js
 	 */
 	ApiCustomXmlPart.prototype.InsertAttribute = function(xPath, name, value)
 	{
@@ -6126,14 +6129,14 @@
 	};
 
 	/**
-	 * Get an attribute from the XML node at the specified XPath.
+	 * Returns an attribute from the XML node at the specified XPath.
 	 * @memberof ApiCustomXmlPart
 	 * @typeofeditors ["CDE"]
 	 * @since 9.0.0
-	 * @param {string} xPath - The XPath of the node to insert the attribute into.
+	 * @param {string} xPath - The XPath of the node from which to get the attribute.
 	 * @param {string} name - The name of the attribute to find.
-	 * @returns {string | null} True if the attribute was successfully inserted.
-	 * @see office-js-api/Examples/{Editor}/ApiCustomXmlParts/Methods/GetAttribute.js
+	 * @returns {string | null} The attribute value or null if no matching attributes are found.
+	 * @see office-js-api/Examples/{Editor}/ApiCustomXmlPart/Methods/GetAttribute.js
 	 */
 	ApiCustomXmlPart.prototype.GetAttribute = function(xPath, name)
 	{
@@ -6141,7 +6144,7 @@
 	};
 
 	/**
-	 * Updates the attribute of an XML node at the specified XPath.
+	 * Updates an attribute of the XML node at the specified XPath.
 	 * @memberof ApiCustomXmlPart
 	 * @typeofeditors ["CDE"]
 	 * @since 9.0.0
@@ -6149,7 +6152,7 @@
 	 * @param {string} name - The name of the attribute to update.
 	 * @param {string} value - The new value for the attribute.
 	 * @returns {boolean} True if the attribute was successfully updated.
-	 * @see office-js-api/Examples/{Editor}/ApiCustomXmlParts/Methods/UpdateAttribute.js
+	 * @see office-js-api/Examples/{Editor}/ApiCustomXmlPart/Methods/UpdateAttribute.js
 	 */
 	ApiCustomXmlPart.prototype.UpdateAttribute = function(xPath, name, value)
 	{
@@ -6163,7 +6166,7 @@
 	 * @since 9.0.0
 	 * @param {string} xPath - The XPath of the node to delete.
 	 * @returns {boolean} True if the element was successfully deleted.
-	 * @see office-js-api/Examples/{Editor}/ApiCustomXmlParts/Methods/DeleteElement.js
+	 * @see office-js-api/Examples/{Editor}/ApiCustomXmlPart/Methods/DeleteElement.js
 	 */
 	ApiCustomXmlPart.prototype.DeleteElement = function(xPath)
 	{
@@ -6179,7 +6182,7 @@
 	 * @param {string} xmlStr - The XML string to insert.
 	 * @param {number} [index] - The position at which to insert the new XML element. If omitted, the element will be appended as the last child.
 	 * @returns {boolean} True if the insertion was successful.
-	 * @see office-js-api/Examples/{Editor}/ApiCustomXmlParts/Methods/InsertElement.js
+	 * @see office-js-api/Examples/{Editor}/ApiCustomXmlPart/Methods/InsertElement.js
 	 */
 	ApiCustomXmlPart.prototype.InsertElement = function(xPath, xmlStr, index)
 	{
@@ -6194,7 +6197,7 @@
 	 * @param {string} xPath - The XPath of the node to update.
 	 * @param {string} xmlStr - The XML string to replace the node content with.
 	 * @returns {boolean} True if the update was successful.
-	 * @see office-js-api/Examples/{Editor}/ApiCustomXmlParts/Methods/UpdateElement.js
+	 * @see office-js-api/Examples/{Editor}/ApiCustomXmlPart/Methods/UpdateElement.js
 	 */
 	ApiCustomXmlPart.prototype.UpdateElement = function(xPath, xmlStr)
 	{
@@ -6202,11 +6205,11 @@
 	};
 
 	/**
-	 * Class representing a custom xml node.
+	 * Class representing a custom XML node.
 	 * @constructor
 	 * @since 9.0.0
-	 * @param xmlNode
-	 * @param xmlPart
+	 * @param xmlNode - The custom XML node.
+	 * @param xmlPart - The custom XML part.
 	 * @typeofeditors ["CDE"]
 	 */
 	function ApiCustomXmlNode(xmlNode, xmlPart)
@@ -6230,7 +6233,7 @@
 	};
 
 	/**
-	 * Gets nodes from the custom XML node based on the given XPath.
+	 * Returns nodes from the custom XML node based on the given XPath.
 	 * @memberof ApiCustomXmlNode
 	 * @typeofeditors ["CDE"]
 	 * @since 9.0.0
@@ -6273,11 +6276,11 @@
 	};
 
 	/**
-	 * Returns the XML string representation of the current node.
+	 * Returns the XML string representation of the current node content.
 	 * @memberof ApiCustomXmlNode
 	 * @typeofeditors ["CDE"]
 	 * @since 9.0.0
-	 * @returns {string} The XML string representation of the current node.
+	 * @returns {string} The XML string representation of the current node content.
 	 * @see office-js-api/Examples/{Editor}/ApiCustomXmlNode/Methods/GetNodeValue.js
 	 */
 	ApiCustomXmlNode.prototype.GetNodeValue = function()
@@ -6313,7 +6316,7 @@
 	};
 
 	/**
-	 * Sets the XML content of the current node.
+	 * Sets the XML content for the current node.
 	 * @memberof ApiCustomXmlNode
 	 * @typeofeditors ["CDE"]
 	 * @since 9.0.0
@@ -6413,12 +6416,12 @@
 	/**
 	 * Represents an attribute of an XML node.
 	 * @typedef {Object} CustomXmlNodeAttribute
-	 * @property {string} name - The name of the attribute.
-	 * @property {string} value - The value of the attribute.
+	 * @property {string} name - The attribute name.
+	 * @property {string} value - The attribute value.
 	 */
 
 	/**
-	 * Returns the list of attributes of the current XML node.
+	 * Returns a list of attributes of the current XML node.
 	 * @memberof ApiCustomXmlNode
 	 * @typeofeditors ["CDE"]
 	 * @since 9.0.0
@@ -6442,13 +6445,12 @@
 	/**
 	 * Sets an attribute for the custom XML node.
 	 * If the attribute already exists, it will not be modified.
-	 *
 	 * @memberof ApiCustomXmlNode
 	 * @typeofeditors ["CDE"]
 	 * @since 9.0.0
 	 * @param {string} name - The name of the attribute to set.
 	 * @param {string} value - The value to assign to the attribute.
-	 * @returns {boolean} `true` if the attribute was successfully set, `false` if the attribute already exists.
+	 * @returns {boolean} Returns `true` if the attribute was successfully set, `false` if the attribute already exists.
 	 * @see office-js-api/Examples/{Editor}/ApiCustomXmlNode/Methods/SetAttribute.js
 	 */
 	ApiCustomXmlNode.prototype.SetAttribute = function(name, value)
@@ -6467,13 +6469,12 @@
 	/**
 	 * Updates the value of an existing attribute in the custom XML node.
 	 * If the attribute doesn't exist, the update will not occur.
-	 *
 	 * @memberof ApiCustomXmlNode
 	 * @typeofeditors ["CDE"]
 	 * @since 9.0.0
 	 * @param {string} name - The name of the attribute to update.
 	 * @param {string} value - The new value to assign to the attribute.
-	 * @returns {boolean} `true` if the attribute was successfully updated, `false` if the attribute doesn't exist.
+	 * @returns {boolean} Returns `true` if the attribute was successfully updated, `false` if the attribute doesn't exist.
 	 * @see office-js-api/Examples/{Editor}/ApiCustomXmlNode/Methods/UpdateAttribute.js
 	 */
 	ApiCustomXmlNode.prototype.UpdateAttribute = function(name, value)
@@ -6491,12 +6492,11 @@
 	/**
 	 * Deletes an attribute from the custom XML node.
 	 * If the attribute exists, it will be removed.
-	 *
 	 * @memberof ApiCustomXmlNode
 	 * @typeofeditors ["CDE"]
 	 * @since 9.0.0
 	 * @param {string} name - The name of the attribute to delete.
-	 * @returns {boolean} `true` if the attribute was successfully deleted, `false` if the attribute didn't exist.
+	 * @returns {boolean} Returns `true` if the attribute was successfully deleted, `false` if the attribute didn't exist.
 	 * @see office-js-api/Examples/{Editor}/ApiCustomXmlNode/Methods/DeleteAttribute.js
 	 */
 	ApiCustomXmlNode.prototype.DeleteAttribute = function(name)
@@ -6512,9 +6512,8 @@
 	};
 
 	/**
-	 * Retrieves the value of an attribute from the custom XML node.
+	 * Retrieves the attribute value from the custom XML node.
 	 * If the attribute doesn't exist, it returns `false`.
-	 *
 	 * @memberof ApiCustomXmlNode
 	 * @typeofeditors ["CDE"]
 	 * @since 9.0.0
@@ -6821,23 +6820,23 @@
 	/**
 	 * Represents a single comment record.
 	 * @typedef {Object} CommentReportRecord
-	 * @property {boolean} IsAnswer Whether the comment is a response.
+	 * @property {boolean} IsAnswer Specifies whether the comment is a response.
 	 * @property {string} CommentMessage The comment text.
-	 * @property {number} Date Local timestamp of the comment.
-	 * @property {number} DateUTC UTC timestamp of the comment.
+	 * @property {number} Date The comment local timestamp.
+	 * @property {number} DateUTC The  comment UTC timestamp.
 	 * @property {string} [QuoteText] The quoted text (if available).
 	 */
 
 	/**
 	 * Represents a user's comment history.
 	 * @typedef {Object} UserComments
-	 * @property {CommentReportRecord[]} comments List of comments.
+	 * @property {CommentReportRecord[]} comments A list of comments.
 	 */
 
 	/**
 	 * A dictionary of users and their comments.
 	 * @typedef {Object} CommentReport
-	 * @property {UserComments} [username] Comments grouped by username.
+	 * @property {UserComments} [username] The comments grouped by username.
 	 * @example
 	 * {
 	 *   "John Smith": {
@@ -6917,22 +6916,22 @@
 	/**
 	 * Represents a single review change record.
 	 * @typedef {Object} ReviewReportRecord
-	 * @property {ReviewReportRecordType} Type Review record type.
-	 * @property {string} [Value] Review change value (only for "TextAdd" and "TextRem" types).
-	 * @property {number} Date Timestamp of when the change was made.
+	 * @property {ReviewReportRecordType} Type The review record type.
+	 * @property {string} [Value] The review change value (only for "TextAdd" and "TextRem" types).
+	 * @property {number} Date The timestamp of the change.
 	 * @property {ApiParagraph | ApiTable} ReviewedElement The element that was reviewed.
 	 */
 
 	/**
 	 * Represents a user's review history.
 	 * @typedef {Object} UserReviewChanges
-	 * @property {ReviewReportRecord[]} reviews List of review records.
+	 * @property {ReviewReportRecord[]} reviews A list of review records.
 	 */
 
 	/**
 	 * A dictionary of users and their review changes.
 	 * @typedef {Object} ReviewReport
-	 * @property {UserReviewChanges} [username] Review changes grouped by username.
+	 * @property {UserReviewChanges} [username] The review changes grouped by username.
 	 * @example
 	 * {
 	 *   "John Smith": {
@@ -8854,10 +8853,10 @@
 	};
 
 	/**
-	 * Moves a cursor to a specified position of the document.
+	 * Moves a cursor to a specified position of the current document.
 	 * If there is any selection in the document, it will be removed.
 	 * @memberof ApiDocument
-	 * @param {number} [nPos=0] - Desired cursor position.
+	 * @param {number} [nPos=0] - The desired cursor position.
 	 * @typeofeditors ["CDE"]
 	 * @returns {boolean}
 	 * @since 9.0.0
@@ -8873,8 +8872,8 @@
 	 * Adds a new checkbox content control to the document.
 	 * @memberof ApiDocument
 	 * @since 9.0.0
-	 * @param {ContentControlCheckBoxPr} checkBoxPr Configuration object for the checkbox.
-	 * @returns {ApiInlineLvlSdt} An instance of the ApiInlineLvlSdt representing the checkbox content control.
+	 * @param {ContentControlCheckBoxPr} checkBoxPr The configuration object for the checkbox.
+	 * @returns {ApiInlineLvlSdt} An instance of the ApiInlineLvlSdt object representing the checkbox content control.
 	 * @see office-js-api/Examples/{Editor}/ApiDocument/Methods/AddCheckBoxContentControl.js
 	 */
 	ApiDocument.prototype.AddCheckBoxContentControl = function(checkBoxPr)
@@ -8888,9 +8887,9 @@
 	 * Adds a new picture content control to the document.
 	 * @memberof ApiDocument
 	 * @since 9.0.0
-	 * @param {EMU} [width] - Optional width of the image.
-	 * @param {EMU} [height] - Optional height of the image.
-	 * @returns {ApiInlineLvlSdt} An instance of the ApiInlineLvlSdt representing the picture content control.
+	 * @param {EMU} [width] - The optional width of the image.
+	 * @param {EMU} [height] - The optional height of the image.
+	 * @returns {ApiInlineLvlSdt} An instance of the ApiInlineLvlSdt object representing the picture content control.
 	 * @see office-js-api/Examples/{Editor}/ApiDocument/Methods/AddPictureContentControl.js
 	 */
 	ApiDocument.prototype.AddPictureContentControl = function(width, height)
@@ -8908,7 +8907,7 @@
 	 * @typeofeditors ["CDE"]
 	 * @since 9.0.0
 	 * @param {Array<ContentControlListItem>} [list] - An array of objects representing the items in the combo box.
-	 * @param {string} [selected] - Optional value of the item that should be selected by default (must match one of the ListItem.Value).
+	 * @param {string} [selected] - The optional value of the item that should be selected by default (must match one of the ListItem.Value).
 	 * @returns {ApiInlineLvlSdt}
 	 * @see office-js-api/Examples/{Editor}/ApiDocument/Methods/AddComboBoxContentControl.js
 	 */
@@ -8925,12 +8924,12 @@
 	};
 	
 	/**
-	 * Adds a new dropdown list content control to the document.
+	 * Adds a new drop-down list content control to the document.
 	 * @memberof ApiDocument
 	 * @typeofeditors ["CDE"]
 	 * @since 9.0.0
-	 * @param {Array<ContentControlListItem>} [list] - An array of objects representing the items in the combo box.
-	 * @param {string} [selected] - Optional value of the item that should be selected by default (must match one of the ListItem.Value).
+	 * @param {Array<ContentControlListItem>} [list] - An array of objects representing the items in the drop-down list.
+	 * @param {string} [selected] - The optional value of the item that should be selected by default (must match one of the ListItem.Value).
 	 * @returns {ApiInlineLvlSdt}
 	 * @see office-js-api/Examples/{Editor}/ApiDocument/Methods/AddDropDownListContentControl.js
 	 */
@@ -8949,7 +8948,7 @@
 	 * @memberof ApiDocument
 	 * @typeofeditors ["CDE"]
 	 * @since 9.0.0
-	 * @param {ContentControlDatePr} [datePickerPr] - Optional date picker properties.
+	 * @param {ContentControlDatePr} [datePickerPr] - The optional date picker properties.
 	 * @returns {ApiInlineLvlSdt}
 	 * @see office-js-api/Examples/{Editor}/ApiDocument/Methods/AddDatePickerContentControl.js
 	 */
@@ -11225,7 +11224,7 @@
         return null;
     };
     /**
-     * Returns a parent paragraph of this run.
+     * Returns a parent paragraph of the current run.
      * @memberof ApiRun
 	 * @typeofeditors ["CDE"]
      * @return {?ApiParagraph}
@@ -13605,7 +13604,7 @@
 	 * Removes a column containing the current cell.
 	 * @memberof ApiTableCell
 	 * @typeofeditors ["CDE"]
-	 * @returns {boolean} - removes false if table doen't exist
+	 * @returns {boolean} - returns false if table doen't exist
 	 * @see office-js-api/Examples/{Editor}/ApiTableCell/Methods/RemoveColumn.js
 	 */
 	ApiTableCell.prototype.RemoveColumn = function()
@@ -16039,12 +16038,12 @@
 		return true;
 	};
 	/**
-	 * Specifies the border which will be displayed on all table cell borders.
+	 * Specifies a border which will be displayed on all table cell borders.
 	 * @memberof ApiTablePr
 	 * @typeofeditors ["CDE"]
-	 * @param {BorderType} sType - The vertical table cell border style.
+	 * @param {BorderType} sType - The border style.
 	 * @param {pt_8} nSize - The width of the current border measured in eighths of a point.
-	 * @param {pt} nSpace - The spacing offset in the vertical table cells of the table measured in points used to place this border.
+	 * @param {pt} nSpace - The spacing offset in the table cells measured in points used to place this border.
 	 * @param {byte} r - Red color component value.
 	 * @param {byte} g - Green color component value.
 	 * @param {byte} b - Blue color component value.
@@ -17460,9 +17459,10 @@
 	/**
      * Sets the rotation angle to the current drawing object.
      * @memberof ApiDrawing
-     * @param {number} nRotAngle - new drawing rot angle
+     * @param {number} nRotAngle - New drawing rotation angle.
      * @typeofeditors ["CDE"]
      * @returns {boolean}
+	 * @since 9.0.0
      * @see office-js-api/Examples/{Editor}/ApiDrawing/Methods/SetRotation.js
 	 */
 	ApiDrawing.prototype.SetRotation = function(nRotAngle)
@@ -17477,10 +17477,11 @@
 		return true;
 	};
 	/**
-     * Gets the rotation angle of the current drawing object.
+     * Returns the rotation angle of the current drawing object.
      * @memberof ApiDrawing
      * @typeofeditors ["CDE"]
      * @returns {number}
+	 * @since 9.0.0
      * @see office-js-api/Examples/{Editor}/ApiDrawing/Methods/GetRotation.js
 	 */
 	ApiDrawing.prototype.GetRotation = function()
@@ -19021,7 +19022,7 @@
 	};
 	
 	/**
-	 * Returns an internal id of the current content control.
+	 * Returns an internal ID of the current content control.
 	 * @memberof ApiInlineLvlSdt
 	 * @typeofeditors ["CDE"]
 	 * @returns {string}
@@ -19037,7 +19038,7 @@
 	 * @memberof ApiInlineLvlSdt
 	 * @typeofeditors ["CDE"]
 	 * @since 8.3.2
-	 * @param {number} id - The numerical id which will be specified to the current content control.
+	 * @param {number} id - The numerical ID which will be specified for the current content control.
 	 * @returns {boolean}
 	 * @see office-js-api/Examples/{Editor}/ApiInlineLvlSdt/Methods/SetId.js
 	 */
@@ -19052,7 +19053,7 @@
 	};
 	
 	/**
-	 * Gets a unique ID for the current content control.
+	 * Returns a unique ID for the current content control.
 	 * @memberof ApiInlineLvlSdt
 	 * @typeofeditors ["CDE"]
 	 * @since 8.3.2
@@ -19648,7 +19649,7 @@
 	};
 
 	/**
-	 * Returns a list of values of the combo box / dropdown list content control.
+	 * Returns a list of values of the combo box / drop-down list content control.
 	 * @memberof ApiInlineLvlSdt
 	 * @typeofeditors ["CDE"]
 	 * @returns {ApiContentControlList}
@@ -19680,7 +19681,7 @@
 		return true;
 	};
 	/**
-	 * Gets the border color of the current content control.
+	 * Returns the border color of the current content control.
 	 * @memberof ApiInlineLvlSdt
 	 * @typeofeditors ["CDE"]
 	 * @since 8.3.2
@@ -19719,7 +19720,7 @@
 	};
 	
 	/**
-	 * Gets the background color of the current content control.
+	 * Returns the background color of the current content control.
 	 * @memberof ApiInlineLvlSdt
 	 * @typeofeditors ["CDE"]
 	 * @since 8.3.2
@@ -19757,7 +19758,7 @@
 	};
 
 	/**
-	 * Sets the data binding for the content control.
+	 * Sets the data binding for the current content control.
 	 * @memberof ApiInlineLvlSdt
 	 * @typeofeditors ["CDE"]
 	 * @since 9.0.0
@@ -19784,7 +19785,6 @@
 	
 	/**
 	 * Retrieves the data binding of the content control.
-	 *
 	 * @memberof ApiInlineLvlSdt
 	 * @typeofeditors ["CDE"]
 	 * @since 9.0.0
@@ -19805,12 +19805,11 @@
 	};
 	
 	/**
-	 * Update the content using the value from the XML mapping.
-	 *
+	 * Updates the content control using the value from the XML mapping.
 	 * @memberof ApiInlineLvlSdt
 	 * @typeofeditors ["CDE"]
 	 * @since 9.0.0
-	 * @returns {boolean} Returns if the update was successful or not.
+	 * @returns {boolean} Returns `true` if the update was successful, otherwise `false`.
 	 * @see office-js-api/Examples/{Editor}/ApiInlineLvlSdt/Methods/UpdateFromXmlMapping.js
 	 */
 	ApiInlineLvlSdt.prototype.UpdateFromXmlMapping = function()
@@ -19819,12 +19818,11 @@
 	};
 	
 	/**
-	 * Get data for xml mapping.
-	 *
+	 * Returns the content control data for the XML mapping.
 	 * @memberof ApiInlineLvlSdt
 	 * @typeofeditors ["CDE"]
 	 * @since 9.0.0
-	 * @returns {string} String data representing the contents of the current content control.
+	 * @returns {string} The string data representing the contents of the current content control.
 	 * @see office-js-api/Examples/{Editor}/ApiInlineLvlSdt/Methods/GetDataForXmlMapping.js
 	 */
 	ApiInlineLvlSdt.prototype.GetDataForXmlMapping = function()
@@ -19836,7 +19834,6 @@
 	
 	/**
 	 * Checks if the content control is a checkbox.
-	 *
 	 * @memberof ApiInlineLvlSdt
 	 * @typeofeditors ["CDE"]
 	 * @since 9.0.0
@@ -19849,9 +19846,8 @@
 	};
 
 	/**
-	 * Sets the checkbox value of the content control.
+	 * Sets the checkbox value for the content control.
 	 * This method updates the checkbox state of the content control to either checked or unchecked.
-	 *
 	 * @memberof ApiInlineLvlSdt
 	 * @typeofeditors ["CDE"]
 	 * @since 9.0.0
@@ -19870,9 +19866,8 @@
 	};
 
 	/**
-	 * Checks whether the content control is a picture type.
+	 * Checks whether the content control is a picture control.
 	 * This method verifies if the content control is specifically a picture control.
-	 *
 	 * @memberof ApiInlineLvlSdt
 	 * @typeofeditors ["CDE"]
 	 * @since 9.0.0
@@ -19885,14 +19880,13 @@
 	};
 
 	/**
-	 * Sets the size of the picture in a content control.
+	 * Sets the size for the picture in a content control.
 	 * This method adjusts the width and height of the image if the content control is a picture.
-	 *
 	 * @memberof ApiInlineLvlSdt
 	 * @typeofeditors ["CDE"]
 	 * @since 9.0.0
-	 * @param {EMU} width - The desired width of the image.
-	 * @param {EMU} height - The desired height of the image.
+	 * @param {EMU} width - The desired image width .
+	 * @param {EMU} height - The desired image height.
 	 * @returns {boolean} Returns `true` if the size was successfully set, or `false` if the content control is not a picture.
 	 * @see office-js-api/Examples/{Editor}/ApiInlineLvlSdt/Methods/SetPictureSize.js
 	 */
@@ -19919,10 +19913,9 @@
 	};
 
 	/**
-	 * Sets the content (image) of a content control picture.
+	 * Sets the content (image) for the picture content control.
 	 * This method updates the picture inside a content control by setting an image from a provided URL.
 	 * The URL should be an internet link to the image.
-	 *
 	 * @memberof ApiInlineLvlSdt
 	 * @typeofeditors ["CDE"]
 	 * @since 9.0.0
@@ -19973,12 +19966,11 @@
 	};
 
 	/**
-	 * Checks if the content control is a dropdown list.
-	 *
+	 * Checks whether the content control is a drop-down list.
 	 * @memberof ApiInlineLvlSdt
 	 * @typeofeditors ["CDE"]
 	 * @since 9.0.0
-	 * @returns {boolean} Returns `true` if the content control is a dropdown list, otherwise `false`.
+	 * @returns {boolean} Returns `true` if the content control is a drop-down list, otherwise `false`.
 	 * @see office-js-api/Examples/{Editor}/ApiInlineLvlSdt/Methods/IsDropDownList.js
 	 */
 	ApiInlineLvlSdt.prototype.IsDropDownList = function()
@@ -19987,12 +19979,11 @@
 	};
 
 	/**
-	 * Checks if the content control is a combobox list.
-	 *
+	 * Checks whether the content control is a combo box list.
 	 * @memberof ApiInlineLvlSdt
 	 * @typeofeditors ["CDE"]
 	 * @since 9.0.0
-	 * @returns {boolean} Returns `true` if the content control is a combobox list, otherwise `false`.
+	 * @returns {boolean} Returns `true` if the content control is a combo box list, otherwise `false`.
 	 * @see office-js-api/Examples/{Editor}/ApiInlineLvlSdt/Methods/IsComboBox.js
 	 */
 	ApiInlineLvlSdt.prototype.IsComboBox = function()
@@ -20001,8 +19992,7 @@
 	};
 
 	/**
-	 * Sets the selected item in a combobox list or dropdown list.
-	 *
+	 * Sets the selected item for a combo box list or drop-down list.
 	 * @memberof ApiInlineLvlSdt
 	 * @typeofeditors ["CDE"]
 	 * @since 9.0.0
@@ -20017,8 +20007,7 @@
 	};
 
 	/**
-	 * Adds an item to a combobox list or dropdown list.
-	 *
+	 * Adds an item to a combo box list or drop-down list.
 	 * @memberof ApiInlineLvlSdt
 	 * @typeofeditors ["CDE"]
 	 * @since 9.0.0
@@ -20044,8 +20033,7 @@
 	};
 
 	/**
-	 * Removes an item from a combobox list or dropdown list.
-	 *
+	 * Removes an item from a combo box list or drop-down list.
 	 * @memberof ApiInlineLvlSdt
 	 * @typeofeditors ["CDE"]
 	 * @since 9.0.0
@@ -20072,8 +20060,7 @@
 	};
 
 	/**
-	 * Checks if the content control is a datepicker.
-	 *
+	 * Checks whether the content control is a datepicker.
 	 * @memberof ApiInlineLvlSdt
 	 * @typeofeditors ["CDE"]
 	 * @since 9.0.0
@@ -20086,8 +20073,7 @@
 	};
 
 	/**
-	 * Sets the value of a datepicker content control.
-	 *
+	 * Sets the value for the datepicker content control.
 	 * @memberof ApiInlineLvlSdt
 	 * @typeofeditors ["CDE"]
 	 * @since 9.0.0
@@ -20110,9 +20096,8 @@
 
 	/**
 	 * Sets the date format for the datepicker content control.
-	 * This method allows to set the format in which the date should be displayed in the datepicker content control.
+	 * This method allows setting the format in which the date should be displayed in the datepicker content control.
 	 * The format string should be specified using common date format patterns (e.g., "mm.dd.yyyy").
-	 *
 	 * @memberof ApiInlineLvlSdt
 	 * @typeofeditors ["CDE"]
 	 * @since 9.0.0
@@ -20133,12 +20118,11 @@
 	};
 	
 	/**
-	 * Sets the visualization of the content control.
-	 *
+	 * Sets the visualization type of the content control.
 	 * @memberof ApiInlineLvlSdt
 	 * @typeofeditors ["CDE"]
 	 * @since 9.0.0
-	 * @param {"boundingBox"|"hidden"} type - The desired type of visualization.
+	 * @param {"boundingBox"|"hidden"} type - The desired visualization type.
 	 * @see office-js-api/Examples/{Editor}/ApiInlineLvlSdt/Methods/SetAppearance.js
 	 */
 	ApiInlineLvlSdt.prototype.SetAppearance = function(type)
@@ -20153,12 +20137,11 @@
 	};
 	
 	/**
-	 * Gets the visualization of the content control.
-	 *
+	 * Returns the visualization type of the content control.
 	 * @memberof ApiInlineLvlSdt
 	 * @typeofeditors ["CDE"]
 	 * @since 9.0.0
-	 * @returns {"boundingBox"|"hidden"} type - The type of visualization.
+	 * @returns {"boundingBox"|"hidden"} type - The visualization type of the content control.
 	 * @see office-js-api/Examples/{Editor}/ApiInlineLvlSdt/Methods/GetAppearance.js
 	 */
 	ApiInlineLvlSdt.prototype.GetAppearance = function()
@@ -20189,7 +20172,7 @@
 	};
 
 	/**
-	 * Returns a collection of items (the ApiContentControlListEntry objects) of the combo box / dropdown list content control.
+	 * Returns a collection of items (the ApiContentControlListEntry objects) of the combo box / drop-down list content control.
 	 * @memberof ApiContentControlList
 	 * @typeofeditors ["CDE"]
 	 * @returns {ApiContentControlListEntry[]}
@@ -20209,7 +20192,7 @@
 	};
 
 	/**
-	 * Returns a number of items of the combo box / dropdown list content control.
+	 * Returns a number of items of the combo box / drop-down list content control.
 	 * @memberof ApiContentControlList
 	 * @typeofeditors ["CDE"]
 	 * @returns {number}
@@ -20221,7 +20204,7 @@
 	};
 
 	/**
-	 * Returns a parent of the combo box / dropdown list content control.
+	 * Returns a parent of the combo box / drop-down list content control.
 	 * @memberof ApiContentControlList
 	 * @typeofeditors ["CDE"]
 	 * @returns {ApiInlineLvlSdt | ApiBlockLvlSdt}
@@ -20233,7 +20216,7 @@
 	};
 
 	/**
-	 * Adds a new value to the combo box / dropdown list content control.
+	 * Adds a new value to the combo box / drop-down list content control.
 	 * @memberof ApiContentControlList
 	 * @param {string} sText - The display text for the list item.
 	 * @param {string} sValue - The list item value. By default is equal to sText parameter
@@ -20264,7 +20247,7 @@
 	};
 
 	/**
-	 * Clears a list of values of the combo box / dropdown list content control.
+	 * Clears a list of values of the combo box / drop-down list content control.
 	 * @memberof ApiContentControlList
 	 * @typeofeditors ["CDE"]
 	 * @returns {boolean}
@@ -20280,7 +20263,7 @@
 	};
 
 	/**
-	 * Returns an item of the combo box / dropdown list content control by the position specified in the request.
+	 * Returns an item of the combo box / drop-down list content control by the position specified in the request.
 	 * @memberof ApiContentControlList
 	 * @param {number} nIndex - Item position.
 	 * @typeofeditors ["CDE"]
@@ -20319,7 +20302,7 @@
 	};
 
 	/**
-	 * Returns a parent of the content control list item in the combo box / dropdown list content control.
+	 * Returns a parent of the content control list item in the combo box / drop-down list content control.
 	 * @memberof ApiContentControlListEntry
 	 * @typeofeditors ["CDE"]
 	 * @returns {ApiContentControlList}
@@ -20334,7 +20317,7 @@
 	};
 
 	/**
-	 * Selects the list entry in the combo box / dropdown list content control and sets the text of the content control to the selected item value.
+	 * Selects the list entry in the combo box / drop-down list content control and sets the text of the content control to the selected item value.
 	 * @memberof ApiContentControlListEntry
 	 * @typeofeditors ["CDE"]
 	 * @returns {boolean}
@@ -20350,7 +20333,7 @@
 	};
 
 	/**
-	 * Moves the current item in the parent combo box / dropdown list content control up one element.
+	 * Moves the current item in the parent combo box / drop-down list content control up one element.
 	 * @memberof ApiContentControlListEntry
 	 * @typeofeditors ["CDE"]
 	 * @returns {boolean}
@@ -20366,7 +20349,7 @@
 	};
 
 	/**
-	 * Moves the current item in the parent combo box / dropdown list content control down one element, so that it is after the item that originally followed it.
+	 * Moves the current item in the parent combo box / drop-down list content control down one element, so that it is after the item that originally followed it.
 	 * @memberof ApiContentControlListEntry
 	 * @typeofeditors ["CDE"]
 	 * @returns {boolean}
@@ -20383,7 +20366,7 @@
 	};
 
 	/**
-	 * Returns an index of the content control list item in the combo box / dropdown list content control.
+	 * Returns an index of the content control list item in the combo box / drop-down list content control.
 	 * @memberof ApiContentControlListEntry
 	 * @typeofeditors ["CDE"]
 	 * @returns {number}
@@ -20396,7 +20379,7 @@
 	};
 
 	/**
-	 * Sets an index to the content control list item in the combo box / dropdown list content control.
+	 * Sets an index to the content control list item in the combo box / drop-down list content control.
 	 * @memberof ApiContentControlListEntry
 	 * @param {number} nIndex - An index of the content control list item.
 	 * @typeofeditors ["CDE"]
@@ -20420,7 +20403,7 @@
 	};
 
 	/**
-	 * Deletes the specified item in the combo box / dropdown list content control.
+	 * Deletes the specified item in the combo box / drop-down list content control.
 	 * @memberof ApiContentControlListEntry
 	 * @typeofeditors ["CDE"]
 	 * @returns {boolean}
@@ -20450,7 +20433,7 @@
 	};
 
 	/**
-	 * Returns a String that represents the display text of a list item for the combo box / dropdown list content control.
+	 * Returns a String that represents the display text of a list item for the combo box / drop-down list content control.
 	 * @memberof ApiContentControlListEntry
 	 * @typeofeditors ["CDE"]
 	 * @returns {string}
@@ -20462,7 +20445,7 @@
 	};
 
 	/**
-	 * Sets a String that represents the display text of a list item for the combo box / dropdown list content control.
+	 * Sets a String that represents the display text of a list item for the combo box / drop-down list content control.
 	 * @memberof ApiContentControlListEntry
 	 * @typeofeditors ["CDE"]
 	 * @param {string} sText - The display text of a list item.
@@ -20490,7 +20473,7 @@
 	};
 
 	/**
-	 * Returns a String that represents the value of a list item for the combo box / dropdown list content control.
+	 * Returns a String that represents the value of a list item for the combo box / drop-down list content control.
 	 * @memberof ApiContentControlListEntry
 	 * @typeofeditors ["CDE"]
 	 * @returns {string}
@@ -20502,7 +20485,7 @@
 	};
 
 	/**
-	 * Sets a String that represents the value of a list item for the combo box / dropdown list content control.
+	 * Sets a String that represents the value of a list item for the combo box / drop-down list content control.
 	 * @memberof ApiContentControlListEntry
 	 * @typeofeditors ["CDE"]
 	 * @param {string} sValue - The value of a list item.
@@ -20566,13 +20549,13 @@
 	 * @memberof ApiBlockLvlSdt
 	 * @typeofeditors ["CDE"]
 	 * @since 8.3.2
-	 * @param {number} id - The numerical id which will be specified to the current content control.
+	 * @param {number} id - The numerical ID which will be specified for the current content control.
 	 * @see office-js-api/Examples/{Editor}/ApiBlockLvlSdt/Methods/SetId.js
 	 */
 	ApiBlockLvlSdt.prototype.SetId = ApiInlineLvlSdt.prototype.SetId;
 	
 	/**
-	 * Gets a unique ID for the current content control.
+	 * Returns a unique ID for the current content control.
 	 * @memberof ApiBlockLvlSdt
 	 * @typeofeditors ["CDE"]
 	 * @since 8.3.2
@@ -20712,10 +20695,9 @@
 	};
 
 	/**
-	 * Sets the content (image) of a content control picture.
+	 * Sets the content (image) for the picture content control.
 	 * This method updates the picture inside a content control by setting an image from a provided URL.
 	 * The URL should be an internet link to the image.
-	 *
 	 * @memberof ApiBlockLvlSdt
 	 * @typeofeditors ["CDE"]
 	 * @since 9.0.0
@@ -20766,9 +20748,8 @@
 	};
 
 	/**
-	 * Checks whether the content control is a picture type.
+	 * Checks whether the content control is a picture control.
 	 * This method verifies if the content control is specifically a picture control.
-	 *
 	 * @memberof ApiBlockLvlSdt
 	 * @typeofeditors ["CDE"]
 	 * @since 9.0.0
@@ -20782,7 +20763,6 @@
 	
 	/**
 	 * Retrieves the data binding of the content control.
-	 *
 	 * @memberof ApiBlockLvlSdt
 	 * @typeofeditors ["CDE"]
 	 * @since 9.0.0
@@ -20802,23 +20782,21 @@
 	};
 	
 	/**
-	 * Update the content using the value from the XML mapping.
-	 *
+	 * Updates the content control using the value from the XML mapping.
 	 * @memberof ApiBlockLvlSdt
 	 * @typeofeditors ["CDE"]
 	 * @since 9.0.0
-	 * @returns {boolean} Returns if the update was successful or not.
+	 * @returns {boolean} Returns `true` if the update was successful, otherwise `false`.
 	 * @see office-js-api/Examples/{Editor}/ApiBlockLvlSdt/Methods/UpdateFromXmlMapping.js
 	 */
 	ApiBlockLvlSdt.prototype.UpdateFromXmlMapping = ApiInlineLvlSdt.prototype.UpdateFromXmlMapping;
 	
 	/**
-	 * Get data for xml mapping.
-	 *
+	 * Returns the content control data for the XML mapping.
 	 * @memberof ApiBlockLvlSdt
 	 * @typeofeditors ["CDE"]
 	 * @since 9.0.0
-	 * @returns {string} String data representing the contents of the current content control.
+	 * @returns {string} The string data representing the contents of the current content control.
 	 * @see office-js-api/Examples/{Editor}/ApiBlockLvlSdt/Methods/GetDataForXmlMapping.js
 	 */
 	ApiBlockLvlSdt.prototype.GetDataForXmlMapping = ApiInlineLvlSdt.prototype.GetDataForXmlMapping;
@@ -21450,7 +21428,7 @@
 	};
 	
 	/**
-	 * Returns a list of values of the combo box / dropdown list content control.
+	 * Returns a list of values of the combo box / drop-down list content control.
 	 * @memberof ApiBlockLvlSdt
 	 * @typeofeditors ["CDE"]
 	 * @returns {ApiContentControlList}
@@ -21513,7 +21491,7 @@
 	ApiBlockLvlSdt.prototype.SetBorderColor = ApiInlineLvlSdt.prototype.SetBorderColor;
 	
 	/**
-	 * Gets the border color of the current content control.
+	 * Returns the border color of the current content control.
 	 * @memberof ApiBlockLvlSdt
 	 * @typeofeditors ["CDE"]
 	 * @since 8.3.2
@@ -21536,7 +21514,7 @@
 	ApiBlockLvlSdt.prototype.SetBackgroundColor = ApiInlineLvlSdt.prototype.SetBackgroundColor;
 	
 	/**
-	 * Gets the background color of the current content control.
+	 * Returns the background color of the current content control.
 	 * @memberof ApiBlockLvlSdt
 	 * @typeofeditors ["CDE"]
 	 * @since 8.3.2
@@ -22606,7 +22584,7 @@
 		}, this);
 	};
 	/**
-	 * Checks if the combo box text can be edited. If it is not editable, then this form is a dropdown list.
+	 * Checks if the combo box text can be edited. If it is not editable, then this form is a drop-down list.
 	 * @memberof ApiComboBoxForm
 	 * @typeofeditors ["CDE", "CFE"]
 	 * @returns {boolean}
@@ -22698,7 +22676,7 @@
 		}, this);
 	};
 	/**
-	 * Get the choice name for the current radio button.
+	 * Returns the choice name of the current radio button.
 	 * @memberof ApiCheckBoxForm
 	 * @typeofeditors ["CDE", "CFE"]
 	 * @since 8.3.2
@@ -22713,9 +22691,9 @@
 			return "";
 	};
 	/**
-	 * Set the choice name for the current radio button.
+	 * Sets the choice name for the current radio button.
 	 * @memberof ApiCheckBoxForm
-	 * @param {string} choiceName - Radio button choice name.
+	 * @param {string} choiceName - The radio button choice name.
 	 * @typeofeditors ["CDE", "CFE"]
 	 * @since 8.3.2
 	 * @returns {boolean}
