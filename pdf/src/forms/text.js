@@ -618,7 +618,7 @@
         let x2 = markX + markW, y2 = markY + markH;
         if (angleRad !== 0) {
             let cos = Math.cos(-angleRad), sin = Math.sin(-angleRad);
-            let rot = (x, y) => {
+            let rot = function (x, y) {
                 let dx = x - cx, dy = y - cy;
                 return {
                     x: dx * cos - dy * sin + cx,

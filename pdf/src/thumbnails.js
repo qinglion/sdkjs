@@ -1138,7 +1138,7 @@
                     selected = [this.dragPageIndex];
                 }
                 // Сортируем и убираем дубли, если нужно
-                selected = Array.from(new Set(selected)).sort((a, b) => a - b);
+                selected = Array.from(new Set(selected)).sort(function(a, b) { return a - b });
     
                 this.reorderPagesMultiple(selected, this.dropInsertPosition);
             }
