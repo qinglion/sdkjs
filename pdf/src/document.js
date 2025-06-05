@@ -4915,6 +4915,14 @@ var CPresentation = CPresentation || function(){};
 
         oController.checkSelectedObjectsAndCallback(oController.setParagraphAlign, [Align], false, AscDFH.historydescription_Presentation_SetParagraphAlign);
     };
+	CPDFDoc.prototype.SetParagraphBidi = function(isRtl) {
+		let oController = this.GetController();
+		if (oController.getSelectedArray().find(function(obj) { return obj.IsAnnot()})) {
+			return false;
+		}
+		
+		oController.checkSelectedObjectsAndCallback(oController.setParagraphBidi, [isRtl], false, AscDFH.historydescription_Document_SetParagraphBidi);
+	};
     CPDFDoc.prototype.SetVerticalAlign = function(Align) {
         let oController = this.GetController();
         if (oController.getSelectedArray().find(function(obj) { return obj.IsAnnot()})) {
