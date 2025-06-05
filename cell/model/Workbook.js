@@ -2986,7 +2986,9 @@
 							resStreamInfo = _promises[i].callback(streamInfos[i]);
 						}
 						_promises[i].parserFormula.promiseResult[_promises[i].index] = resStreamInfo;
-						t.wb.dependencyFormulas.addToChangedCell(_promises[i].parserFormula.parent);
+						if (_promises[i].parserFormula.parent) {
+							t.wb.dependencyFormulas.addToChangedCell(_promises[i].parserFormula.parent);
+						}
 						t.addPromiseParserFormula(_promises[i].parserFormula);
 					}
 					//t.wb.buildDependency();
@@ -6801,7 +6803,7 @@
 										break;
 								}
 								formulaParent = new AscCommonExcel.CConditionalFormattingFormulaParent(this, oRule, true);
-								oRuleElement = oRule.getFormulaCellIs();
+								oRuleElement =  oRule.getFormulaCellIs(Asc.ECfType.notContainsText === oRule.type || Asc.ECfType.containsText === oRule.type);
 								parsed1 = oRuleElement && oRuleElement.getFormula && oRuleElement.getFormula(this, formulaParent);
 								if (parsed1 && parsed1.hasRelativeRefs()) {
 									bboxCf = oRule.getBBox();
@@ -16068,13 +16070,14 @@
 									range._foreachNoEmpty(function (cell) {
 										if (cell.isFormula()) {
 											const isRecursiveFormula = cell.checkRecursiveFormula(t);
-											!isRecursiveFormula && cell.initStartCellForIterCalc(t);
+											!isRecursiveFormula && cell.initStartCellForIterCalc();
 											if (g_cCalcRecursion.getStartCellIndex() != null || isRecursiveFormula) {
 												if (!cell.getFormulaParsed().ca) {
 													cell.getFormulaParsed().ca = true;
 												}
 												isCycleCell = true;
 												!isEnabledRecursion && g_cCalcRecursion.addCycleCell(cell);
+												g_cCalcRecursion.getStartCellIndex() && g_cCalcRecursion.setStartCellIndex(null);
 												return true;
 											}
 										}

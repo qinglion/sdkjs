@@ -1067,7 +1067,7 @@
 					_t.startTimer();
 				}
 
-				if (_t.isStarted && _t.pageDetector && !oDoc.fontLoader.isWorking() && _t.IsOpenFormsInProgress == false) {
+				if (_t.isStarted && _t.pageDetector && !oDoc.fontLoader.isWorking() && _t.IsOpenFormsInProgress == false && _t.initPaintDone) {
 					_t.sendEvent("onFileOpened");
 
 					_t.sendEvent("onPagesCount", _t.file.pages.length);
@@ -1088,7 +1088,7 @@
 			this.checkReady();
 			this.file.onRepaintPages = this.onUpdatePages.bind(this);
 			this.file.onRepaintForms = this.onRepaintForms.bind(this);
-			this.file.onRepaintAnnots = this.onRepaintAnnots.bind(this);
+			this.file.onRepaintAnnotations = this.onRepaintAnnots.bind(this);
 			this.file.onUpdateStatistics = this.onUpdateStatistics.bind(this);
 			this.currentPage = -1;
 			this.structure = this.file.getStructure();
@@ -4932,20 +4932,20 @@
 			let nRotAngle		= oFile.pages[nPage].Rotate;
 
 			let bNeedEdit = false;
-			bNeedEdit ||= nRotAngle != nOrigRotAngle;
-			bNeedEdit ||= aDrawings.length != 0;
-			bNeedEdit ||= aAnnots.find(function(annot) {
+
+			if (nRotAngle != nOrigRotAngle) bNeedEdit = true;
+			if (aDrawings.length != 0) bNeedEdit = true;
+			if (aAnnots.find(function(annot) {
 				let aReplies = annot.GetReplies();
-
-				return annot.IsChanged() || aReplies.find(function(reply) { return reply.IsChanged()});
-			});
-			bNeedEdit ||= aForms.find(function(form) {
-
+				return annot.IsChanged() || aReplies.find(function(reply) {
+					return reply.IsChanged();
+				});
+			})) bNeedEdit = true;
+			if (aForms.find(function(form) {
 				return form.IsChanged();
-			});
-			bNeedEdit ||= aDeletedObj.length != 0;
-			
-			bNeedEdit &&= nOriginIndex != undefined;
+			})) bNeedEdit = true;
+			if (aDeletedObj.length != 0) bNeedEdit = true;
+			if (bNeedEdit && nOriginIndex !== undefined) bNeedEdit = true;
 
 			return bNeedEdit;
 		}
@@ -5234,20 +5234,21 @@
 			let nRotAngle		= oFile.pages[nPage].Rotate;
 
 			let bNeedEdit = false;
-			bNeedEdit ||= nRotAngle != nOrigRotAngle;
-			bNeedEdit ||= aDrawings.length != 0;
-			bNeedEdit ||= aAnnots.find(function(annot) {
+
+			if (nRotAngle != nOrigRotAngle) bNeedEdit = true;
+			if (aDrawings.length != 0) bNeedEdit = true;
+			if (aAnnots.some(function(annot) {
 				let aReplies = annot.GetReplies();
-
-				return annot.IsChanged() || aReplies.find(function(reply) { return reply.IsChanged()});
-			});
-			bNeedEdit ||= aForms.find(function(form) {
-
+				return annot.IsChanged() || aReplies.some(function(reply) {
+					return reply.IsChanged();
+				});
+			})) bNeedEdit = true;
+			if (aForms.some(function(form) {
 				return form.IsChanged();
-			});
-			bNeedEdit ||= aDeletedObj.length != 0;
-			
-			bNeedEdit &&= nOriginIndex != undefined;
+			})) bNeedEdit = true;
+			if (aDeletedObj.length != 0) bNeedEdit = true;
+
+			if (bNeedEdit && nOriginIndex === undefined) bNeedEdit = false;
 
 			return bNeedEdit;
 		}

@@ -504,23 +504,46 @@ var CPresentation = CPresentation || function(){};
         oField.SetDocument(this);
         return oField;
     };
-    CPDFDoc.prototype.SetEditFieldsMode = function(bEdit) {
-        this.editFieldsMode = bEdit;
-        
-        if (this.activeForm) {
+    CPDFDoc.prototype.onUpdateRestrictions = function() {
+        let _t = this;
+        let isEditMode = false;
+
+        if (false == Asc.editor.isRestrictionView()) {
+            isEditMode = true;
+        }
+
+        if (isEditMode && this.activeForm) {
             this.BlurActiveObject();
         }
         
         this.widgets.forEach(function(field) {
-            field.SetEditMode(bEdit);
+            field.SetEditMode(isEditMode);
         });
 
-        if (false == bEdit && this.activeForm) {
+        if (false == isEditMode && this.activeForm) {
             this.activeForm = null;
         }
+
+        if (isEditMode) {
+            setTimeout(function() {
+				_t.checkDefaultFonts();
+			});
+        }
+        else {
+            let oActiveObj = this.GetActiveObject();
+			if (oActiveObj && oActiveObj.IsDrawing()) {
+				this.BlurActiveObject();
+			}
+        }
+
+        this.drawings.forEach(function(drawing) {
+			if (drawing.IsShape() && drawing.IsFromScan()) {
+				drawing.AddToRedraw();
+			}
+		});
     };
     CPDFDoc.prototype.IsEditFieldsMode = function() {
-        return this.editFieldsMode;
+        return false == Asc.editor.isRestrictionView();
     };
     CPDFDoc.prototype.CreateNewFieldName = function(nFieldType) {
         let sFormType = "";
@@ -559,9 +582,9 @@ var CPresentation = CPresentation || function(){};
 
         while (true) {
             const fullName = sFormType + nFormNumber;
-            const oField = Object.values(AscCommon.g_oTableId.m_aPairs).find(elm =>
-                elm.IsForm?.() && elm.GetFullName() === fullName
-            );
+            const oField = Object.values(AscCommon.g_oTableId.m_aPairs).find(function(elm) {
+                elm.IsForm && elm.IsForm() && elm.GetFullName() === fullName
+            });
         
             if (!oField) break;
         
@@ -767,11 +790,6 @@ var CPresentation = CPresentation || function(){};
     };
     CPDFDoc.prototype.FillButtonsIconsOnOpen = function() {
 		let oViewer = editor.getDocumentRenderer();
-		if (window["NATIVE_EDITOR_ENJINE"]) {
-			oViewer.IsOpenFormsInProgress = false;
-			return;
-		}
-		
         let oDoc = this;
 
         let aIconsToLoad = [];
@@ -780,11 +798,11 @@ var CPresentation = CPresentation || function(){};
             "View": []
         };
 
-        for (let i = 0; i < oViewer.pagesInfo.pages.length; i++) {
-            let oPage = oViewer.drawingPages[i];
-
-            let w = (oPage.W * AscCommon.AscBrowser.retinaPixelRatio) >> 0;
-            let h = (oPage.H * AscCommon.AscBrowser.retinaPixelRatio) >> 0;
+        for (let i = 0; i < oViewer.file.pages.length; i++) {
+            let oPage = oViewer.file.pages[i];
+            
+            let w = (((oPage.W * 96 / oPage.Dpi) >> 0) * AscCommon.AscBrowser.retinaPixelRatio) >> 0;
+            let h = (((oPage.H * 96 / oPage.Dpi) >> 0) * AscCommon.AscBrowser.retinaPixelRatio) >> 0;
 
             let oFile = oViewer.file;
             let oPageIconsInfo = oFile.nativeFile["getButtonIcons"](i, w, h, undefined, true);
@@ -826,9 +844,7 @@ var CPresentation = CPresentation || function(){};
             return;
         }
 
-        editor.ImageLoader.LoadImagesWithCallback(aIconsToLoad.map(function(info) {
-            return info.src;
-        }), function() {
+        function onLoadImages() {
             // выставляем только ImageData. Форму пересчитаем и добавим картинку после того, как форма изменится, чтобы не грузить шрифты
             for (let nBtn = 0; nBtn < oIconsInfo["MK"].length; nBtn++) {
                 let oBtnField = oDoc.GetFieldByApIdx(oIconsInfo["MK"][nBtn]["i"]);
@@ -845,7 +861,16 @@ var CPresentation = CPresentation || function(){};
             }
             oViewer.isRepaint = true;
             oViewer.IsOpenFormsInProgress = false;
-        });
+        }
+        
+        if (window["NATIVE_EDITOR_ENJINE"]) {
+			onLoadImages();
+		}
+        else {
+            Asc.editor.ImageLoader.LoadImagesWithCallback(aIconsToLoad.map(function(info) {
+                return info.src;
+            }), onLoadImages);
+        }
     };
     
     ////////////////////////////////////
@@ -2665,11 +2690,12 @@ var CPresentation = CPresentation || function(){};
 	 * @returns {boolean}
 	 */
     CPDFDoc.prototype.RemovePage = function(nPos) {
-        let oThis       = this;
         let oViewer     = editor.getDocumentRenderer();
         let oFile       = oViewer.file;
         let oController = this.GetController();
         
+        this.BlurActiveObject();
+
         if (oFile.pages.length == 1)
             return null;
         if (!AscCommon.isNumber(nPos) || nPos < 0)
@@ -6252,6 +6278,7 @@ var CPresentation = CPresentation || function(){};
     CPDFDoc.prototype.MergePagesBinary = function(nInsertPos, aUint8Array) {
         let oFile = this.Viewer.file;
         let sMergeName = "Merged_" + this.mergedPagesData.length;
+        let nNavigateTo = nInsertPos;
 
         this.UpdateMaxApIdx(oFile.nativeFile["getStartID"]());
         this.SetMergedBinaryData(aUint8Array, AscCommon.g_oIdCounter.m_nIdCounterEdit, sMergeName);
@@ -6260,7 +6287,6 @@ var CPresentation = CPresentation || function(){};
 
         if (res) {
             let aPages = oFile.nativeFile["getPagesInfo"]();
-            
             for (let i = oFile.originalPagesCount; i < aPages.length; i++) {
                 let page = aPages[i];
                 
@@ -6279,7 +6305,8 @@ var CPresentation = CPresentation || function(){};
         }
 
         this.Viewer.checkLoadCMap();
-        
+        this.Viewer.navigateToPage(nNavigateTo);
+
         return res;
     };
     CPDFDoc.prototype.SetMergedBinaryData = function(aUint8Array, nMaxIdx, sMergeName) {

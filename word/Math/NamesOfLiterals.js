@@ -2134,7 +2134,7 @@
 
 				let oStyle = this.GetStyle(this._cursor);
 				let oMetaData = oStyle.GetMathMetaData();
-				oMetaData.setIsEscapedSlash();
+				oMetaData.setIsEscapedSlash(true);
 			}
 
 			if (tokenValue === null)
@@ -5478,45 +5478,45 @@
 		this.isLimitNary		= false;
 		this.isText				= false;
 
-		this.setIsLinearFraction = function ()
+		this.setIsLinearFraction = function (isLinearFraction)
 		{
-			this.isLinearFraction = true;
+			this.isLinearFraction = isLinearFraction;
 		}
 		this.getIsLinearFraction = function ()
 		{
 			return this.isLinearFraction;
 		}
 
-		this.setIsMathRm = function()
+		this.setIsMathRm = function(isMathRm)
 		{
-			this.isMathRm = true;
+			this.isMathRm = isMathRm;
 		}
 		this.getIsMathRm = function()
 		{
 			return this.isMathRm;
 		}
 
-		this.setIsEscapedSlash = function ()
+		this.setIsEscapedSlash = function (isEscapedSlash)
 		{
-			this.isEscapedSlash = true;
+			this.isEscapedSlash = isEscapedSlash;
 		}
 		this.getIsEscapedSlash = function ()
 		{
 			return this.isEscapedSlash;
 		}
 
-		this.setIsLimitNary = function()
+		this.setIsLimitNary = function(isLimitNary)
 		{
-			this.isLimitNary = true;
+			this.isLimitNary = isLimitNary;
 		}
 		this.getIsLimitNary = function()
 		{
 			return this.isLimitNary;
 		}
 
-		this.setIsText = function()
+		this.setIsText = function(isText)
 		{
-			this.isText = true;
+			this.isText = isText;
 		}
 		this.getIsText = function()
 		{
@@ -5527,22 +5527,49 @@
 		{
 			let oCopy = new MathMetaData();
 
-			if (this.isMathRm)
-				oCopy.setIsMathRm();
-
-			if (this.isLinearFraction)
-				oCopy.setIsLinearFraction();
-
-			if (this.isEscapedSlash)
-				oCopy.setIsEscapedSlash();
-
-			if (this.isLimitNary)
-				oCopy.setIsLimitNary();
-
-			if (this.isText)
-				oCopy.setIsText();
+			oCopy.setIsMathRm(this.isMathRm);
+			oCopy.setIsLinearFraction(this.isLinearFraction);
+			oCopy.setIsEscapedSlash(this.isEscapedSlash);
+			oCopy.setIsLimitNary(this.isLimitNary);
+			oCopy.setIsText(this.isText);
 
 			return oCopy;
+		}
+
+		this.Write_ToBinary = function(oWriter)
+		{
+			oWriter.WriteBool(this.isMathRm);
+			oWriter.WriteBool(this.isLinearFraction);
+			oWriter.WriteBool(this.isEscapedSlash);
+			oWriter.WriteBool(this.isLimitNary);
+			oWriter.WriteBool(this.isText);
+		}
+
+		this.Read_FromBinary = function(oReader)
+		{
+			this.isMathRm			= oReader.GetBool();
+			this.isLinearFraction	= oReader.GetBool();
+			this.isEscapedSlash		= oReader.GetBool();
+			this.isLimitNary		= oReader.GetBool();
+			this.isText				= oReader.GetBool();
+		}
+
+		this.Set = function(oMetaData)
+		{
+			if (this.isMathRm !== oMetaData.isMathRm)
+				this.setIsMathRm(oMetaData.isMathRm);
+
+			if (this.isLinearFraction !== oMetaData.isLinearFraction)
+				this.setIsLinearFraction(oMetaData.isLinearFraction);
+
+			if (this.isEscapedSlash !== oMetaData.isEscapedSlash)
+				this.setIsEscapedSlash(oMetaData.isEscapedSlash);
+
+			if (this.isLimitNary !== oMetaData.isLimitNary)
+				this.setIsLimitNary(oMetaData.isLimitNary);
+
+			if (this.isText !== oMetaData.isText)
+				this.setIsText(oMetaData.isTex);
 		}
 	}
 
@@ -8198,4 +8225,5 @@
 	window["AscMath"].ConvertWord					= ConvertWord;
 	window["AscMath"].SetIsAllowAutoCorrect			= SetIsAllowAutoCorrect;
 	window["AscMath"].GetIsAllowAutoCorrect			= GetIsAllowAutoCorrect;
+	window["AscMath"].MathMetaData					= MathMetaData;
 })(window);

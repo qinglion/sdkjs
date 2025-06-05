@@ -3383,6 +3383,12 @@
                 this.memory.WriteByte(c_oSerPropLenType.Long);
                 this.memory.WriteLong(align.indent);
             }
+            if(null != align.ReadingOrder)
+            {
+                this.memory.WriteByte(c_oSerAligmentTypes.ReadingOrder);
+                this.memory.WriteByte(c_oSerPropLenType.Long);
+                this.memory.WriteLong(align.ReadingOrder);
+            }
             if(null != align.RelativeIndent)
             {
                 this.memory.WriteByte(c_oSerAligmentTypes.RelativeIndent);
@@ -8456,6 +8462,8 @@
                     oAligment.indent = 0;
                 }
             }
+            else if ( c_oSerAligmentTypes.ReadingOrder == type )
+                oAligment.ReadingOrder = this.stream.GetULongLE();
             else if ( c_oSerAligmentTypes.RelativeIndent == type )
                 oAligment.RelativeIndent = this.stream.GetULongLE();
             else if ( c_oSerAligmentTypes.ShrinkToFit == type )
@@ -15017,6 +15025,18 @@
     prot['notView'] = prot.notView;
     prot['view'] = prot.view;
     prot['edit'] = prot.edit;
+
+    window['Asc']['c_oSerAligmentTypes'] = window['Asc'].c_oSerAligmentTypes = c_oSerAligmentTypes;
+    prot = c_oSerAligmentTypes;
+    prot['Horizontal'] = prot.Horizontal;
+    prot['Indent'] = prot.Indent;
+    prot['JustifyLastLine'] = prot.JustifyLastLine;
+    prot['ReadingOrder'] = prot.ReadingOrder;
+    prot['RelativeIndent'] = prot.RelativeIndent;
+    prot['ShrinkToFit'] = prot.ShrinkToFit;
+    prot['TextRotation'] = prot.TextRotation;
+    prot['Vertical'] = prot.Vertical;
+    prot['WrapText'] = prot.WrapText;
 
     window['Asc']['EUpdateLinksType'] = window['Asc'].EUpdateLinksType = EUpdateLinksType;
     prot = EUpdateLinksType;

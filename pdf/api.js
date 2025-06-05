@@ -373,24 +373,7 @@
 			return;
 		}
 
-		if (this.isRestrictionView()) {
-			let oActiveObj = oDoc.GetActiveObject();
-
-			if (oActiveObj && oActiveObj.IsDrawing()) {
-				oDoc.BlurActiveObject();
-			}
-		}
-		else {
-			setTimeout(function() {
-				oDoc.checkDefaultFonts();
-			});
-		}
-
-		oDoc.drawings.forEach(function(drawing) {
-			if (drawing.IsShape() && drawing.IsFromScan()) {
-				drawing.AddToRedraw();
-			}
-		});
+		oDoc.onUpdateRestrictions();
 	};
 	PDFEditorApi.prototype.sync_CanUndoCallback = function(canUndo) {
 		this.sendEvent("asc_onCanUndo", canUndo);
@@ -762,7 +745,14 @@
 		let oDoc = this.getPDFDoc();
 
 		let oThumbnails = oViewer.thumbnails;
-		aPages = aPages != undefined ? aPages : oThumbnails.getSelectedPages().slice();
+		if (undefined == aPages) {
+			if (oThumbnails) {
+				aPages = oThumbnails.getSelectedPages().slice();
+			}
+			else {
+				aPages = [oDoc.GetCurPage()];
+			}
+		}
 
 		let nPagesCount = oDoc.GetPagesCount();
 		let canDelete = false;
@@ -792,7 +782,14 @@
 		let oDoc = this.getPDFDoc();
 
 		let oThumbnails = oViewer.thumbnails;
-		aPages = aPages != undefined ? aPages : oThumbnails.getSelectedPages().slice();
+		if (undefined == aPages) {
+			if (oThumbnails) {
+				aPages = oThumbnails.getSelectedPages().slice();
+			}
+			else {
+				aPages = [oDoc.GetCurPage()];
+			}
+		}
 		
 		let canDelete = true;
 
@@ -1248,10 +1245,6 @@
 	/////////////////////////////////////////////////////////////
 	///////// For filed
 	////////////////////////////////////////////////////////////
-	PDFEditorApi.prototype.SetEditFieldsMode = function(bEdit) {
-		let oDoc = this.getPDFDoc();
-		oDoc.SetEditFieldsMode(bEdit);
-	};
 	PDFEditorApi.prototype.AddTextField = function(oParams) {
 		let oDoc = this.getPDFDoc();
 		
@@ -1337,7 +1330,8 @@
 		}
 
 		if (Array.isArray(AscCommon.g_aAdditionalCurrencySymbols)) {
-			for (let symbol of AscCommon.g_aAdditionalCurrencySymbols) {
+			for (let i = 0; i < AscCommon.g_aAdditionalCurrencySymbols.length; i++) {
+				let symbol = AscCommon.g_aAdditionalCurrencySymbols[i];
 				symbolsSet.add(symbol);
 			}
 		}
@@ -4614,7 +4608,6 @@
 	PDFEditorApi.prototype['AddFreeTextAnnot']	= PDFEditorApi.prototype.AddFreeTextAnnot;
 
 	// forms
-	PDFEditorApi.prototype['SetEditFieldsMode']			= PDFEditorApi.prototype.SetEditFieldsMode;
 	PDFEditorApi.prototype['AddTextField']				= PDFEditorApi.prototype.AddTextField;
 	PDFEditorApi.prototype['AddDateField']				= PDFEditorApi.prototype.AddDateField;
 	PDFEditorApi.prototype['AddImageField']				= PDFEditorApi.prototype.AddImageField;
