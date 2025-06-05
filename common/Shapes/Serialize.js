@@ -6657,6 +6657,7 @@ function BinaryPPTYLoader()
                 {
                     let lenRec = s.GetULong();
                     let rIdOverride = s.GetString2();
+                    this.ResetImageId(shape, rIdOverride);
                     break;
                 }
                 default:
@@ -6673,6 +6674,19 @@ function BinaryPPTYLoader()
         s.Seek2(_end_rec);
         return shape;
     };
+
+    this.ResetImageId = function(drawing, rIdOverride) {
+        if (this.IsUseFullUrl) {
+            for (let idx = 0; idx < this.RebuildImages.length; ++idx) {
+                let builderImage = this.RebuildImages[idx];
+                if(builderImage.ImageShape === drawing) {
+                    if(builderImage.BlipFill) {
+                        builderImage.BlipFill.embed = rIdOverride;
+                    }
+                }
+            }
+        }
+    }
 
     this.CheckGroupXfrm = function(oGroup){
         if(!oGroup){
@@ -7093,6 +7107,7 @@ function BinaryPPTYLoader()
                 {
                     let lenRec = s.GetULong();
                     let rIdOverride = s.GetString2();
+                    this.ResetImageId(pic, rIdOverride);
                     break;
                 }
                 default:
