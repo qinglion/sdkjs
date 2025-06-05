@@ -248,56 +248,40 @@ ParaHyperlink.prototype.SetToolTip = function(ToolTip)
 };
 ParaHyperlink.prototype.GetToolTip = function()
 {
-	if (!this.ToolTip)
-	{
-        if (Asc.editor.isPdfEditor() && AscCommon.IsLinkPPAction(this.Value)) {
-            if (this.Value == "ppaction://hlinkshowjump?jump=firstslide") {
-				return AscCommon.translateManager.getValue("First Page");
-			}
-			else if (this.Value == "ppaction://hlinkshowjump?jump=lastslide") {
-				return AscCommon.translateManager.getValue("Last Page");
-			}
-			else if (this.Value == "ppaction://hlinkshowjump?jump=nextslide") {
-				return AscCommon.translateManager.getValue("Next Page");
-			}
-			else if (this.Value == "ppaction://hlinkshowjump?jump=previousslide") {
-				return AscCommon.translateManager.getValue("Previous Page");
-			}
-			else {
-				let mask	= "ppaction://hlinksldjumpslide";
-				let posStr	= this.Value.indexOf(mask);
+	if (!this.ToolTip) {
 
-				if (0 == posStr) {
-					let pageNum = parseInt(this.Value.substring(mask.length));
-					return AscCommon.translateManager.getValue("Page " + (pageNum + 1));
-				}
-			}
-        }
+		if (AscCommon.IsLinkPPAction(this.Value) && (Asc.editor.isPdfEditor() || Asc.editor.isPresentationEditor)) {
 
-		if (Asc.editor.isPresentationEditor && AscCommon.IsLinkPPAction(this.Value)) {
 			if (this.Value == "ppaction://hlinkshowjump?jump=firstslide") {
-				return AscCommon.translateManager.getValue("First Slide");
+				const str = Asc.editor.isPresentationEditor ? 'First Slide' : 'First Page';
+				return AscCommon.translateManager.getValue(str);
 			}
-			else if (this.Value == "ppaction://hlinkshowjump?jump=lastslide") {
-				return AscCommon.translateManager.getValue("Last Slide");
+
+			if (this.Value == "ppaction://hlinkshowjump?jump=lastslide") {
+				const str = Asc.editor.isPresentationEditor ? 'Last Slide' : 'Last Page';
+				return AscCommon.translateManager.getValue(str);
 			}
-			else if (this.Value == "ppaction://hlinkshowjump?jump=nextslide") {
-				return AscCommon.translateManager.getValue("Next Slide");
+
+			if (this.Value == "ppaction://hlinkshowjump?jump=nextslide") {
+				const str = Asc.editor.isPresentationEditor ? 'Next Slide' : 'Next Page';
+				return AscCommon.translateManager.getValue(str);
 			}
-			else if (this.Value == "ppaction://hlinkshowjump?jump=previousslide") {
-				return AscCommon.translateManager.getValue("Previous Slide");
+
+			if (this.Value == "ppaction://hlinkshowjump?jump=previousslide") {
+				const str = Asc.editor.isPresentationEditor ? 'Previous Slide' : 'Previous Page';
+				return AscCommon.translateManager.getValue(str);
 			}
-			else if (this.Value.indexOf("ppaction://hlinkfile") === 0) {
+
+			if (this.Value.indexOf("ppaction://hlinkfile") === 0) {
 				return this.Value.substring("ppaction://hlinkfile?file=".length);
 			}
-			else {
-				let mask = "ppaction://hlinksldjumpslide";
-				let posStr = this.Value.indexOf(mask);
 
-				if (0 == posStr) {
-					let pageNum = parseInt(this.Value.substring(mask.length));
-					return AscCommon.translateManager.getValue("Slide " + (pageNum + 1));
-				}
+			const mask = "ppaction://hlinksldjumpslide";
+			let posStr = this.Value.indexOf(mask);
+			if (0 == posStr) {
+				let pageNum = parseInt(this.Value.substring(mask.length));
+				const str = Asc.editor.isPresentationEditor ? 'Slide ' : 'Page ';
+				return AscCommon.translateManager.getValue(str + (pageNum + 1));
 			}
 		}
 
