@@ -24994,19 +24994,19 @@
 	 *
 	 * @memberof ApiCustomProperties
 	 * @typeofeditors ["CDE", "CSE", "CPE"]
-	 * @param {string} sName
+	 * @param {string} name
 	 * @param {string | number | boolean | Date} value
 	 * @returns {boolean} - Returns false if the type is unsupported.
 	 * @see office-js-api/Examples/{Editor}/ApiCustomProperties/Methods/AddProperty.js
 	 */
-	ApiCustomProperties.prototype.AddProperty = function (sName, value) {
+	ApiCustomProperties.prototype.AddProperty = function (name, value) {
 		if (typeof value === 'string') {
-			this.CustomProperties.AddProperty(sName, AscCommon.c_oVariantTypes.vtLpwstr, value);
+			this.CustomProperties.AddProperty(name, AscCommon.c_oVariantTypes.vtLpwstr, value);
 			return true;
 		}
 
 		if (typeof value === 'boolean') {
-			this.CustomProperties.AddProperty(sName, AscCommon.c_oVariantTypes.vtBool, value);
+			this.CustomProperties.AddProperty(name, AscCommon.c_oVariantTypes.vtBool, value);
 			return true;
 		}
 
@@ -25014,12 +25014,12 @@
 			const type = Number.isInteger(value)
 				? AscCommon.c_oVariantTypes.vtI4
 				: AscCommon.c_oVariantTypes.vtR8;
-			this.CustomProperties.AddProperty(sName, type, value);
+			this.CustomProperties.AddProperty(name, type, value);
 			return true;
 		}
 
 		if (value instanceof Date && !isNaN(value.getTime())) {
-			this.CustomProperties.AddProperty(sName, AscCommon.c_oVariantTypes.vtFiletime, value);
+			this.CustomProperties.AddProperty(name, AscCommon.c_oVariantTypes.vtFiletime, value);
 			return true;
 		}
 
@@ -25031,14 +25031,14 @@
 	 *
 	 * @memberof ApiCustomProperties
 	 * @typeofeditors ["CDE", "CSE", "CPE"]
-	 * @param {string} sName
+	 * @param {string} name
 	 * @returns {string | number | Date | boolean | null} - The value of the custom property or null if the property does not exist.
 	 * @see office-js-api/Examples/{Editor}/ApiCustomProperties/Methods/GetPropertyValueByName.js
 	 */
-	ApiCustomProperties.prototype.GetPropertyValueByName = function (sName) {
+	ApiCustomProperties.prototype.GetPropertyValueByName = function (name) {
 		let property = null;
 		this.CustomProperties.getAllProperties().forEach(function (prop) {
-			if (prop.asc_getName() === sName) {
+			if (prop.asc_getName() === name) {
 				property = prop;
 			}
 		});
