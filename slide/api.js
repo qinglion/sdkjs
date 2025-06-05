@@ -6885,6 +6885,9 @@ background-repeat: no-repeat;\
 				{
 					Data.Hyperlink.Value = AscCommon.translateManager.getValue("Previous Slide");
 				}
+				else if (Url.indexOf("ppaction://hlinkfile") === 0) {
+					Data.Hyperlink.Value = Url.substring("ppaction://hlinkfile?file=".length);
+				}
 				else
 				{
 					let mask     = "ppaction://hlinksldjumpslide";

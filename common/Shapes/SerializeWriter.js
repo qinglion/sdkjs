@@ -2226,6 +2226,12 @@ function CBinaryFileWriter()
             action = url;
             url = "";
         }
+		else if (url.indexOf("ppaction://hlinkfile") == 0) {
+			// "ppaction://hlinkfile?file=name.ext";
+			const parts = url.split('?file=');
+			action = parts[0];
+			url = parts[1];
+		}
         else
         {
             var mask = "ppaction://hlinksldjumpslide";
@@ -3284,7 +3290,7 @@ function CBinaryFileWriter()
                 }
                 case para_Hyperlink:
                 {
-                    var _hObj = { Value : _elem.GetValue(), tooltip: _elem.GetToolTip()};
+                    var _hObj = { Value : _elem.GetValue(), tooltip: _elem.ToolTip};
                     var _content_len_h = _elem.Content.length;
 
                     for (var hi = 0; hi < _content_len_h; hi++)
@@ -4481,6 +4487,12 @@ function CBinaryFileWriter()
             action = id;
             id = "";
         }
+		else if (id.indexOf("ppaction://hlinkfile") == 0) {
+			// "ppaction://hlinkfile?file=name.ext";
+			const parts = id.split('?file=');
+			action = parts[0];
+			id = parts[1];
+		}
         else
         {
             if(typeof id === "string")

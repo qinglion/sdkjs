@@ -274,6 +274,33 @@ ParaHyperlink.prototype.GetToolTip = function()
 			}
         }
 
+		if (Asc.editor.isPresentationEditor && AscCommon.IsLinkPPAction(this.Value)) {
+			if (this.Value == "ppaction://hlinkshowjump?jump=firstslide") {
+				return AscCommon.translateManager.getValue("First Slide");
+			}
+			else if (this.Value == "ppaction://hlinkshowjump?jump=lastslide") {
+				return AscCommon.translateManager.getValue("Last Slide");
+			}
+			else if (this.Value == "ppaction://hlinkshowjump?jump=nextslide") {
+				return AscCommon.translateManager.getValue("Next Slide");
+			}
+			else if (this.Value == "ppaction://hlinkshowjump?jump=previousslide") {
+				return AscCommon.translateManager.getValue("Previous Slide");
+			}
+			else if (this.Value.indexOf("ppaction://hlinkfile") === 0) {
+				return this.Value.substring("ppaction://hlinkfile?file=".length);
+			}
+			else {
+				let mask = "ppaction://hlinksldjumpslide";
+				let posStr = this.Value.indexOf(mask);
+
+				if (0 == posStr) {
+					let pageNum = parseInt(this.Value.substring(mask.length));
+					return AscCommon.translateManager.getValue("Slide " + (pageNum + 1));
+				}
+			}
+		}
+
 		if ("string" === typeof(this.Value))
 			return (this.Anchor ? this.Value + "#" + this.Anchor : this.Value);
 		else if (this.Anchor)
