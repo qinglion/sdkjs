@@ -1630,13 +1630,13 @@
 				let el = this.GetPreScriptLiteral();
 				if (el)
 					arrExpList.push(el);
-				}
-				else
-				{
-					let el = this.GetWrapperElementLiteral();
-					if (el)
-						arrExpList.push(el);
-				}
+			}
+			else
+			{
+				let el = this.GetWrapperElementLiteral();
+				if (el)
+					arrExpList.push(el);
+			}
 		}
 
 		this.EscapeSymbol = undefined;
