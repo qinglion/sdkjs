@@ -9030,6 +9030,10 @@ function RangeDataManagerElem(bbox, data)
 			}
 		};
 
+		function _getStrucTableReservedLocalWords (type) {
+			return parserHelp.getColumnNameByType(type, true);
+		}
+
 		if (this.Ref.containsRange(handleSelectionRange)) {
 
 			let argsSeparator = AscCommon.FormulaSeparators.functionArgumentSeparator;
@@ -9042,11 +9046,11 @@ function RangeDataManagerElem(bbox, data)
 
 			if (this.Ref.isEqual(handleSelectionRange)) {
 				//Table1[#All]
-				return this.DisplayName + "[" + AscCommon.cStrucTableReservedWords.all + "]";
+				return this.DisplayName + "[" + _getStrucTableReservedLocalWords(FormulaTablePartInfo.all) + "]";
 			} else if (this.Ref.r1 === handleSelectionRange.r1 && this.Ref.r2 === handleSelectionRange.r2) {
 				//Table1[[#All];[Column1]]
 				//Table1[[#All];[Column1]:[Column2]]
-				return this.DisplayName + "[" + "[" + AscCommon.cStrucTableReservedWords.all + "]" + argsSeparator + getColumnNameRange(startCol, endCol, true) + "]";
+				return this.DisplayName + "[" + "[" + _getStrucTableReservedLocalWords(FormulaTablePartInfo.all) + "]" + argsSeparator + getColumnNameRange(startCol, endCol, true) + "]";
 			}
 
 			let dataContains = this._isDataTableContainsRange(handleSelectionRange);
@@ -9090,9 +9094,9 @@ function RangeDataManagerElem(bbox, data)
 			//4. only totals - Table4[[#Totals];[Column1]:[Column2]]
 			if (!dataContains && totalContains && !headerContains) {
 				if (totalContains.all) {
-					return this.DisplayName + "[" + AscCommon.cStrucTableReservedWords.totals + "]";
+					return this.DisplayName + "[" + _getStrucTableReservedLocalWords(FormulaTablePartInfo.totals) + "]";
 				} else {
-					return this.DisplayName + "[" + "[" +  AscCommon.cStrucTableReservedWords.totals + "]" + argsSeparator + getColumnNameRange(startCol, endCol, true) + "]";
+					return this.DisplayName + "[" + "[" +  _getStrucTableReservedLocalWords(FormulaTablePartInfo.totals) + "]" + argsSeparator + getColumnNameRange(startCol, endCol, true) + "]";
 				}
 			}
 
@@ -9100,9 +9104,9 @@ function RangeDataManagerElem(bbox, data)
 			//6. only headers - Table4[[#Headers];[Column1]:[Column2]]
 			if (!dataContains && !totalContains && headerContains) {
 				if (headerContains.all) {
-					return this.DisplayName + "[" + AscCommon.cStrucTableReservedWords.headers + "]";
+					return this.DisplayName + "[" + _getStrucTableReservedLocalWords(FormulaTablePartInfo.headers) + "]";
 				} else {
-					return this.DisplayName + "[" + "[" +  AscCommon.cStrucTableReservedWords.headers + "]" + argsSeparator + getColumnNameRange(startCol, endCol, true) + "]";
+					return this.DisplayName + "[" + "[" +  _getStrucTableReservedLocalWords(FormulaTablePartInfo.headers) + "]" + argsSeparator + getColumnNameRange(startCol, endCol, true) + "]";
 				}
 			}
 
@@ -9122,7 +9126,7 @@ function RangeDataManagerElem(bbox, data)
 				let res = this.DisplayName + "[";
 				let needDelimiter = false;
 				if (headerContains) {
-					res += "[" + AscCommon.cStrucTableReservedWords.headers + "]";
+					res += "[" + _getStrucTableReservedLocalWords(FormulaTablePartInfo.headers) + "]";
 					needDelimiter = true;
 					if (headerContains.all) {
 						isAll = true;
@@ -9132,7 +9136,7 @@ function RangeDataManagerElem(bbox, data)
 					if (needDelimiter) {
 						res += argsSeparator;
 					}
-					res += "[" + AscCommon.cStrucTableReservedWords.data + "]";
+					res += "[" + _getStrucTableReservedLocalWords(FormulaTablePartInfo.data) + "]";
 					needDelimiter = true;
 					if (dataContains.all) {
 						isAll = true;
@@ -9142,7 +9146,7 @@ function RangeDataManagerElem(bbox, data)
 					if (needDelimiter) {
 						res += argsSeparator;
 					}
-					res += "[" + AscCommon.cStrucTableReservedWords.totals + "]";
+					res += "[" + _getStrucTableReservedLocalWords(FormulaTablePartInfo.totals) + "]";
 					needDelimiter = true;
 					if (totalContains.all) {
 						isAll = true;

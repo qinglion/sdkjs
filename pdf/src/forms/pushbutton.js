@@ -1031,9 +1031,9 @@
             let sImgRasterId = this._imgData.normal;
             if (sImgRasterId)
                 this.SetImage(sImgRasterId);
-
-            this.imageChecked = true;
         }
+
+        this.imageChecked = true;
     };
     CPushButtonField.prototype.CalculateContentClipRect = function() {
         if (!this.content)
@@ -1084,10 +1084,6 @@
         return true;
     };
     CPushButtonField.prototype.Recalculate = function() {
-        if (this.IsNeedUpdateEditShape()) {
-            this.UpdateEditShape();
-        }
-        
         if (this.IsNeedRecalc() == false)
             return;
 
@@ -1489,9 +1485,8 @@
 
             this._buttonFitBounds = bValue;
             this.SetNeedUpdateImage(true);
-            this.CalculateContentClipRect();
+            this.SetNeedRecalc(true);
             this.SetWasChanged(true);
-            this._UpdateImage();
         }
     };
     CPushButtonField.prototype.IsButtonFitBounds = function() {

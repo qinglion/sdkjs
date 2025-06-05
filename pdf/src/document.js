@@ -504,23 +504,46 @@ var CPresentation = CPresentation || function(){};
         oField.SetDocument(this);
         return oField;
     };
-    CPDFDoc.prototype.SetEditFieldsMode = function(bEdit) {
-        this.editFieldsMode = bEdit;
-        
-        if (this.activeForm) {
+    CPDFDoc.prototype.onUpdateRestrictions = function() {
+        let _t = this;
+        let isEditMode = false;
+
+        if (false == Asc.editor.isRestrictionView()) {
+            isEditMode = true;
+        }
+
+        if (isEditMode && this.activeForm) {
             this.BlurActiveObject();
         }
         
         this.widgets.forEach(function(field) {
-            field.SetEditMode(bEdit);
+            field.SetEditMode(isEditMode);
         });
 
-        if (false == bEdit && this.activeForm) {
+        if (false == isEditMode && this.activeForm) {
             this.activeForm = null;
         }
+
+        if (isEditMode) {
+            setTimeout(function() {
+				_t.checkDefaultFonts();
+			});
+        }
+        else {
+            let oActiveObj = this.GetActiveObject();
+			if (oActiveObj && oActiveObj.IsDrawing()) {
+				this.BlurActiveObject();
+			}
+        }
+
+        this.drawings.forEach(function(drawing) {
+			if (drawing.IsShape() && drawing.IsFromScan()) {
+				drawing.AddToRedraw();
+			}
+		});
     };
     CPDFDoc.prototype.IsEditFieldsMode = function() {
-        return this.editFieldsMode;
+        return false == Asc.editor.isRestrictionView();
     };
     CPDFDoc.prototype.CreateNewFieldName = function(nFieldType) {
         let sFormType = "";
@@ -559,9 +582,9 @@ var CPresentation = CPresentation || function(){};
 
         while (true) {
             const fullName = sFormType + nFormNumber;
-            const oField = Object.values(AscCommon.g_oTableId.m_aPairs).find(elm =>
-                elm.IsForm?.() && elm.GetFullName() === fullName
-            );
+            const oField = Object.values(AscCommon.g_oTableId.m_aPairs).find(function(elm) {
+                elm.IsForm && elm.IsForm() && elm.GetFullName() === fullName
+            });
         
             if (!oField) break;
         
@@ -4892,6 +4915,14 @@ var CPresentation = CPresentation || function(){};
 
         oController.checkSelectedObjectsAndCallback(oController.setParagraphAlign, [Align], false, AscDFH.historydescription_Presentation_SetParagraphAlign);
     };
+	CPDFDoc.prototype.SetParagraphBidi = function(isRtl) {
+		let oController = this.GetController();
+		if (oController.getSelectedArray().find(function(obj) { return obj.IsAnnot()})) {
+			return false;
+		}
+		
+		oController.checkSelectedObjectsAndCallback(oController.setParagraphBidi, [isRtl], false, AscDFH.historydescription_Document_SetParagraphBidi);
+	};
     CPDFDoc.prototype.SetVerticalAlign = function(Align) {
         let oController = this.GetController();
         if (oController.getSelectedArray().find(function(obj) { return obj.IsAnnot()})) {

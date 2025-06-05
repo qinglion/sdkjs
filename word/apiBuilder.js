@@ -1398,6 +1398,46 @@
 		logicDocument.LoadDocumentState(docState);
 		return textPr;
 	};
+	ApiRange.prototype.private_GetLogicDocument = function()
+	{
+		return private_GetLogicDocument();
+	};
+	ApiRange.prototype._trackPositions = function()
+	{
+		let logicDocument = this.private_GetLogicDocument();
+		if (!logicDocument || !logicDocument.IsDocumentEditor())
+			return;
+		
+		if (this.StartPos)
+			logicDocument.CollaborativeEditing.Add_DocumentPosition(this.StartPos);
+		
+		if (this.EndPos)
+			logicDocument.CollaborativeEditing.Add_DocumentPosition(this.EndPos);
+	};
+	ApiRange.prototype._updatePositions = function()
+	{
+		let logicDocument = this.private_GetLogicDocument();
+		if (!logicDocument || !logicDocument.IsDocumentEditor())
+			return;
+		
+		if (this.StartPos)
+			logicDocument.CollaborativeEditing.Update_DocumentPosition(this.StartPos);
+		
+		if (this.EndPos)
+			logicDocument.CollaborativeEditing.Update_DocumentPosition(this.EndPos);
+	};
+	ApiRange.prototype._untrackPositions = function()
+	{
+		let logicDocument = this.private_GetLogicDocument();
+		if (!logicDocument || !logicDocument.IsDocumentEditor())
+			return;
+		
+		if (this.StartPos)
+			logicDocument.CollaborativeEditing.Remove_DocumentPosition(this.StartPos);
+		
+		if (this.EndPos)
+			logicDocument.CollaborativeEditing.Remove_DocumentPosition(this.EndPos);
+	};
 	
 	/**
 	 * Returns a type of the ApiRange class.
@@ -1468,88 +1508,75 @@
 	 * Adds a text to the specified position.
 	 * @memberof ApiRange
 	 * @typeofeditors ["CDE"]
-	 * @param {String} sText - The text that will be added.
-	 * @param {string} [sPosition = "after"] - The position where the text will be added ("before" or "after" the range specified).
-	 * @return {boolean} - returns false if range is empty or sText isn't string value.
+	 * @param {String} text - The text that will be added.
+	 * @param {"after" | "before"} [position = "after"] - The position where the text will be added ("before" or "after" the range specified).
+	 * @return {boolean} - returns true if the text was successfully added.
 	 * @see office-js-api/Examples/{Editor}/ApiRange/Methods/AddText.js
 	 */	
-	ApiRange.prototype.AddText = function(sText, sPosition)
+	ApiRange.prototype.AddText = function(text, position)
 	{
-		private_RefreshRangesPosition();
+		this._updatePositions();
 
-		let oDocument = private_GetLogicDocument();
-		oDocument.RemoveSelection();
+		let logicDocument = private_GetLogicDocument();
+		logicDocument.RemoveSelection();
 
-		if (typeof(sText) !== "string")
+		text = GetStringParameter(text, "");
+		if ("" === text)
 			return false;
-
-		if (sPosition !== "after" && sPosition !== "before")
-			sPosition = "after";
 		
-		if (sPosition === "after")
+		position = GetStringParameter(position, "after");
+		
+		if ("after" === position)
 		{
-			let oTargetRun	= this.EndPos[this.EndPos.length - 1].Class;
-			let oPrevApiRun	= null;
+			let run      = this.EndPos[this.EndPos.length - 1].Class;
+			let inRunPos = this.EndPos[this.EndPos.length - 1].Position;
+			
+			if (!run || !(run instanceof AscWord.Run) || -1 === inRunPos)
+				return false;
 
-			if (oTargetRun.IsParaEndRun())
+			run.SetCursorPosition(inRunPos);
+			let newRun = run.CheckRunBeforeAdd();
+			if (newRun)
 			{
-				oPrevApiRun = new ApiRun(oTargetRun).private_GetPreviousInParent();
-				
-				if (oPrevApiRun)
-				{
-					oTargetRun = oPrevApiRun.Run;
-				}
-				else
-				{
-					oTargetRun = null;
-				}
-			}
-
-			if (!oTargetRun)
-			{
-				return false; 	
-			}
-
-			let nPosInRun		= this.EndPos[this.EndPos.length - 1].Position;
-			let nRunPosInParent	= this.EndPos[this.EndPos.length - 2].Position;
-			let oRunParent		= oTargetRun.GetParent();
-			let nNewPosInRun	= nPosInRun;
-
-			if (nPosInRun === 0)
-			{
-				if (nRunPosInParent - 1 >= 0)
-				{
-					nRunPosInParent--;
-					oTargetRun		= oRunParent.GetElement(nRunPosInParent);
-					nPosInRun	= oTargetRun.Content.length;
-				}
-			}
-			else {
-				for (let oIterator = sText.getUnicodeIterator(); oIterator.check(); oIterator.next())
-					nNewPosInRun++;
-			}
-
-			// если ран окончания параграфа, позиция в нём не изменится
-			if (null == oPrevApiRun) {
-				oTargetRun.AddText(sText, nPosInRun);
-				this.EndPos[this.EndPos.length - 1].Class = oTargetRun;
-				this.EndPos[this.EndPos.length - 1].Position = nNewPosInRun;
-				this.EndPos[this.EndPos.length - 2].Position = nRunPosInParent;
-			}
-			else {
-				nPosInRun = oTargetRun.Content.length;
-				oTargetRun.AddText(sText, nPosInRun);
+				run = newRun;
+				inRunPos = 0;
 			}
 			
-			private_TrackRangesPositions(true);
+			let newInRunPos = run.AddText(text, inRunPos);
+			run.SetCursorPosition(newInRunPos);
+			
+			this._untrackPositions();
+			this.EndPos = run.GetDocumentPositionForCurrentPosition();
+			this._trackPositions();
 		}
-		else if (sPosition === "before")
+		else
 		{
-			let oTargetRun	= this.StartPos[this.StartPos.length - 1].Class;
-			let nPosInRun	= this.StartPos[this.StartPos.length - 1].Position;
-			oTargetRun.AddText(sText, nPosInRun);
+			let run      = this.StartPos[this.StartPos.length - 1].Class;
+			let inRunPos = this.StartPos[this.StartPos.length - 1].Position;
+			
+			if (!run || !(run instanceof AscWord.Run) || -1 === inRunPos)
+				return false;
+			
+			run.SetCursorPosition(inRunPos);
+			let newRun = run.CheckRunBeforeAdd();
+			if (newRun)
+			{
+				run = newRun;
+				inRunPos = 0;
+			}
+			
+			let newInRunPos = run.AddText(text, inRunPos);
+			run.SetCursorPosition(newInRunPos);
+			
+			if (newRun)
+			{
+				this._untrackPositions();
+				run.SetCursorPosition(0);
+				this.StartPos = run.GetDocumentPositionForCurrentPosition();
+				this._trackPositions();
+			}
 		}
-
+		
 		return true;
 	};
 
@@ -23064,7 +23091,7 @@
 				{
 					date = new Date(date);
 				}
-				catch
+				catch (err)
 				{
 					date = new Date();
 				}
