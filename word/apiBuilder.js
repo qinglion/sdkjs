@@ -24990,59 +24990,40 @@
 	};
 
 	/**
-	 * Adds a custom string property to the document.
-	 *
-	 * @memberof ApiCustomProperties
-	 * @typeofeditors ["CDE", "CSE", "CPE"]
-	 * @param {string} setName
-	 * @param {string} sValue
-	 * @see office-js-api/Examples/{Editor}/ApiCustomProperties/Methods/AddStringProperty.js
-	 */
-	ApiCustomProperties.prototype.AddStringProperty = function (sName, sValue) {
-		return this.CustomProperties.AddProperty(sName, AscCommon.c_oVariantTypes.vtLpwstr, '' + sValue);
-	};
-
-	/**
-	 * Adds a custom number property to the document.
+	 * Adds a custom property to the document with automatic type detection.
 	 *
 	 * @memberof ApiCustomProperties
 	 * @typeofeditors ["CDE", "CSE", "CPE"]
 	 * @param {string} sName
-	 * @param {number} nValue
-	 * @see office-js-api/Examples/{Editor}/ApiCustomProperties/Methods/AddNumberProperty.js
+	 * @param {string | number | boolean | Date} value
+	 * @returns {boolean} - Returns false if the type is unsupported.
+	 * @see office-js-api/Examples/{Editor}/ApiCustomProperties/Methods/AddProperty.js
 	 */
-	ApiCustomProperties.prototype.AddNumberProperty = function (sName, nValue) {
-		Number.isInteger(nValue)
-			? this.CustomProperties.AddProperty(sName, AscCommon.c_oVariantTypes.vtI4, parseInt(nValue))
-			: this.CustomProperties.AddProperty(sName, AscCommon.c_oVariantTypes.vtR8, parseFloat(nValue));
-	};
-
-	/**
-	 * Adds a custom date property to the document.
-	 *
-	 * @memberof ApiCustomProperties
-	 * @typeofeditors ["CDE", "CSE", "CPE"]
-	 * @param {string} sName
-	 * @param {Date} oValue
-	 * @see office-js-api/Examples/{Editor}/ApiCustomProperties/Methods/AddDateProperty.js
-	 */
-	ApiCustomProperties.prototype.AddDateProperty = function (sName, oValue) {
-		if (oValue instanceof Date && !isNaN(oValue.getTime())) {
-			this.CustomProperties.AddProperty(sName, AscCommon.c_oVariantTypes.vtFiletime, oValue);
+	ApiCustomProperties.prototype.AddProperty = function (sName, value) {
+		if (typeof value === 'string') {
+			this.CustomProperties.AddProperty(sName, AscCommon.c_oVariantTypes.vtLpwstr, value);
+			return true;
 		}
-	};
 
-	/**
-	 * Adds a custom boolean property to the document.
-	 *
-	 * @memberof ApiCustomProperties
-	 * @typeofeditors ["CDE", "CSE", "CPE"]
-	 * @param {string} sName
-	 * @param {boolean} bValue
-	 * @see office-js-api/Examples/{Editor}/ApiCustomProperties/Methods/AddBoolProperty.js
-	 */
-	ApiCustomProperties.prototype.AddBoolProperty = function (sName, bValue) {
-		this.CustomProperties.AddProperty(sName, AscCommon.c_oVariantTypes.vtBool, Boolean(bValue));
+		if (typeof value === 'boolean') {
+			this.CustomProperties.AddProperty(sName, AscCommon.c_oVariantTypes.vtBool, value);
+			return true;
+		}
+
+		if (typeof value === 'number') {
+			const type = Number.isInteger(value)
+				? AscCommon.c_oVariantTypes.vtI4
+				: AscCommon.c_oVariantTypes.vtR8;
+			this.CustomProperties.AddProperty(sName, type, value);
+			return true;
+		}
+
+		if (value instanceof Date && !isNaN(value.getTime())) {
+			this.CustomProperties.AddProperty(sName, AscCommon.c_oVariantTypes.vtFiletime, value);
+			return true;
+		}
+
+		return false;
 	};
 
 	/**
@@ -26152,10 +26133,7 @@
 	ApiCore.prototype["GetVersion"] = ApiCore.prototype.GetVersion;
 
 	ApiCustomProperties.prototype["GetClassType"] = ApiCustomProperties.prototype.GetClassType;
-	ApiCustomProperties.prototype["AddStringProperty"] = ApiCustomProperties.prototype.AddStringProperty;
-	ApiCustomProperties.prototype["AddNumberProperty"] = ApiCustomProperties.prototype.AddNumberProperty;
-	ApiCustomProperties.prototype["AddDateProperty"] = ApiCustomProperties.prototype.AddDateProperty;
-	ApiCustomProperties.prototype["AddBoolProperty"] = ApiCustomProperties.prototype.AddBoolProperty;
+	ApiCustomProperties.prototype["AddProperty"] = ApiCustomProperties.prototype.AddProperty;
 	ApiCustomProperties.prototype["GetPropertyValueByName"] = ApiCustomProperties.prototype.GetPropertyValueByName;
 
 	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
