@@ -6679,7 +6679,7 @@ function BinaryPPTYLoader()
         if (this.IsUseFullUrl) {
             for (let idx = 0; idx < this.RebuildImages.length; ++idx) {
                 let builderImage = this.RebuildImages[idx];
-                if (builderImage.ImageShape === drawing) {
+                if (builderImage.ImageShape === drawing || builderImage.SpPr && builderImage.SpPr.parent === drawing) {
                     if (builderImage.BlipFill) {
                         builderImage.BlipFill.embed = rIdOverride;
                     }
