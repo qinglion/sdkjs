@@ -512,17 +512,13 @@ var CPresentation = CPresentation || function(){};
             isEditMode = true;
         }
 
-        if (isEditMode && this.activeForm) {
+        if (this.activeForm) {
             this.BlurActiveObject();
         }
         
         this.widgets.forEach(function(field) {
             field.SetEditMode(isEditMode);
         });
-
-        if (false == isEditMode && this.activeForm) {
-            this.activeForm = null;
-        }
 
         if (isEditMode) {
             setTimeout(function() {
@@ -6742,8 +6738,11 @@ var CPresentation = CPresentation || function(){};
         let oController = this.GetController();
 
         this.SetMouseDownObject(oState.activeObject);
+        if (oState.activeObject && oState.activeObject.IsForm && oState.activeObject.IsForm()) {
+            this.activeForm = oState.activeObject;
+        }
+        
         oController.setSelectionState(oState.drawingSelection);
-
         if (oState.CurPage != -1 && oState.CurPage != this.Viewer.currentPage)
 	        this.Viewer.navigateToPage(oState.CurPage);
     };
