@@ -5204,8 +5204,8 @@ var CPresentation = CPresentation || function(){};
                 Asc.editor.ImageLoader.LoadImagesWithCallback(aLoadUrls, fEndCallback, []);
 
                 let _file = _this.Viewer.file;
-                for (let i in allImages) {
-                    _file.nativeFile["changeImageUrl"](allImages[i], oImageMap[i]);
+                for (let nIdx = 0; nIdx < data.length; ++nIdx) {
+                    _file.nativeFile["changeImageUrl"](allImages[nIdx], AscCommon.g_oDocumentUrls.imagePath2Local(data[nIdx].path));
                 }
             });
         } else {
