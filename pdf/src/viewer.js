@@ -2160,7 +2160,8 @@
 		};
 		this.canInteract = function() {
 			// не даем взаимодействовать с документом пока не произошла отрисовка
-			return this.scheduledRepaintTimer == null && this.isRepaint != true && this.initPaintDone == true && !this.isCMapLoading && !Asc.editor.getPDFDoc().CollaborativeEditing.Get_GlobalLock();
+			return this.scheduledRepaintTimer == null && this.isRepaint != true && this.initPaintDone == true && !this.isCMapLoading &&
+				(!Asc.editor.getPDFDoc().CollaborativeEditing.Get_GlobalLock() || Asc.editor.isViewMode);
 		};
 		this.getPageDrawingByMouse = function()
 		{
@@ -3247,9 +3248,7 @@
 		};
 		this.isLandscapePage = function(nPage) {
 			const angle = this.getPageRotate(nPage);
-			// Углы поворота, указывающие на ландшафтную ориентацию
-			const landscapeAngles = [90, -90, 270, -270];
-			return landscapeAngles.includes(angle);
+			return (0 !== angle % 180);
 		};
 		this.Get_PageLimits = function(nPage) {
 			let oPage = this.file.pages[nPage] || this.file.pages[0];
@@ -4258,6 +4257,9 @@
 
 		image.requestWidth = nWidthPx;
 		image.requestHeight = nHeightPx;
+
+		if (file.type !== 2)
+			return image;
 
 		let ctx = image.getContext('2d');
 
