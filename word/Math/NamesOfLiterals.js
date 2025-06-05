@@ -45,10 +45,14 @@
 		'gcd', 'inf', 'asec', 'ker', 'asech', 'arccos', 'hom', 'lg',
 		'arctan', 'sup', 'arcsec', 'arccot', 'arccsc', 'sinh', 'cosh',
 		'tanh', 'coth', 'sech', 'csch', 'srcsinh', 'arctanh', 'arcsech', 'arccosh',
-		'arccoth', 'arccsch', 'Pr', 'lin', 'exp', "sgn",
+		'arccoth', 'arccsch', 'Pr', 'lin', 'exp', "sgn"
 	];
 	const limitFunctions = [
 		"lim", "min", "max", "log", "ln"
+	];
+	const limitFunctionsLaTeX = [
+		"lim", "min", "max", "liminf", "limup", 'sum', 'prod', 'coprod', 'bigcup',
+		'bigcap', 'bigsqcap', 'bigvee', 'bigwedge', 'bigodot', 'bigotimes', 'bigoplus'
 	];
 	const UnicodeSpecialScript = {
 		"⁰": "0",
@@ -1129,7 +1133,7 @@
 			"\\widehat": "̂",
 			"\\check": "̌",
 			"\\tilde": "̃",
-			"\\widetilde": "～",
+			"\\widetilde": "̃",
 			"\\acute": "́",
 			"\\grave": "̀",
 			"\\dot": "̇",
@@ -1225,6 +1229,10 @@
 			"\\begin{array}" : 1,
 			"\\end{array}" : 2,
 			"\\array{" : 1,
+			"\\begin{aligned}": 1,
+			"\\end{aligned}": 2,
+			"\\begin{gathered}": 1,
+			"\\end{gathered}": 2,
 		};
 		this.Init();
 	}
@@ -1256,7 +1264,7 @@
 			" "		:	1,
 			"‌"		:	1,
 		};
-		this.LaTeX = {
+	this.LaTeX = {
 			"\\nbsp"	:	" ",		// space width && no-break space
 			"\\numsp"	:	" ",		// digit width
 			"\\emsp"	:	" ",		// 18/18 em
@@ -1285,6 +1293,12 @@
 
 	function TokenLaTeXWords()
 	{
+		this.LaTeX = {
+			"\\nolimits": "\\nolimits",
+			"\\underset": "\\underset",
+			"\\overset": "\\overset",
+			"\\operatorname": "\\operatorname"
+		};
 		this.id = 24;
 		this.isClassEqalData = true;
 	}
@@ -1313,7 +1327,7 @@
 	}
 	TokenFunctionLiteral.prototype.IsLaTeXIncludeLimit = function (str)
 	{
-		if (limitFunctions.includes(str.slice(1)))
+		if (limitFunctionsLaTeX.includes(str.slice(1)))
 			return str;
 	}
 	TokenFunctionLiteral.prototype.IsUnicodeInclude = function(arrStr)
@@ -2102,19 +2116,19 @@
 				data: undefined,
 			};
 
-		let autoCorrectRule,
+		let autoCorrectRule = {class:null},
 			tokenValue,
 			tokenClass,
 			string = this._string.slice(this._cursor);
 
 		for (let i = arrTokensCheckerList.length - 1; i >= 0; i--)
 		{
-			autoCorrectRule = arrTokensCheckerList[i];
-			tokenValue = this.MatchToken(autoCorrectRule, string, isNextLookahead);
+			autoCorrectRule.class = arrTokensCheckerList[i];
+			tokenValue = this.MatchToken(autoCorrectRule, string, isNextLookahead, i);	
 
 			if (string[0] === "\\" && string[1] === "/")
 			{
-				autoCorrectRule = MathLiterals.divide;
+				autoCorrectRule.class = MathLiterals.divide;
 				tokenValue = "/"
 				this._cursor += this.GetStringLength("\\/");
 
@@ -2125,25 +2139,25 @@
 
 			if (tokenValue === null)
 				continue;
-
-			else if (!Array.isArray(autoCorrectRule))
+			else if (!Array.isArray(autoCorrectRule.class))
 			{
-				tokenClass = (autoCorrectRule.isClassEqalData)
+				tokenClass = (autoCorrectRule.class.isClassEqalData)
 					? tokenValue
-					: autoCorrectRule.id;
+					: autoCorrectRule.class.id;
 			}
-			else if (autoCorrectRule.length === 1)
+			else if (autoCorrectRule.class.length === 1)
 			{
 				tokenClass = MathLiterals.char.id;
 			}
-			else if (autoCorrectRule.length === 2)
+			else if (autoCorrectRule.class.length === 2)
 			{
-				tokenClass = (autoCorrectRule[1] === true)
-					? autoCorrectRule[0]
-					: autoCorrectRule[1];
+				tokenClass = (autoCorrectRule.class[1] === true)
+					? autoCorrectRule.class[0]
+					: autoCorrectRule.class[1];
 			}
 
 			let oStyle = this.GetStyle(this._cursor);
+			this.LaTeXVariant = null;
 
 			return {
 				class: tokenClass,
@@ -2169,23 +2183,54 @@
 		}
 		return char;
 	};
-	Tokenizer.prototype.MatchToken = function (fMathCheck, arrStr, isNextLookahead)
+	Tokenizer.prototype.MatchToken = function (fMathCheck, arrStr, isNextLookahead, i)
 	{
-		if (undefined === fMathCheck)
+		if (undefined === fMathCheck.class)
 			return null;
 
-		let oMatched = fMathCheck.GetToken(this.isLaTeX, arrStr);
+		let oMatched = fMathCheck.class.GetToken(this.isLaTeX, arrStr);
 
 		if (oMatched === null || oMatched === undefined)
 			return null;
 
-		if (!isNextLookahead)
-			this._cursor += this.GetStringLength(oMatched);
+		if (this.isLaTeX && oMatched)
+		{
+			if (!this.LaTeXVariant || oMatched > this.LaTeXVariant.tokenValue)
+			{
+				this.LaTeXVariant = {
+					tokenValue: oMatched,
+					autoCorrectRule: fMathCheck.class
+				}
+			}
+		}
 
-		if (fMathCheck.IsNeedReturnCorrected_Unicode === true && this.isLaTeX)
-			oMatched = fMathCheck.LaTeX[oMatched];
+		if (this.isLaTeX)
+		{
+			if (i === 0)
+			{
+				fMathCheck.class = this.LaTeXVariant.autoCorrectRule;
+				oMatched = this.LaTeXVariant.tokenValue;
 
-		return oMatched;
+				if (!isNextLookahead)
+					this._cursor += this.GetStringLength(oMatched);
+
+				if (fMathCheck.class.IsNeedReturnCorrected_Unicode === true && this.isLaTeX)
+					oMatched = fMathCheck.class.LaTeX[oMatched];
+
+				return oMatched
+			}
+			else
+			{
+				return null;
+			}
+		}
+		else
+		{
+			if (!isNextLookahead)
+				this._cursor += this.GetStringLength(oMatched);
+
+			return oMatched;
+		}
 	};
 	Tokenizer.prototype.SaveState = function (oLookahead)
 	{
@@ -2473,7 +2518,7 @@
 
 						oTokens.value.type = MathStructures.char;
 						UnicodeArgument(
-							oTokens.value,
+							oTokens.value.value,
 							MathStructures.bracket_block,
 							SubSup.getBase()
 						);
@@ -2519,11 +2564,10 @@
 							null,
 							oTokens.up ? LIMIT_UP : LIMIT_LOW
 						);
-						oFuncWithLimit
-							.getFName()
-							.Content[0]
-							.getFName()
-							.Add_Text(oTokens.value.value, Paragraph, STY_PLAIN);
+
+						ConvertTokens(
+							oTokens.value.value,
+							oFuncWithLimit.getFName().Content[0].getFName());
 
 						let oLimitIterator = oFuncWithLimit
 							.getFName()
