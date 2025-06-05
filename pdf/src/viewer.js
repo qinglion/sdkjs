@@ -4258,7 +4258,7 @@
 		image.requestWidth = nWidthPx;
 		image.requestHeight = nHeightPx;
 
-		if (file.type !== 2)
+		if (oFile.type !== 2)
 			return image;
 
 		let ctx = image.getContext('2d');
