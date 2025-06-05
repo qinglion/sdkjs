@@ -24997,9 +24997,9 @@
 	 * @param {string} name
 	 * @param {string | number | boolean | Date} value
 	 * @returns {boolean} - Returns false if the type is unsupported.
-	 * @see office-js-api/Examples/{Editor}/ApiCustomProperties/Methods/AddProperty.js
+	 * @see office-js-api/Examples/{Editor}/ApiCustomProperties/Methods/Add.js
 	 */
-	ApiCustomProperties.prototype.AddProperty = function (name, value) {
+	ApiCustomProperties.prototype.Add = function (name, value) {
 		if (typeof value === 'string') {
 			this.CustomProperties.AddProperty(name, AscCommon.c_oVariantTypes.vtLpwstr, value);
 			return true;
@@ -25033,9 +25033,9 @@
 	 * @typeofeditors ["CDE", "CSE", "CPE"]
 	 * @param {string} name
 	 * @returns {string | number | Date | boolean | null} - The value of the custom property or null if the property does not exist.
-	 * @see office-js-api/Examples/{Editor}/ApiCustomProperties/Methods/GetPropertyValueByName.js
+	 * @see office-js-api/Examples/{Editor}/ApiCustomProperties/Methods/Get.js
 	 */
-	ApiCustomProperties.prototype.GetPropertyValueByName = function (name) {
+	ApiCustomProperties.prototype.Get = function (name) {
 		let property = null;
 		this.CustomProperties.getAllProperties().forEach(function (prop) {
 			if (prop.asc_getName() === name) {
@@ -26133,8 +26133,8 @@
 	ApiCore.prototype["GetVersion"] = ApiCore.prototype.GetVersion;
 
 	ApiCustomProperties.prototype["GetClassType"] = ApiCustomProperties.prototype.GetClassType;
-	ApiCustomProperties.prototype["AddProperty"] = ApiCustomProperties.prototype.AddProperty;
-	ApiCustomProperties.prototype["GetPropertyValueByName"] = ApiCustomProperties.prototype.GetPropertyValueByName;
+	ApiCustomProperties.prototype["Add"] = ApiCustomProperties.prototype.Add;
+	ApiCustomProperties.prototype["Get"] = ApiCustomProperties.prototype.Get;
 
 	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	// Export for internal usage
