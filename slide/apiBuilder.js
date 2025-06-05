@@ -1658,7 +1658,7 @@
 	};
 
 	/**
-	* Adds a math equation to the current document.
+	* Adds a math equation to the current presentation.
 	* @memberof ApiPresentation
 	* @typeofeditors ["CPE"]
 	* @param {string} sText - The math equation text.
