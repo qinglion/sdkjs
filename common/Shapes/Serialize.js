@@ -6653,6 +6653,12 @@ function BinaryPPTYLoader()
                     shape.readMacro(s);
                     break;
                 }
+                case 0x64:
+                {
+                    let lenRec = s.GetULong();
+                    let rIdOverride = s.GetString2();
+                    break;
+                }
                 default:
                 {
                     s.SkipRecord();
@@ -7081,6 +7087,12 @@ function BinaryPPTYLoader()
                 case 0xA1:
                 {
                     pic.readMacro(s);
+                    break;
+                }
+                case 0x64:
+                {
+                    let lenRec = s.GetULong();
+                    let rIdOverride = s.GetString2();
                     break;
                 }
                 default:
