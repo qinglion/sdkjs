@@ -597,23 +597,28 @@
                     oImage = this.viewer.GetPageForThumbnails(needPage.num, needPage.pageRect.w, needPage.pageRect.h);
                 }
 
-                // Создание нового canvas с изменёнными размерами
-                const rotatedCanvas = document.createElement('canvas');
-                rotatedCanvas.width = needPage.pageRect.w;
-                rotatedCanvas.height = needPage.pageRect.h;
-                const rotatedContext = rotatedCanvas.getContext('2d');
-                
-                // Поворот canvas
-                rotatedContext.save();
-                rotatedContext.translate(rotatedCanvas.width / 2 >> 0, rotatedCanvas.height / 2 >> 0);
-                rotatedContext.rotate(angle * Math.PI / 180);
-                rotatedContext.drawImage(oImage, -oImage.width / 2 >> 0, -oImage.height / 2 >> 0);
-                rotatedContext.restore();
+                if (0 === angle)
+                {
+                    needPage.page.image = oImage;
+                } else {
+                    // Создание нового canvas с изменёнными размерами
+                    const rotatedCanvas = document.createElement('canvas');
+                    rotatedCanvas.width = needPage.pageRect.w;
+                    rotatedCanvas.height = needPage.pageRect.h;
+                    const rotatedContext = rotatedCanvas.getContext('2d');
 
-                rotatedCanvas.requestWidth = rotatedCanvas.width;
-                rotatedCanvas.requestHeight = rotatedCanvas.height;
+                    // Поворот canvas
+                    rotatedContext.save();
+                    rotatedContext.translate(rotatedCanvas.width / 2 >> 0, rotatedCanvas.height / 2 >> 0);
+                    rotatedContext.rotate(angle * Math.PI / 180);
+                    rotatedContext.drawImage(oImage, -oImage.width / 2 >> 0, -oImage.height / 2 >> 0);
+                    rotatedContext.restore();
 
-                needPage.page.image = rotatedCanvas;
+                    rotatedCanvas.requestWidth = rotatedCanvas.width;
+                    rotatedCanvas.requestHeight = rotatedCanvas.height;
+
+                    needPage.page.image = rotatedCanvas;
+                }
 
                 needPage.page.needRedraw = false;
                 this.isRepaint = true;
