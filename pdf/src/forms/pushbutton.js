@@ -1087,6 +1087,8 @@
         if (this.IsNeedRecalc() == false)
             return;
 
+        this.CheckTextFont();
+        
         if (false == this.RecalculateContentRect()) {
             this.Internal_CorrectContentPos();
             this.content.Recalculate_Page(0, false);
