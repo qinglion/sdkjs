@@ -452,8 +452,7 @@
             // Write base64 binaryData
             let writer = new AscCommon.CBinaryFileWriter();
             writer.WriteSpTreeElem(this);
-            let base64 = "pptData;" +  writer.pos + ";" + writer.GetBase64Memory();
-            memory.WriteString(base64);
+            memory.WriteXmlString(writer.GetBase64Memory());
         }
     };
 
