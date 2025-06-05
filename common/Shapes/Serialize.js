@@ -3074,7 +3074,9 @@ function BinaryPPTYLoader()
                 case 11:
                 {
                     // id. embed / link
-                    s.GetString2();
+                    uni_fill.fill.embed = s.GetString2();
+                    if (this.IsUseFullUrl)
+                        this.RebuildImages.push(new CBuilderImages(uni_fill.fill, null, oImageShape, oSpPr, oLn, undefined, undefined, undefined, oParagraph, oBullet));
                     break;
                 }
                 case 2:
@@ -6718,6 +6720,13 @@ function BinaryPPTYLoader()
                     shape.readMacro(s);
                     break;
                 }
+                case 0x64:
+                {
+                    let lenRec = s.GetULong();
+                    let rIdOverride = s.GetString2();
+                    this.ResetImageId(shape, rIdOverride);
+                    break;
+                }
                 default:
                 {
                     s.SkipRecord();
@@ -6732,6 +6741,19 @@ function BinaryPPTYLoader()
         s.Seek2(_end_rec);
         return shape;
     };
+
+    this.ResetImageId = function(drawing, rIdOverride) {
+        if (this.IsUseFullUrl) {
+            for (let idx = 0; idx < this.RebuildImages.length; ++idx) {
+                let builderImage = this.RebuildImages[idx];
+                if (builderImage.ImageShape === drawing || builderImage.SpPr && builderImage.SpPr.parent === drawing) {
+                    if (builderImage.BlipFill) {
+                        builderImage.BlipFill.embed = rIdOverride;
+                    }
+                }
+            }
+        }
+    }
 
     this.CheckGroupXfrm = function(oGroup){
         if(!oGroup){
@@ -7146,6 +7168,13 @@ function BinaryPPTYLoader()
                 case 0xA1:
                 {
                     pic.readMacro(s);
+                    break;
+                }
+                case 0x64:
+                {
+                    let lenRec = s.GetULong();
+                    let rIdOverride = s.GetString2();
+                    this.ResetImageId(pic, rIdOverride);
                     break;
                 }
                 default:

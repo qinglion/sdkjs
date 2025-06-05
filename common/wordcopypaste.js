@@ -95,19 +95,8 @@ function GetObjectsForImageDownload(aBuilderImages, bSameDoc)
 		let sUrl = oBuilderImg.Url;
         if(!g_oDocumentUrls.getImageLocal(sUrl) && !g_oDocumentUrls.isThemeUrl(sUrl))
         {
-            if(!Array.isArray(oMapImages[sUrl]))
-            {
-                oMapImages[sUrl] = [];
-            }
-            oMapImages[sUrl].push(oBuilderImg);
-        }
-    }
-    for(var key in oMapImages)
-    {
-        if(oMapImages.hasOwnProperty(key))
-        {
-            aUrls.push(key);
-            aBuilderImagesByUrl.push(oMapImages[key]);
+			aUrls.push(sUrl);
+			aBuilderImagesByUrl.push([oBuilderImg]);
         }
     }
     if(bSameDoc !== true){
