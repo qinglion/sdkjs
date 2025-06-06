@@ -501,6 +501,12 @@
         this._kids.push(oField);
         oField._parent = this;
 
+        if (false == Asc.editor.getDocumentRenderer().IsOpenFormsInProgress) {
+            if (oField.IsWidget()) {
+                oField.SyncValue();
+            }
+        }
+        
         if (aNewOptions) {
             this.SetOptions(aNewOptions);
         }

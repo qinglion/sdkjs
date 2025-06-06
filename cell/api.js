@@ -5527,6 +5527,9 @@ var editor;
   };
   spreadsheet_api.prototype.putImageToSelection = function(sImageSrc, nWidth, nHeight, replaceMode) {
       var ws = this.wb.getWorksheet();
+	  if (ws.model.getSheetProtection(Asc.c_oAscSheetProtectType.objects)) {
+		  return false;
+	  }
       return ws.objectRender.controller.putImageToSelection(sImageSrc, nWidth, nHeight, replaceMode);
   };
 

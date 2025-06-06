@@ -22021,7 +22021,6 @@
 	};
 	/**
 	 * Returns the text from the current form.
-	 *Returns the value as a string if possible for the given form type*
 	 * @memberof ApiFormBase
 	 * @typeofeditors ["CDE", "CFE"]
 	 * @returns {string}
@@ -23791,7 +23790,7 @@
 	/**
 	 * Returns the user ID of the comment author.
 	 * @memberof ApiComment
-	 * @typeofeditors ["CDE"]
+	 * @typeofeditors ["CDE", "CPE"]
 	 * @returns {string}
 	 * @see office-js-api/Examples/{Editor}/ApiComment/Methods/GetUserId.js
 	 */
@@ -24974,74 +24973,55 @@
 	};
 
 	/**
-	 * Adds a custom string property to the document.
+	 * Adds a custom property to the document with automatic type detection.
 	 * @memberof ApiCustomProperties
 	 * @typeofeditors ["CDE", "CSE", "CPE"]
-	 * @param {string} setName - The name of the custom string property.
-	 * @param {string} sValue - The value of the custom string property.
+	 * @param {string} name - The custom property name.
+	 * @param {string | number | boolean | Date} value - The custom property value.
+	 * @returns {boolean} - Returns false if the type is unsupported.
 	 * @since 9.0.0
-	 * @see office-js-api/Examples/{Editor}/ApiCustomProperties/Methods/AddStringProperty.js
+	 * @see office-js-api/Examples/{Editor}/ApiCustomProperties/Methods/Add.js
 	 */
-	ApiCustomProperties.prototype.AddStringProperty = function (sName, sValue) {
-		return this.CustomProperties.AddProperty(sName, AscCommon.c_oVariantTypes.vtLpwstr, '' + sValue);
-	};
-
-	/**
-	 * Adds a custom number property to the document.
-	 * @memberof ApiCustomProperties
-	 * @typeofeditors ["CDE", "CSE", "CPE"]
-	 * @param {string} sName - The name of the custom number property.
-	 * @param {number} nValue - The value of the custom number property.
-	 * @since 9.0.0
-	 * @see office-js-api/Examples/{Editor}/ApiCustomProperties/Methods/AddNumberProperty.js
-	 */
-	ApiCustomProperties.prototype.AddNumberProperty = function (sName, nValue) {
-		Number.isInteger(nValue)
-			? this.CustomProperties.AddProperty(sName, AscCommon.c_oVariantTypes.vtI4, parseInt(nValue))
-			: this.CustomProperties.AddProperty(sName, AscCommon.c_oVariantTypes.vtR8, parseFloat(nValue));
-	};
-
-	/**
-	 * Adds a custom date property to the document.
-	 * @memberof ApiCustomProperties
-	 * @typeofeditors ["CDE", "CSE", "CPE"]
-	 * @param {string} sName - The name of the custom date property.
-	 * @param {Date} oValue - The value of the custom date property.
-	 * @since 9.0.0
-	 * @see office-js-api/Examples/{Editor}/ApiCustomProperties/Methods/AddDateProperty.js
-	 */
-	ApiCustomProperties.prototype.AddDateProperty = function (sName, oValue) {
-		if (oValue instanceof Date && !isNaN(oValue.getTime())) {
-			this.CustomProperties.AddProperty(sName, AscCommon.c_oVariantTypes.vtFiletime, oValue);
+	ApiCustomProperties.prototype.Add = function (name, value) {
+		if (typeof value === 'string') {
+			this.CustomProperties.AddProperty(name, AscCommon.c_oVariantTypes.vtLpwstr, value);
+			return true;
 		}
-	};
 
-	/**
-	 * Adds a custom boolean property to the document.
-	 * @memberof ApiCustomProperties
-	 * @typeofeditors ["CDE", "CSE", "CPE"]
-	 * @param {string} sName - The name of the custom boolean property.
-	 * @param {boolean} bValue - The value of the custom boolean property.
-	 * @since 9.0.0
-	 * @see office-js-api/Examples/{Editor}/ApiCustomProperties/Methods/AddBoolProperty.js
-	 */
-	ApiCustomProperties.prototype.AddBoolProperty = function (sName, bValue) {
-		this.CustomProperties.AddProperty(sName, AscCommon.c_oVariantTypes.vtBool, Boolean(bValue));
+		if (typeof value === 'boolean') {
+			this.CustomProperties.AddProperty(name, AscCommon.c_oVariantTypes.vtBool, value);
+			return true;
+		}
+
+		if (typeof value === 'number') {
+			const type = Number.isInteger(value)
+				? AscCommon.c_oVariantTypes.vtI4
+				: AscCommon.c_oVariantTypes.vtR8;
+			this.CustomProperties.AddProperty(name, type, value);
+			return true;
+		}
+
+		if (value instanceof Date && !isNaN(value.getTime())) {
+			this.CustomProperties.AddProperty(name, AscCommon.c_oVariantTypes.vtFiletime, value);
+			return true;
+		}
+
+		return false;
 	};
 
 	/**
 	 * Returns the value of a custom property by its name.
 	 * @memberof ApiCustomProperties
 	 * @typeofeditors ["CDE", "CSE", "CPE"]
-	 * @param {string} sName - The custom property name.
+	 * @param {string} name - The custom property name.
 	 * @returns {string | number | Date | boolean | null} - The value of the custom property or null if the property does not exist.
 	 * @since 9.0.0
-	 * @see office-js-api/Examples/{Editor}/ApiCustomProperties/Methods/GetPropertyValueByName.js
+	 * @see office-js-api/Examples/{Editor}/ApiCustomProperties/Methods/Get.js
 	 */
-	ApiCustomProperties.prototype.GetPropertyValueByName = function (sName) {
+	ApiCustomProperties.prototype.Get = function (name) {
 		let property = null;
 		this.CustomProperties.getAllProperties().forEach(function (prop) {
-			if (prop.asc_getName() === sName) {
+			if (prop.asc_getName() === name) {
 				property = prop;
 			}
 		});
@@ -26136,11 +26116,8 @@
 	ApiCore.prototype["GetVersion"] = ApiCore.prototype.GetVersion;
 
 	ApiCustomProperties.prototype["GetClassType"] = ApiCustomProperties.prototype.GetClassType;
-	ApiCustomProperties.prototype["AddStringProperty"] = ApiCustomProperties.prototype.AddStringProperty;
-	ApiCustomProperties.prototype["AddNumberProperty"] = ApiCustomProperties.prototype.AddNumberProperty;
-	ApiCustomProperties.prototype["AddDateProperty"] = ApiCustomProperties.prototype.AddDateProperty;
-	ApiCustomProperties.prototype["AddBoolProperty"] = ApiCustomProperties.prototype.AddBoolProperty;
-	ApiCustomProperties.prototype["GetPropertyValueByName"] = ApiCustomProperties.prototype.GetPropertyValueByName;
+	ApiCustomProperties.prototype["Add"] = ApiCustomProperties.prototype.Add;
+	ApiCustomProperties.prototype["Get"] = ApiCustomProperties.prototype.Get;
 
 	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	// Export for internal usage

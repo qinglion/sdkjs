@@ -1087,6 +1087,8 @@
         if (this.IsNeedRecalc() == false)
             return;
 
+        this.CheckTextFont();
+        
         if (false == this.RecalculateContentRect()) {
             this.Internal_CorrectContentPos();
             this.content.Recalculate_Page(0, false);
@@ -1742,6 +1744,7 @@
                 nPosInPara = oPara1.Content.indexOf(oRun);
                 oPara1.Remove_FromContent(nPosInPara, 1, true);
             }
+            oPara1.CorrectContent();
 
             let oNewPara = new AscWord.Paragraph(this.content, false);
             oNewPara.CorrectContent();
@@ -1804,7 +1807,8 @@
                 nPosInPara = oPara1.Content.indexOf(oRun);
                 oPara1.Remove_FromContent(nPosInPara, 1, true);
             }
-
+            oPara1.CorrectContent();
+            
             let oNewPara = new AscWord.Paragraph(this.content, false);
             oNewPara.CorrectContent();
             this.content.AddToContent(0, oNewPara);

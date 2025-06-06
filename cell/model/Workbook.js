@@ -15422,6 +15422,9 @@
 		if (!sFunctionName) {
 			return false;
 		}
+		if (!aExcludeFormulas.includes(sFunctionName)) {
+			return false;
+		}
 		aOutStack.forEach(function (oElem) {
 			if (oElem.type === cElementType.func || (oElem.type === cElementType.operator && !aUnOperators.includes(oElem.name))) {
 				nFuncCount++;
@@ -16054,7 +16057,7 @@
 						} else {
 							parsed.calculate();
 						}
-						if (g_cCalcRecursion.getFunctionsResult().length && g_cCalcRecursion.getIterStep() === 1) {
+						if (g_cCalcRecursion.getFunctionsResult().length && g_cCalcRecursion.getIterStep() === 1 && g_cCalcRecursion.getLevel() === 1) {
 							const functionsResult = g_cCalcRecursion.getFunctionsResult();
 							const isEnabledRecursion = g_cCalcRecursion.getIsEnabledRecursion();
 							let isCycleCell = false;
