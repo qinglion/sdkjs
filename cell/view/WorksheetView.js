@@ -13126,8 +13126,19 @@
 
     WorksheetView.prototype.getSelectionName = function (bRangeText) {
         if (this.isSelectOnShape) {
+					const oController = this.objectRender.controller;
+					if (oController && oController.selectedObjects.length === 1) {
+							const oGroupSelection = oController.selection.groupSelection;
+							if (oGroupSelection) {
+								if (oGroupSelection.selectedObjects.length === 1) {
+									return oGroupSelection.selectedObjects[0].getObjectName();
+								}
+							} else {
+								return oController.selectedObjects[0].getObjectName();
+							}
+					}
             return " ";
-        }	// Пока отправим пустое имя(с пробелом, пустое не воспринимаем в меню..) ToDo
+        }
 
         var selection = this.model.selectionRange || this.model.copySelection;
         var ar = selection.getLast();
