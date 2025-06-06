@@ -579,7 +579,7 @@ var CPresentation = CPresentation || function(){};
         while (true) {
             const fullName = sFormType + nFormNumber;
             const oField = Object.values(AscCommon.g_oTableId.m_aPairs).find(function(elm) {
-                elm.IsForm && elm.IsForm() && elm.GetFullName() === fullName
+                return elm.IsForm && elm.IsForm() && elm.GetFullName() === fullName
             });
         
             if (!oField) break;
@@ -1432,6 +1432,13 @@ var CPresentation = CPresentation || function(){};
         if (!oActiveObj)
             return;
         
+        if (false == oActiveObj.IsUseInDocument()) {
+            this.activeForm = null;
+            this.mouseDownAnnot = null;
+            this.activeDrawing = null;
+            return;
+        }
+
         let oDrDoc      = this.GetDrawingDocument();
         let oController = this.GetController();
 

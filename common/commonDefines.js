@@ -5856,6 +5856,7 @@ window.AscCommon.g_cIsBeta = "false";
 	prot['DateTime']     = c_oAscContentControlSpecificType.DateTime;
 	prot['TOC']          = c_oAscContentControlSpecificType.TOC;
 	prot['Complex']      = c_oAscContentControlSpecificType.Complex;
+	prot['Signature']    = c_oAscContentControlSpecificType.Signature;
 
 	window['Asc']['c_oAscDefNameType'] = window['Asc'].c_oAscDefNameType = c_oAscDefNameType;
 	prot = c_oAscDefNameType;

@@ -22037,7 +22037,6 @@
 	};
 	/**
 	 * Returns the text from the current form.
-	 *Returns the value as a string if possible for the given form type*
 	 * @memberof ApiFormBase
 	 * @typeofeditors ["CDE", "CFE"]
 	 * @returns {string}
@@ -23807,7 +23806,7 @@
 	/**
 	 * Returns the user ID of the comment author.
 	 * @memberof ApiComment
-	 * @typeofeditors ["CDE"]
+	 * @typeofeditors ["CDE", "CPE"]
 	 * @returns {string}
 	 * @see office-js-api/Examples/{Editor}/ApiComment/Methods/GetUserId.js
 	 */
