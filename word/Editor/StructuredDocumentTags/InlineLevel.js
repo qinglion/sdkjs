@@ -1670,7 +1670,7 @@ CInlineLevelSdt.prototype.private_FillPlaceholderContent = function()
 		if (this.IsContentControlEquation())
 		{
 			var oParaMath = new ParaMath();
-			oParaMath.Root.Load_FromMenu(c_oAscMathType.Default_Text, this.GetParagraph(), null, oFirstParagraph.GetText({ParaSeparator : "", TableRowSeparator : "", TableCellSeparator : ""}));
+			oParaMath.Root.Load_FromMenu(c_oAscMathType.Default_Text, this.GetParagraph(), oFirstParagraph.GetFirstRunPr().Copy(), oFirstParagraph.GetText({ParaSeparator : "", TableRowSeparator : "", TableCellSeparator : ""}));
 			oParaMath.Root.Correct_Content(true);
 			this.AddToContent(0, oParaMath);
 		}
