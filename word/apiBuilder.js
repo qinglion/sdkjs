@@ -21784,6 +21784,8 @@
 			return "pictureForm";
 		if (this.Sdt.IsDatePicker())
 			return "dateForm";
+		if (this.Sdt.IsComplexForm())
+			return "complexForm";
 	};
 	/**
 	 * Returns the current form key.
@@ -23135,6 +23137,93 @@
 	{
 		let fullDate = this.Sdt.GetDatePickerPr().GetFullDate();
 		return new Date(fullDate);
+	};
+
+	//------------------------------------------------------------------------------------------------------------------
+	//
+	// ApiComplexForm
+	//
+	//------------------------------------------------------------------------------------------------------------------
+
+	/**
+	 * Inserts a given form element into the current complex form.
+	 * @memberof ApiComplexForm
+	 * @param oField {ApiDateForm|ApiPictureForm|ApiCheckBoxForm|ApiComboBoxForm|ApiTextForm} - The form element to insert.
+	 * @typeofeditors ["CDE", "CFE"]
+	 * @returns {boolean}
+	 * @since 9.0.0
+	 * @see office-js-api/Examples/{Editor}/ApiComplexForm/Methods/InsertForm.js
+	 */
+	ApiComplexForm.prototype.InsertForm = function(oField)
+	{
+		return executeNoFormLockCheck(function(){
+			if (!oField || !(oField instanceof ApiDateForm
+				|| oField instanceof ApiPictureForm
+				|| oField instanceof ApiCheckBoxForm
+				|| oField instanceof ApiComboBoxForm
+				|| oField instanceof ApiTextForm))
+				return false;
+
+			if (this.Sdt.IsPlaceHolder())
+				this.Sdt.private_ReplacePlaceHolderWithContent();
+
+			this.Sdt.Add_ToContent(this.Sdt.Content.length, oField.Sdt);
+			this.OnChangeValue();
+			return true;
+		}, this);
+	};
+	/**
+	 * Adds text content to the current complex form.
+	 * @memberof ApiComplexForm
+	 * @param sText {string}
+	 * @typeofeditors ["CDE", "CFE"]
+	 * @returns {boolean}
+	 * @since 9.0.0
+	 * @see office-js-api/Examples/{Editor}/ApiComplexForm/Methods/AddText.js
+	 */
+	ApiComplexForm.prototype.AddText = function(sText)
+	{
+		return executeNoFormLockCheck(function(){
+			let _sText = GetStringParameter(sText, null);
+			if (!_sText)
+				return false;
+
+			if (this.Sdt.IsPlaceHolder())
+				this.Sdt.private_ReplacePlaceHolderWithContent();
+
+			let lastElement = this.Sdt.Content[this.Sdt.Content.length - 1];
+			if (lastElement instanceof ParaRun)
+			{
+				lastElement.AddText(sText);
+			}
+			else
+			{
+				let oRun = new ParaRun(this.Sdt.GetParagraph(), false);
+				oRun.AddText(sText);
+				this.Sdt.Add_ToContent(this.Sdt.Content.length, oRun);
+			}
+			this.OnChangeValue();
+			return true;
+		}, this);
+	};
+	/**
+	 * Clears all content from the current complex form, resetting it to its placeholder state.
+	 * @memberof ApiComplexForm
+	 * @typeofeditors ["CDE", "CFE"]
+	 * @returns {boolean}
+	 * @since 9.0.0
+	 * @see office-js-api/Examples/{Editor}/ApiComplexForm/Methods/ClearContent.js
+	 */
+	ApiComplexForm.prototype.ClearContent = function()
+	{
+		return executeNoFormLockCheck(function(){
+			if (this.Sdt.IsPlaceHolder())
+				return false;
+			this.Sdt.ClearContentControl();
+			this.Sdt.ReplaceContentWithPlaceHolder();
+			this.OnChangeValue();
+			return true;
+		}, this);
 	};
 	
 	/**
