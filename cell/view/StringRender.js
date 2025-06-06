@@ -185,14 +185,6 @@
 				Style : (this.font.getBold() ? 1 : 0) | (this.font.getItalic() ? 2 : 0)
 			};
 		};
-		FragmentShaper.prototype.IsRtlDirection = function() {
-			let result = false;
-
-			if (this.stringRenderer && this.stringRenderer.drawState) {
-				result = this.stringRenderer.drawState.mainDirection === AscBidi.TYPE.R;
-			}
-			return result;
-		};
 		FragmentShaper.prototype.FlushGrapheme = function(grapheme, width, codePointCount, isLigature) {
 			if (codePointCount <= 0)
 				return;
@@ -1421,6 +1413,9 @@
 			} else if (align === AscCommon.align_Right) {
 				return AscCommon.align_Left;
 			}
+			else if(align === null) {
+				return AscCommon.align_Right;
+			}
 
 			return align;
 		};
@@ -1480,16 +1475,16 @@
 
 				this.stringRender._setFont(this.drawingCtx, prop.font);
 				this.drawingCtx.setFillStyle(prop.c || this.stringRender.textColor);
-				this.handleBidiFlow({
+				// this.handleBidiFlow({
+				// 	charIndex: i,
+				// 	charProp: charProp,
+				// 	fragmentProp: prop
+				// }, bidiType);
+				this.bidiFlow.add({
 					charIndex: i,
 					charProp: charProp,
 					fragmentProp: prop
 				}, bidiType);
-				// this.bidiFlow.add({
-				// 	charIndex: charProp.idx,
-				// 	charProp: charProp,
-				// 	fragmentProp: prop
-				// }, bidiType);
 				i++;
 			}
 		};
