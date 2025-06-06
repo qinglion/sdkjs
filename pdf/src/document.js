@@ -312,7 +312,7 @@ var CPresentation = CPresentation || function(){};
             let xInd    = xCenter - (oPage.W >> 1);
             let yInd    = -(this.Viewer.scrollY - this.Viewer.drawingPages[i].Y);
             
-            let nScale = this.Viewer.file.pages[i].W / this.Viewer.drawingPages[i].W;
+            let nScale = 1 / (this.Viewer.getDrawingPageScale(i) * this.Viewer.zoom);
 
             let shx = 0, shy = 0, sx = 1, sy = 1, tx = 0, ty = 0;
 
@@ -391,7 +391,7 @@ var CPresentation = CPresentation || function(){};
         let xInd    = xCenter - (oPage.W >> 1);
         let yInd    = -(this.Viewer.scrollY - this.Viewer.drawingPages[nPage].Y);
         
-        let nScale = this.Viewer.file.pages[nPage].W / this.Viewer.drawingPages[nPage].W;
+        let nScale = 1 / (this.Viewer.getDrawingPageScale(nPage) * this.Viewer.zoom);
 
         let shx = 0, shy = 0, sx = 1, sy = 1, tx = 0, ty = 0;
 
