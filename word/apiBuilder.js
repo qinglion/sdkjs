@@ -23807,7 +23807,7 @@
 	/**
 	 * Returns the user ID of the comment author.
 	 * @memberof ApiComment
-	 * @typeofeditors ["CDE"]
+	 * @typeofeditors ["CDE", "CPE"]
 	 * @returns {string}
 	 * @see office-js-api/Examples/{Editor}/ApiComment/Methods/GetUserId.js
 	 */
