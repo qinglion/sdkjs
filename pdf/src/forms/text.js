@@ -1601,6 +1601,8 @@
         }
     };
 	CTextField.prototype.EnterText = function(aChars, isOnCorrect) {
+        let doc = this.GetDocument();
+
         let nEnteredCharsCount = aChars.length;
 
         AscCommon.History.ForbidUnionPoint();
@@ -1621,9 +1623,12 @@
         
         if (!this.DoKeystrokeAction(aChars))
 			return false;
-
-		let doc = this.GetDocument();
-		aChars = AscWord.CTextFormFormat.prototype.GetBuffer(doc.event["change"]);
+		
+        let oKeystrokeTrigger = this.GetTrigger(AscPDF.FORMS_TRIGGERS_TYPES.Keystroke);
+        if (oKeystrokeTrigger) {
+            aChars = AscWord.CTextFormFormat.prototype.GetBuffer(doc.event["change"]);
+        }
+		
 		if (0 === aChars.length)
 			return false;
 		
@@ -1863,7 +1868,11 @@
         let oDoc = this.GetDocument();
         
         // set invoker field
-        oKeystrokeTrigger && oKeystrokeTrigger.SetCallerField(this);
+        if (!oKeystrokeTrigger) {
+            return true;
+        }
+
+        oKeystrokeTrigger.SetCallerField(this);
 
         let isCanEnter = true;
 
@@ -1884,7 +1893,7 @@
             return {nSelStart : preText.length, nSelEnd : preText.length + selectedText.length};
         }
 
-        let sValue = this.GetValue(true);
+        let sValue      = this.GetValue(true);
         let oSelRange   = GetSelectionRange(this.content.GetElement(0));
         let nSelStart   = oSelRange.nSelStart;
         let nSelEnd     = oSelRange.nSelEnd;
@@ -1912,22 +1921,21 @@
             }
         }
 
-        this.GetDocument().SetEvent({
-            "target":   this.GetFormApi(),
-            "value":    sValue,
-            "change":   aChars.map(function(char) {
-                return String.fromCharCode(char);
-            }).join(""),
-            "willCommit": !!isOnCommit,
-            "selStart": nSelStart,
-            "selEnd": nSelEnd
-        });
-
         if (!sValue && aChars.length == 0) {
             return isCanEnter;
         }
         if (oActionRunScript) {
-            oActionRunScript.RunScript();
+            oActionRunScript.RunScript({
+                "name":         AscPDF.CFormTrigger.GetName(AscPDF.FORMS_TRIGGERS_TYPES.Format),
+                "target":       this.GetFormApi(),
+                "value":        sValue,
+                "change":       aChars.map(function(char) {
+                    return String.fromCharCode(char);
+                }).join(""),
+                "willCommit":   !!isOnCommit,
+                "selStart":     nSelStart,
+                "selEnd":       nSelEnd
+            });
             isCanEnter = oDoc.event["rc"];
         }
 
@@ -1936,12 +1944,6 @@
     CTextField.prototype.DoValidateAction = function(value) {
         let oDoc = this.GetDocument();
 
-        oDoc.SetEvent({
-            "taget": this.GetFormApi(),
-            "rc": true,
-            "value": value
-        });
-
         let oValidateTrigger = this.GetTrigger(AscPDF.FORMS_TRIGGERS_TYPES.Validate);
         let oValidateScript = oValidateTrigger ? oValidateTrigger.GetActions()[0] : null;
 
@@ -1949,7 +1951,12 @@
             return true;
 
         oDoc.isOnValidate = true;
-        oValidateScript.RunScript();
+        oValidateScript.RunScript({
+            "name": AscPDF.CFormTrigger.GetName(AscPDF.FORMS_TRIGGERS_TYPES.Validate),
+            "taget": this.GetFormApi(),
+            "rc": true,
+            "value": value
+        });
         let isValid = oDoc.event["rc"];
         oDoc.isOnValidate = false;
 
@@ -1988,7 +1995,10 @@
 			this.content.Remove(nDirection, true, false, false, isCtrlKey);
 
         // скрипт keystroke мог поменять change значение, поэтому
-        this.InsertChars(AscWord.CTextFormFormat.prototype.GetBuffer(oDoc.event["change"].toString()));
+        let oKeystrokeTrigger = this.GetTrigger(AscPDF.FORMS_TRIGGERS_TYPES.Keystroke);
+        if (oKeystrokeTrigger) {
+            this.InsertChars(AscWord.CTextFormFormat.prototype.GetBuffer(oDoc.event["change"].toString()));
+        }
 
         if (false == AscCommon.History.Is_LastPointEmpty()) {
             this._bAutoShiftContentView = true && this.IsDoNotScroll() == false;
@@ -2182,6 +2192,10 @@
 		let selStart = doc.event["selStart"];
 		let selEnd   = doc.event["selEnd"];
 		
+        if (selStart == undefined || selEnd == undefined) {
+            return;
+        }
+        
 		let docPos = this.CalcDocPos(selStart, selEnd);
 		let startPos = docPos.startPos;
 		let endPos   = docPos.endPos;
