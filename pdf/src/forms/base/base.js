@@ -1794,14 +1794,22 @@
         this.SetWasChanged(true);
 
         let oWidget = this.IsWidget() ? this : this.GetKid(0);
-        if (oWidget.IsWidget()) {
-            if (!value && this.GetParentValue() == sOldDefValue) {
+        
+        const shouldUpdate = (
+            (!value && this.GetParentValue() === sOldDefValue) ||
+            (value && (
+                !this.GetParentValue() ||
+                (this.GetType() === AscPDF.FIELD_TYPES.checkbox && this.GetParentValue() === "Off")
+            ))
+        );
+
+        if (shouldUpdate) {
+            if (oWidget && oWidget.IsWidget()) {
                 oWidget.SetValue(value);
                 oWidget.Commit();
             }
-            else if (value && (!this.GetParentValue() || (this.GetType() == AscPDF.FIELD_TYPES.checkbox && this.GetParentValue() == "Off"))) {
-                oWidget.SetValue(value);
-                oWidget.Commit();
+            else {
+                this.SetParentValue(value);
             }
         }
 
