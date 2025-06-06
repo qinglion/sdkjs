@@ -1441,13 +1441,11 @@
 				if (oFormInfo["locked"])
 					oForm.SetLocked(Boolean(oFormInfo["locked"]));
 				
-				if (oFormInfo["curIdxs"])
+				if (Array.isArray(oFormInfo["curIdxs"]) && oFormInfo["curIdxs"].length != 0)
 				{
 					oForm.SetCurIdxs(oFormInfo["curIdxs"]);
 					if (oFormInfo["value"] != null)
-					{
-						oForm._value = oFormInfo["value"];
-					}
+						oForm.SetParentValue(oFormInfo["value"]);
 				}
 				else if (oFormInfo["value"] != null && oForm.GetType() != AscPDF.FIELD_TYPES.button)
 				{

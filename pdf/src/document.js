@@ -2496,31 +2496,48 @@ var CPresentation = CPresentation || function(){};
     };
 
     CPDFDoc.prototype.SetEvent = function(oEventPr) {
-        if (oEventPr["target"] != null && oEventPr["target"] != this.event["target"])
-            this.event["target"] = oEventPr["target"];
+        this.event["name"] = oEventPr["name"];
+        this.event["target"] = oEventPr["target"];
+        this.event["rc"] = oEventPr["rc"] != null ? oEventPr["rc"] : true;
+        this.event["change"] = oEventPr["change"];
+        this.event["willCommit"] = oEventPr["willCommit"];
+        this.event["willCommit"] = oEventPr["willCommit"];
+        this.event["selStart"] = oEventPr["selStart"];
+        this.event["selEnd"] = oEventPr["selEnd"];
 
-        if (oEventPr["rc"] != null)
-            this.event["rc"] = oEventPr["rc"];
-        else
-            this.event["rc"] = true;
-
-        if (oEventPr["change"] != null && oEventPr["change"] != this.event["change"])
-            this.event["change"] = oEventPr["change"];
+        if (this.event["name"] == "Calculate" && this.event["target"]) {
+            delete this.event["value"];
             
-        if (oEventPr["value"] != null && oEventPr["value"] != this.event["value"])
+            Object.defineProperty(this.event, "value", {
+                get: function () {
+                    return this.target.value;
+                },
+                set: function(value) {
+                    this.target.value = value;
+                },
+                configurable: true
+            });
+        }
+        else if (this.event["name"] == "Format" && this.event["target"]) {
+            delete this.event["value"];
+
+            Object.defineProperty(this.event, "value", {
+                get: function () {
+                    return this.target.value;
+                },
+                set: function(value) {
+                    let aAllWidgets = this["target"].field.GetAllWidgets();
+                    aAllWidgets.forEach(function(widget) {
+                        widget.SetFormatValue(value);
+                    });
+                },
+                configurable: true
+            });
+        }
+        else {
+            delete this.event["value"];
             this.event["value"] = oEventPr["value"];
-
-        if (oEventPr["willCommit"] != null)
-            this.event["willCommit"] = oEventPr["willCommit"];
-
-        if (oEventPr["willCommit"] != null)
-            this.event["willCommit"] = oEventPr["willCommit"];
-
-        if (oEventPr["selStart"] != null)
-            this.event["selStart"] = oEventPr["selStart"];
-
-        if (oEventPr["selEnd"] != null)
-            this.event["selEnd"] = oEventPr["selEnd"];
+        }
     };
     CPDFDoc.prototype.SetWarningInfo = function(oInfo) {
         this.warningInfo = oInfo;
