@@ -98,7 +98,7 @@ CInlineLevelSdt.prototype.Add = function(Item)
 	{
 		if (para_Tab === Item.Type)
 			return CParagraphContentWithParagraphLikeContent.prototype.Add.call(this, new AscWord.CRunSpace());
-		else if (Item.Type !== para_Text && Item.Type !== para_Space && (!(Item instanceof AscWord.CRunBreak) || !Item.IsLineBreak() || !this.IsMultiLineForm()))
+		else if (Item.Type !== para_Text && Item.Type !== para_Space && (!(Item instanceof AscWord.CRunBreak) || !Item.IsLineBreak() || (!this.IsMultiLineForm() && this.IsFixedForm())))
 			return;
 
 		oTextFormRun = this.MakeSingleRunElement(false);
@@ -3229,6 +3229,9 @@ CInlineLevelSdt.prototype.ConvertFormToFixed = function(nW, nH)
 		nW = Math.max(nW, 150 * g_dKoef_pt_to_mm);
 		nH = Math.max(nH, 22 * g_dKoef_pt_to_mm);
 	}
+	
+	// Удаляем переносы строк и все лишнее, т.к. изначально конвертим в однострочную форму
+	this.CorrectSingleLineFormContent();
 	
 	// Для билдера, чтобы мы могли конвертить форму, даже если она нигде не лежит
 	if (!oParent)
