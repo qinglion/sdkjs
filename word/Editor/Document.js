@@ -28232,6 +28232,10 @@ CDocument.prototype.RemoveCustomProperty = function(idx)
 	this.CustomProperties.RemoveProperty(idx)
 	this.FinalizeAction(true);
 };
+CDocument.prototype.IsHindiNumeral = function()
+{
+	return false;
+};
 
 function CDocumentSelectionState()
 {
