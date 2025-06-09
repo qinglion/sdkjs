@@ -2070,7 +2070,8 @@ function CDocument(DrawingDocument, isMainLogicDocument)
         Y       : 0,
         PageNum : 0
     };
-
+	
+	this.NumeralType = Asc.c_oNumeralType.arabic;
 
     // Класс для работы со статискикой документа
     this.Statistics = new CStatistics( this );
@@ -28232,9 +28233,13 @@ CDocument.prototype.RemoveCustomProperty = function(idx)
 	this.CustomProperties.RemoveProperty(idx)
 	this.FinalizeAction(true);
 };
-CDocument.prototype.IsHindiNumeral = function()
+CDocument.prototype.SetNumeralType = function(type)
 {
-	return false;
+	this.NumeralType = type;
+};
+CDocument.prototype.GetNumeralType = function()
+{
+	return this.NumeralType;
 };
 
 function CDocumentSelectionState()

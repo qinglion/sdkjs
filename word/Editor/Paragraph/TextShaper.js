@@ -315,7 +315,7 @@
 		let logicDocument = this.Paragraph ? this.Paragraph.GetLogicDocument() : undefined;
 		return (logicDocument
 			&& logicDocument.IsDocumentEditor()
-			&& logicDocument.IsHindiNumeral());
+			&& Asc.c_oNumeralType.hindi === logicDocument.GetNumeralType());
 	};
 	CParagraphTextShaper.prototype.private_HandleHindiDigit = function(oItem)
 	{
