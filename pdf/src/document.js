@@ -4274,13 +4274,8 @@ var CPresentation = CPresentation || function(){};
             isCanCut = false;
 
             // cant cut last page
-            if (this.Viewer.file.pages.length > 1) {
-                aSelectedPagesIdxs.forEach(function(idx) {
-                    let oPageInfo = _t.GetPageInfo(idx);
-                    if (false == oPageInfo.IsDeleteLock()) {
-                        isCanCut = true;
-                    }
-                });
+            if (false == Asc.editor.isRestrictionView() && Asc.editor.asc_CanRemovePages(aSelectedPagesIdxs)) {
+                isCanCut = true;
             }
         }
 

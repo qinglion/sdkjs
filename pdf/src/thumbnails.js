@@ -1056,7 +1056,6 @@
         }
     
         AscCommon.stopEvent(e);
-        Asc.editor.getPDFDoc().UpdateCopyCutState();
         
         return false;
     };
@@ -1206,6 +1205,8 @@
         this._ctrlPressed = false;
     
         if (e && e.preventDefault) e.preventDefault();
+
+        Asc.editor.getPDFDoc().UpdateCopyCutState();
         return false;
     };
     
