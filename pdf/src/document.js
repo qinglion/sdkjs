@@ -5225,13 +5225,16 @@ var CPresentation = CPresentation || function(){};
                 if (blipFill && blipFill.embed) {
                     embed = blipFill.embed;
                     const url = _this.Viewer.file.nativeFile["getImageBase64"](parseInt(embed.substring(3)));
-                    builderImage.BlipFill.RasterImageId = url;
-                    builderImage.Url = url;
                     delete builderImage.BlipFill.embed;
 
+                    builderImage.BlipFill.RasterImageId = url;
+                    builderImage.Url = url;
                     if(url.indexOf("data:") === 0) {
                         aResetBuilderImages.push(builderImage);
                         allImages.push(url);
+                    }
+                    else {
+                        builderImage.SetUrl(url);
                     }
                 }
             }
