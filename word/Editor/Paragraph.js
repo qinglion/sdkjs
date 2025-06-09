@@ -8616,12 +8616,6 @@ Paragraph.prototype.DrawSelectionOnPage = function(CurPage, clipInfo)
 					
 					drawSelectionState.beginRange(iRange);
 					
-					if (rangeEnd === this.Content.length - 1
-						&& this.GetLogicDocument()
-						&& this.GetLogicDocument().IsSelectParagraphEndMark
-						&& !this.GetLogicDocument().IsSelectParagraphEndMark())
-						--rangeEnd;
-					
 					for (let pos = rangeStart; pos <= rangeEnd; ++pos)
 					{
 						this.Content[pos].drawSelectionInRange(iLine, iRange, drawSelectionState);
@@ -9060,12 +9054,6 @@ Paragraph.prototype.GetSelectionBounds = function()
 				
 				if (StartPos > rangeEnd || EndPos < rangeStart)
 					continue;
-				
-				if (rangeEnd === this.Content.length - 1
-					&& this.GetLogicDocument()
-					&& this.GetLogicDocument().IsSelectParagraphEndMark
-					&& !this.GetLogicDocument().IsSelectParagraphEndMark())
-					--rangeEnd;
 				
 				drawSelectionState.beginRange(iRange);
 				for (var CurPos = rangeStart; CurPos <= rangeEnd; CurPos++)
