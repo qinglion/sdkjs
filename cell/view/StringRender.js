@@ -1322,11 +1322,11 @@
 						continue;
 					}
 					if (p.nl || p.hp) {
+						drawState.endLine();
 						y1 += asc_round(l.th * zoom);
 						l = self.lines[++n];
 						drawState.x = self.initStartX(i, l, x, maxWidth);
 						dx = computeWordDeltaX();
-						drawState.endLine();
 						drawState.beginLine(l, drawState.x, y);
 					}
 				}
