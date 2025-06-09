@@ -6730,7 +6730,17 @@ var CPresentation = CPresentation || function(){};
     CPDFDoc.prototype.TurnOnCheckChartSelection = function() {};
     CPDFDoc.prototype.UpdateRulers = function() {};
     CPDFDoc.prototype.UpdateSelection = function() {};
-    CPDFDoc.prototype.GetCurrentParagraph = function() {};
+    CPDFDoc.prototype.GetCurrentParagraph = function(ignoreSelection, returnSelectedArray, pr) {
+		let textController = this.getTextController();
+		if (!textController)
+			return null;
+		
+		let docContent = textController.GetDocContent();
+		if (!docContent)
+			return null;
+		
+		return docContent.GetCurrentParagraph(ignoreSelection, returnSelectedArray, pr);
+	};
     CPDFDoc.prototype.StopRecalculate = function() {};
     CPDFDoc.prototype.StopSpellCheck = function() {};
     CPDFDoc.prototype.Check_GraphicFrameRowHeight = function(oGrFrame) {
