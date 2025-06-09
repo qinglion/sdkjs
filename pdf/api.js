@@ -3107,15 +3107,6 @@
 		{
 			let paragraph = oDoc.GetCurrentParagraph(false, false, {FirstInSelection : true});
 			bidi = paragraph ? paragraph.GetParagraphBidi() : undefined;
-			
-			oParaPr.Jc = undefined;
-		}
-		else if (bidi)
-		{
-			if (AscCommon.align_Left === oParaPr.Jc)
-				oParaPr.Jc = AscCommon.align_Right;
-			else if (AscCommon.align_Right === oParaPr.Jc)
-				oParaPr.Jc = AscCommon.align_Left;
 		}
 		
 		this.sendEvent("asc_onTextDirection", bidi);
