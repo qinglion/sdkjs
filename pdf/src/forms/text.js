@@ -1953,7 +1953,7 @@
         oDoc.isOnValidate = true;
         oValidateScript.RunScript({
             "name": AscPDF.CFormTrigger.GetName(AscPDF.FORMS_TRIGGERS_TYPES.Validate),
-            "taget": this.GetFormApi(),
+            "target": this.GetFormApi(),
             "rc": true,
             "value": value
         });
