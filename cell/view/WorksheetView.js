@@ -6315,7 +6315,7 @@
 		if (this.getRightToLeft()) {
 			rect._x = this.getCtxWidth(ctx) - rect._x - rect._width;
 		}
-		rect._x = this._calcTextHorizPos(rect._x, rect._x + rect._width, tm, cellHA);
+		rect._x = this._calcTextHorizPos(rect._x, rect._x + rect._width, tm, cellHA, true);
 		rect._y = this._calcTextVertPos(rect._y, rect._height, bl, tm, align.getAlignVertical());
 		var dScale = asc_getcvt(0, 3, this._getPPIX());
 		rect._x *= dScale;
@@ -10353,8 +10353,8 @@
         return tm;
     };
 
-    WorksheetView.prototype._calcTextHorizPos = function (x1, x2, tm, align) {
-        if (this.getRightToLeft()) {
+    WorksheetView.prototype._calcTextHorizPos = function (x1, x2, tm, align, skipRtl) {
+        if (this.getRightToLeft() && !skipRtl) {
 			if (align === AscCommon.align_Right) {
 				align = AscCommon.align_Left;
 			} else if (align === AscCommon.align_Left) {
