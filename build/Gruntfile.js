@@ -271,7 +271,7 @@ module.exports = function(grunt) {
 		`--define=window.AscCommon.g_cIsBeta='${beta}'`,
 		'--rewrite_polyfills=true',
 		'--warning_level=QUIET',
-		'--language_out=ECMASCRIPT_2018',
+		'--language_out=ECMASCRIPT5',
 		'--compilation_level=' + level,
 		...sdkmin.map((file) => ('--js=' + file)),
 		`--chunk=${outmin}:${sdkmin.length}`,
