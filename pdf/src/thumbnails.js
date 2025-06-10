@@ -1169,10 +1169,11 @@
                     let idx = this.selectedPages.indexOf(dp.num);
                     if (idx === -1) {
                         this.selectedPages.push(dp.num);
-                    } else {
+                        this.repaint();
+                    } else if (this.selectedPages.length > 1) {
                         this.selectedPages.splice(idx, 1);
+                        this.repaint();
                     }
-                    this.repaint();
                 } else {
                     // Обычный клик без модификаторов
                     if (!this.selectedPages.includes(dp.num) || this.selectedPages.length > 1) {
