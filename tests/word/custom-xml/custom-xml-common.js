@@ -204,7 +204,9 @@ const oCustomXMLs		= {
   <otherbook id="4">
 	<title lang="en">-</title>
     <author>-</author>
-    <year>-</year>
+    <year>
+		<title>One</title>
+	</year>
     <price>0.00</price>
   </otherbook>
 </bookstore>`

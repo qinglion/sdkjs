@@ -610,6 +610,44 @@ $(function () {
 			assert.strictEqual(node.getAttribute("id"), ids[i], "Check '/bookstore/book/@category' node[" + i + "]");
 		}
 	});
+	QUnit.test("Check //bookstore", async function (assert)
+	{
+		let xml = CreateCustomXMLForDocument(oCustomXMLs.xPath);
+		let nodes = xml.findElementByXPath('//bookstore');
+		assert.strictEqual(nodes.length, 1, "Check '//bookstore' count of nodes");
+	});
+	QUnit.test("Check //title", async function (assert)
+	{
+		let xml = CreateCustomXMLForDocument(oCustomXMLs.xPath);
+		let nodes = xml.findElementByXPath('//title');
+		assert.strictEqual(nodes.length, 5, "Check '//title' count of nodes");
+	});
+	QUnit.test("Check /bookstore/book//title", async function (assert)
+	{
+		let xml = CreateCustomXMLForDocument(oCustomXMLs.xPath);
+		let nodes = xml.findElementByXPath('/bookstore/book//title');
+		assert.strictEqual(nodes.length, 3, "Check '/bookstore/book//title' count of nodes");
+	});
+	QUnit.test("Check /bookstore/otherbook//title", async function (assert)
+	{
+		let xml = CreateCustomXMLForDocument(oCustomXMLs.xPath);
+		let nodes = xml.findElementByXPath('/bookstore/otherbook//title');
+		assert.strictEqual(nodes.length, 2, "Check '/bookstore/otherbook//title' count of nodes");
+	});
+	QUnit.test("Check getXPath un-unique", async function (assert)
+	{
+		let xml = CreateCustomXMLForDocument(oCustomXMLs.xPath);
+		let nodes = xml.findElementByXPath('/bookstore/book');
+		let node = nodes[1];
 
+		assert.strictEqual(node.getXPath(), "/bookstore/book[2]", "Check get xPath is /bookstore/book[2]");
+	});
+	QUnit.test("Check getXPath unique", async function (assert)
+	{
+		let xml = CreateCustomXMLForDocument(oCustomXMLs.xPath);
+		let nodes = xml.findElementByXPath('/bookstore/otherbook/author');
+		let node = nodes[0];
 
+		assert.strictEqual(node.getXPath(), "/bookstore/otherbook/author", "Check get xPath is /bookstore/otherbook/author");
+	});
 });

@@ -231,17 +231,20 @@
 
 		function parseSteps(xpath) {
 			let steps = [];
-			let parts = xpath.split('/');
-			let deep = false;
+
+			const marker = '#DOUBLE_SLASH#';
+			let temp = xpath.replace(/\/\//g, `/${marker}/`);
+			let parts = temp.split('/').filter(function(el) {return el !== ""});
+			let deepNext = false;
 
 			for (let i = 0; i < parts.length; i++) {
 				let part = parts[i];
-				if (part === '') {
-					deep = true;
+				if (part === marker) {
+					deepNext = true;
 					continue;
 				}
-				steps.push({ part, deep });
-				deep = false;
+				steps.push({ part, deepNext });
+				deepNext = false;
 			}
 			return steps;
 		}
@@ -253,8 +256,9 @@
 			
 			let step = steps[0];
 			let part = step.part;
-			let deep = step.deep;
+			let deep = step.deepNext;
 			let restSteps = steps.slice(1);
+
 			let tagName = null;
 			let index = null;
 
@@ -474,9 +478,39 @@
 		{
 			return this.text;
 		};
+		this.getXPath = function ()
+		{
+			let parent		= this.getParent();
+			let parentText	= parent ? parent.getXPath() + "/" : "/";
+			let curNodeName = this.getNodeName();
+			let count		= parent ? parent.getPosOfChilderNode(this) : null;
+			let textOfCount = count !== null ? "[" + count + "]" : "";
+
+			if (!curNodeName)
+				return '';
+
+			return parentText + curNodeName + textOfCount;
+		};
 		this.getChildNodesCount = function()
 		{
 			return this.childNodes.length;
+		};
+		this.getPosOfChilderNode = function(childNode)
+		{
+			if (!childNode || !(childNode instanceof CustomXmlContent) || this.childNodes.length <= 1)
+				return null;
+
+			let childNameNodes = this.childNodes.filter(function(node){return node.nodeName === childNode.nodeName});
+
+			if (childNameNodes.length <= 1)
+				return null;
+
+			for (let i = 0; i < childNameNodes.length; i++)
+			{
+				let node = childNameNodes[i];
+				if (node === childNode)
+					return i + 1;
+			}
 		};
 		this.deleteChild = function (childNode)
 		{
