@@ -3371,6 +3371,10 @@ function CDrawingDocument()
 		if (oDemonstrationManager && oDemonstrationManager.Mode) {
 			const oSlide = oDemonstrationManager.GetCurrentSlide();
 			if (oSlide && oSlide.checkImageDraw(sCheckImage)) {
+				const oPlayer = oSlide.getAnimationPlayer();
+				if (oPlayer) {
+					oPlayer.clearImageCache(sCheckImage);
+				}
 				oDemonstrationManager.Resize(true);
 			}
 		}
