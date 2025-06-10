@@ -178,6 +178,9 @@ var CPresentation = CPresentation || function(){};
 		this.History = new AscPDF.History(this);
         this.History.Set_LogicDocument(this);
 		this.pagesContentChanges = new AscCommon.CContentChanges();
+        this.locks = {
+            merge: new AscPDF.PropLocker(this.GetId())
+        };
 
         if (AscCommon.History)
         {
@@ -249,6 +252,14 @@ var CPresentation = CPresentation || function(){};
 		}
 	});
 
+    CPDFDoc.prototype.IsMergeLock = function() {
+        const lockType = this.locks.merge.Lock.Get_Type();
+        if (lockType !== AscCommon.c_oAscLockTypes.kLockTypeNone && lockType !== AscCommon.c_oAscLockTypes.kLockTypeMine) {
+            return true;
+        }
+
+        return false;
+	};
 	CPDFDoc.prototype.RecalculateAll = function() {
 		let fontMap = {};
 		
@@ -537,6 +548,8 @@ var CPresentation = CPresentation || function(){};
 				drawing.AddToRedraw();
 			}
 		});
+
+        this.UpdateCopyCutState();
     };
     CPDFDoc.prototype.IsEditFieldsMode = function() {
         return false == Asc.editor.isRestrictionView();
@@ -3235,10 +3248,6 @@ var CPresentation = CPresentation || function(){};
 		}
 		
 		this.StartAction(nDescription);
-        if ([AscDFH.historydescription_Pdf_ExecActions, AscDFH.historydescription_Pdf_ClickCheckbox, AscDFH.historydescription_Pdf_FieldCommit, AscDFH.historydescription_Pdf_FieldImportImage].includes(this.GetActionDescription())) {
-            this.CheckActionLock();
-        }
-
 		let result = fAction.call(oThis);
 		this.FinalizeAction(true);
 		return result;
@@ -3292,6 +3301,10 @@ var CPresentation = CPresentation || function(){};
             // this.Action.Redraw.Start    = undefined;
             // this.Action.Redraw.End      = undefined;
             this.Action.Additional      = {};
+        }
+
+        if ([AscDFH.historydescription_Pdf_ExecActions, AscDFH.historydescription_Pdf_ClickCheckbox, AscDFH.historydescription_Pdf_FieldCommit, AscDFH.historydescription_Pdf_FieldImportImage, AscDFH.historydescription_Document_PasteHotKey].includes(nDescription)) {
+            this.CheckActionLock();
         }
     };
 
@@ -4231,6 +4244,11 @@ var CPresentation = CPresentation || function(){};
     CPDFDoc.prototype.UpdateCopyCutState = function() {
         let oCanCopyCut = this.CanCopyCut();
         editor.sync_CanCopyCutCallback(oCanCopyCut.copy, oCanCopyCut.cut);
+
+        let oThumbnails = this.GetThumbnails();
+        if (oThumbnails && oThumbnails.isInFocus) {
+            Asc.editor.sendEvent('asc_onCanPastePage', !this.IsMergeLock() && !Asc.editor.isRestrictionView());
+        }
     };
     CPDFDoc.prototype.CanCopyCut = function() {
         let _t              = this;

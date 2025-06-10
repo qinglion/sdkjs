@@ -1206,7 +1206,9 @@
     
         if (e && e.preventDefault) e.preventDefault();
 
-        Asc.editor.getPDFDoc().UpdateCopyCutState();
+        const oDoc = Asc.editor.getPDFDoc();
+        oDoc.UpdateCopyCutState();
+        
         return false;
     };
     
