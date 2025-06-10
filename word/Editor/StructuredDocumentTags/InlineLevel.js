@@ -3917,7 +3917,8 @@ CInlineLevelSdt.prototype.SetInnerText = function(sText)
 CInlineLevelSdt.prototype.GetInnerText = function()
 {
 	var oText = {
-		Text: ""
+		Text: "",
+		NewLineSeparator : "\r\n"
 	};
 
 	this.Get_Text(oText);
