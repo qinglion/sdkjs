@@ -1211,6 +1211,16 @@
         
         return false;
     };
+
+    CDocument.prototype.selectAll = function() {
+        this.resetSelection();
+        
+        for (let i = 0; i < this.pages.length; i++) {
+            this.selectedPages.push(i);
+        }
+
+        this.repaint();
+    };
     
     // Create "ghost" for dragging
     CDocument.prototype.prepareDragGhost = function(dp, countPages) {

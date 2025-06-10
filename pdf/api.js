@@ -4079,12 +4079,16 @@
 		let oDoc			= oViewer.getPDFDoc();
 		let oActiveForm		= oDoc.activeForm;
         let oActiveAnnot	= oDoc.mouseDownAnnot;
+		let oThumbnails		= oDoc.GetThumbnails();
 
 		if (oActiveForm && oActiveForm.IsCanEditText()) {
 			oActiveForm.SelectAllText();
 		}
 		else if (oActiveAnnot && oActiveAnnot.IsFreeText() && oActiveAnnot.IsInTextBox()) {
             oActiveAnnot.SelectAllText();
+		}
+		else if (oThumbnails && oThumbnails.isInFocus) {
+			oThumbnails.selectAll();
 		}
 		else {
 			oViewer.file.selectAll();

@@ -7123,7 +7123,14 @@ var CPresentation = CPresentation || function(){};
                 break;
             }
             case Asc.c_oAscDocumentShortcutType.EditSelectAll: {
-                this.SelectAll();
+                let oThumbnails = this.GetThumbnails();
+                if (oThumbnails && oThumbnails.isInFocus) {
+                    oThumbnails.selectAll();
+                }
+                else {
+                    this.SelectAll();
+                }
+                
                 result = true;
                 break;
             }
