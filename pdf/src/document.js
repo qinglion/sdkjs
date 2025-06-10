@@ -718,29 +718,29 @@ var CPresentation = CPresentation || function(){};
 
             // flags
             if (aParentsInfo[i]["editable"])
-                oParent.SetEditable(true);
+                oParent.SetEditable && oParent.SetEditable(true);
             if (aParentsInfo[i]["readOnly"])
-                oParent.SetReadOnly(true);
+                oParent.SetReadOnly && oParent.SetReadOnly(true);
             if (aParentsInfo[i]["multiline"])
-                oParent.SetMultiline(true);
+                oParent.SetMultiline && oParent.SetMultiline(true);
             if (aParentsInfo[i]["comb"])
-                oParent.SetComb(true);
+                oParent.SetComb && oParent.SetComb(true);
             if (aParentsInfo[i]["maxLen"])
-                oParent.SetCharLimit(aParentsInfo[i]["maxLen"]);
+                oParent.SetCharLimit && oParent.SetCharLimit(aParentsInfo[i]["maxLen"]);
             if (aParentsInfo[i]["required"])
-                oParent.SetRequired(true);
+                oParent.SetRequired && oParent.SetRequired(true);
             if (aParentsInfo[i]["commitOnSelChange"])
-                oParent.SetCommitOnSelChange(true);
+                oParent.SetCommitOnSelChange && oParent.SetCommitOnSelChange(true);
             if (aParentsInfo[i]["NoToggleToOff"])
-                oParent.SetNoToggleToOff(true);
+                oParent.SetNoToggleToOff && oParent.SetNoToggleToOff(true);
             if (aParentsInfo[i]["radiosInUnison"])
-                oParent.SetRadiosInUnison(true);
+                oParent.SetRadiosInUnison && oParent.SetRadiosInUnison(true);
             if (aParentsInfo[i]["doNotScroll"])
-                oParent.SetDoNotScroll(true);
+                oParent.SetDoNotScroll && oParent.SetDoNotScroll(true);
             if (aParentsInfo[i]["multipleSelection"])
-                oParent.SetMultipleSelection(true);
+                oParent.SetMultipleSelection && oParent.SetMultipleSelection(true);
             if (aParentsInfo[i]["password"])
-                oParent.SetPassword(true);
+                oParent.SetPassword && oParent.SetPassword(true);
 
             AscPDF.ReadFieldActions(oParent, aParentsInfo[i]['AA']);
         }
