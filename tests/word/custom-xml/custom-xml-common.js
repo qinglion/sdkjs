@@ -181,35 +181,7 @@ const oCustomXMLs		= {
 	'picture': "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<documentData xmlns=\"http://example.com/picture\"><simpleText>" + oCustomXMLData.onePicture + "</simpleText></documentData>\"",
 	'notValidData': oCustomXMLData.onePicture,
 	'checkboxTrueAnotherXML': "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<weather>" + oCustomXMLData.checkboxTrue + "</weather>",
-	'xPath': `<?xml version="1.0" encoding="UTF-8"?>
-<bookstore>
-  <book category="classic" id="1">
-	<title lang="en">Great Expectations</title>
-	<author>Charles Dickens</author>
-	<year>1861</year>
-	<price>15.00</price>
-  </book>
-  <book category="classic" id="2">
-    <title lang="en">Moby-Dick</title>
-    <author>Herman Melville</author>
-    <year>1851</year>
-    <price>18.50</price>
-  </book>
-  <book category="classic" id="3">
-    <title lang="en">Crime and Punishment</title>
-    <author>Fyodor Dostoevsky</author>
-    <year>1866</year>
-    <price>20.00</price>
-  </book>
-  <otherbook id="4">
-	<title lang="en">-</title>
-    <author>-</author>
-    <year>
-		<title>One</title>
-	</year>
-    <price>0.00</price>
-  </otherbook>
-</bookstore>`
+	'xPath': "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<bookstore>\n  <book category=\"classic\" id=\"1\">\n	<title lang=\"en\">Great Expectations</title>\n	<author>Charles Dickens</author>\n	<year>1861</year>\n	<price>15.00</price>\n  </book>\n  <book category=\"classic\" id=\"2\">\n    <title lang=\"en\">Moby-Dick</title>\n    <author>Herman Melville</author>\n    <year>1851</year>\n    <price>18.50</price>\n  </book>\n  <book category=\"classic\" id=\"3\">\n    <title lang=\"en\">Crime and Punishment</title>\n    <author>Fyodor Dostoevsky</author>\n    <year>1866</year>\n    <price>20.00</price>\n  </book>\n  <otherbook id=\"4\">\n	<title lang=\"en\">-</title>\n    <author>-</author>\n    <year>\n		<title>One</title>\n	</year>\n    <price>0.00</price>\n  </otherbook>\n</bookstore>"
 }
 
 function CreateContentControl(isInline, nPos)

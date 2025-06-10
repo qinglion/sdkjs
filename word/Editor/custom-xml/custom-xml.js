@@ -233,7 +233,7 @@
 			let steps = [];
 
 			const marker = '#DOUBLE_SLASH#';
-			let temp = xpath.replace(/\/\//g, `/${marker}/`);
+			let temp = xpath.replace(/\/\//g, function() {return '/' + marker + '/'});
 			let parts = temp.split('/').filter(function(el) {return el !== ""});
 			let deepNext = false;
 
