@@ -549,4 +549,67 @@ $(function () {
 		);
 	});
 
+	QUnit.module("XPath");
+
+	QUnit.test("Check /bookstore/book", async function (assert)
+	{
+		let xml = CreateCustomXMLForDocument(oCustomXMLs.xPath);
+		let nodes = xml.findElementByXPath('/bookstore/book');
+		assert.strictEqual(nodes.length, 3, "Check '/bookstore/book' count of nodes");
+
+		let ids = ["1", "2", "3"];
+		for (let i = 0; i < nodes.length; i++)
+		{
+			let node = nodes[i];
+			assert.strictEqual(node.getAttribute("id"), ids[i], "Check '/bookstore/book' node[" + i + "]");
+		}
+	});
+	QUnit.test("Check /bookstore/book/title", async function (assert)
+	{
+		let xml = CreateCustomXMLForDocument(oCustomXMLs.xPath);
+		let nodes = xml.findElementByXPath('/bookstore/book/title');
+		assert.strictEqual(nodes.length, 3, "Check '/bookstore/book/title' count of nodes");
+
+		let ids = ["Great Expectations", "Moby-Dick", "Crime and Punishment"];
+		for (let i = 0; i < nodes.length; i++)
+		{
+			let node = nodes[i];
+			assert.strictEqual(node.getText(), ids[i], "Check '/bookstore/book/title' node[" + i + "]");
+		}
+	});
+	QUnit.test("Check /bookstore/book[2]/author", async function (assert)
+	{
+		let xml = CreateCustomXMLForDocument(oCustomXMLs.xPath);
+		let nodes = xml.findElementByXPath('/bookstore/book[2]/author');
+		assert.strictEqual(nodes.length, 1, "Check '/bookstore/book[2]/author' count of nodes");
+		assert.strictEqual(nodes[0].getText(), 'Herman Melville', "Check '/bookstore/book[2]/author' node");
+	});
+	QUnit.test("Check /bookstore/*", async function (assert)
+	{
+		let xml = CreateCustomXMLForDocument(oCustomXMLs.xPath);
+		let nodes = xml.findElementByXPath('/bookstore/*');
+		assert.strictEqual(nodes.length, 4, "Check '/bookstore/*' count of nodes");
+
+		let ids = ["1", "2", "3", "4"];
+		for (let i = 0; i < nodes.length; i++)
+		{
+			let node = nodes[i];
+			assert.strictEqual(node.getAttribute("id"), ids[i], "Check '/bookstore/*' node[" + i + "]");
+		}
+	});
+	QUnit.test("Check /bookstore/book/@category", async function (assert)
+	{
+		let xml = CreateCustomXMLForDocument(oCustomXMLs.xPath);
+		let nodes = xml.findElementByXPath('/bookstore/book/@category');
+		assert.strictEqual(nodes.length, 3, "Check '/bookstore/book/@category' count of nodes");
+
+		let ids = ["1", "2", "3", "4"];
+		for (let i = 0; i < nodes.length; i++)
+		{
+			let node = nodes[i];
+			assert.strictEqual(node.getAttribute("id"), ids[i], "Check '/bookstore/book/@category' node[" + i + "]");
+		}
+	});
+
+
 });

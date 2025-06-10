@@ -181,6 +181,33 @@ const oCustomXMLs		= {
 	'picture': "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<documentData xmlns=\"http://example.com/picture\"><simpleText>" + oCustomXMLData.onePicture + "</simpleText></documentData>\"",
 	'notValidData': oCustomXMLData.onePicture,
 	'checkboxTrueAnotherXML': "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<weather>" + oCustomXMLData.checkboxTrue + "</weather>",
+	'xPath': `<?xml version="1.0" encoding="UTF-8"?>
+<bookstore>
+  <book category="classic" id="1">
+	<title lang="en">Great Expectations</title>
+	<author>Charles Dickens</author>
+	<year>1861</year>
+	<price>15.00</price>
+  </book>
+  <book category="classic" id="2">
+    <title lang="en">Moby-Dick</title>
+    <author>Herman Melville</author>
+    <year>1851</year>
+    <price>18.50</price>
+  </book>
+  <book category="classic" id="3">
+    <title lang="en">Crime and Punishment</title>
+    <author>Fyodor Dostoevsky</author>
+    <year>1866</year>
+    <price>20.00</price>
+  </book>
+  <otherbook id="4">
+	<title lang="en">-</title>
+    <author>-</author>
+    <year>-</year>
+    <price>0.00</price>
+  </otherbook>
+</bookstore>`
 }
 
 function CreateContentControl(isInline, nPos)
@@ -205,7 +232,7 @@ function CreateDataBindingForCC(contentControl, prefix, itemId, xpath, checkSum)
 }
 function CreateCustomXMLForDocument(strContent, ItemId, Uri)
 {
-	let oXML					= new AscWord.CustomXml();
+	let oXML = new AscWord.CustomXml();
 	
 	oXML.addContentByXMLString(
 		strContent !== undefined
@@ -213,15 +240,16 @@ function CreateCustomXMLForDocument(strContent, ItemId, Uri)
 			: oCustomXMLs.withoutContent
 	);
 	
-	oXML.itemId		= ItemId === undefined
+	oXML.itemId = ItemId === undefined
 		? "{694325A8-B1C9-407B-A2C2-E2DD1740AA5E}"
 		: ItemId;
 	
-	oXML.uri		= Uri === undefined
+	oXML.uri = Uri === undefined
 		? ['http://example.com/picture']
 		: Uri;
 	
 	oXMLManager.add(oXML);
+	return oXML;
 }
 function SetDataToContentControl (oCC, strData)
 {
