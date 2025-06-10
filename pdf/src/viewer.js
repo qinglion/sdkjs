@@ -2203,8 +2203,10 @@
 
 		this.onMouseDown = function(e)
 		{
-			if (oThis.thumbnails) {
+			let oDoc = oThis.getPDFDoc();
+			if (oThis.thumbnails && oThis.thumbnails.isInFocus) {
 				oThis.thumbnails.isInFocus = false;
+				Asc.editor.sendEvent('asc_onCanPastePage', true);
 			}
 
 			Asc.editor.checkInterfaceElementBlur();
@@ -2224,7 +2226,6 @@
 			oThis.isFocusOnThumbnails = false;
 			AscCommon.stopEvent(e);
 
-			let oDoc = oThis.getPDFDoc();
 			oDoc.HideComments();
 
 			var mouseButton = AscCommon.getMouseButton(e || {});

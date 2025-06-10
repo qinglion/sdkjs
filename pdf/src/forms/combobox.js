@@ -678,7 +678,14 @@
         return [];
     };
     CComboBoxField.prototype.SyncValue = function() {
-        this.SetCurIdxs(this.GetParentCurIdxs());
+        const aCurIdxs = this.GetParentCurIdxs();
+        if (aCurIdxs.length != 0) {
+            this.SetCurIdxs(aCurIdxs);
+        }
+        else {
+            this.SetValue(this.GetParentValue());
+        }
+
         this.SetFormatValue(this.GetFormatValue());
         
         this.SetNeedRecalc(true);
