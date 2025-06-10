@@ -6301,9 +6301,7 @@
 	 */
 	ApiCustomXmlNode.prototype.GetXPath = function()
 	{
-		let parent		= this.GetParent();
-		let parentText	= parent ? parent.GetXPath() + "/" : "/";
-		return parentText + this.CustomXmlContent.getNodeName();
+		return this.CustomXmlContent.getXPath();
 	};
 
 	/**
