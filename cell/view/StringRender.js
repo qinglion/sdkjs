@@ -262,6 +262,8 @@
 			this.drawingCtx = drawingCtx;
 			this.fragmentShaper = new FragmentShaper();
 
+			this.drawState = new TableCellDrawState(this);
+
 			/** @type Array */
 			this.fragments = undefined;
 
@@ -950,8 +952,7 @@
 			var tw = 0, nlPos = 0, isEastAsian, hpPos = undefined, isSP_ = true, delta = 0;
 			let frShaper = this.fragmentShaper;
 
-			this.drawState = new TableCellDrawState(this);
-			this.drawState.init(null, this.flags, this.angle);
+			this.drawState.reset(null, null, this.flags, this.angle);
 			
 			function measureFragment(_chars, format) {
 				
@@ -1159,18 +1160,18 @@
 		 */
 
 		StringRender.prototype._doRender = function (drawingCtx, x, y, maxWidth, textColor) {
-			var self = this;
-			var ctx = drawingCtx || this.drawingCtx;
-			var zoom = ctx.getZoom();
-			var ppiy = ctx.getPPIY();
-			var align = this.getEffectiveAlign();
-			var i, j, p, p_, strBeg;
-			var n = 0, l = this.lines[0], x1 = l ? this.initStartX(0, l, x, maxWidth) : 0, y1 = y, dx = l ? computeWordDeltaX() : 0;
+			let self = this;
+			let ctx = drawingCtx || this.drawingCtx;
+			let zoom = ctx.getZoom();
+			let ppiy = ctx.getPPIY();
+			this.drawState.reset(drawingCtx, textColor, this.flags, this.angle);
+			let drawState = this.drawState;
+			let align = this.getEffectiveAlign();
+			let i, j, p, p_, strBeg;
+			let n = 0, l = this.lines[0], x1 = l ? this.initStartX(0, l, x, maxWidth) : 0, y1 = y, dx = l ? computeWordDeltaX() : 0;
 
 			ctx.setTextRotated(!!this.angle);
 			self.textColor = textColor;
-			var drawState = new TableCellDrawState(this, drawingCtx);
-			drawState.init(textColor, this.flags, this.angle);
 
 
 			function computeWordDeltaX() {
@@ -1321,11 +1322,11 @@
 						continue;
 					}
 					if (p.nl || p.hp) {
+						drawState.endLine();
 						y1 += asc_round(l.th * zoom);
 						l = self.lines[++n];
 						drawState.x = self.initStartX(i, l, x, maxWidth);
 						dx = computeWordDeltaX();
-						drawState.endLine();
 						drawState.beginLine(l, drawState.x, y);
 					}
 				}
@@ -1382,27 +1383,7 @@
 		};
 		StringRender.prototype.getEffectiveAlign = function() {
 			let align = this.flags ? this.flags.textAlign : null;
-			let isRtl = false;
-
-
-			if (this.drawState) {
-				isRtl = this.drawState.mainDirection === AscBidi.TYPE.R;
-			} else if (this.flags) {
-				let readingOrder = this.flags.getReadingOrder();
-				if (readingOrder === 2) {
-					isRtl = true;
-				} else if (readingOrder === 0 || readingOrder === null) {
-					for (let i = 0; i < this.chars.length; ++i) {
-						let type = AscBidi.getType(this.chars[i]);
-						if (type & AscBidi.FLAG.STRONG) {
-							if (type & AscBidi.FLAG.RTL) {
-								isRtl = true;
-							}
-							break;
-						}
-					}
-				}
-			}
+			let isRtl = this.drawState.getMainDirection() === AscBidi.TYPE.R;
 
 			if (!isRtl) {
 				return align;
@@ -1424,28 +1405,21 @@
 		window["AscCommonExcel"].StringRender = StringRender;
 
 
-		function TableCellDrawState(stringRender, drawingCtx) {
+		function TableCellDrawState(stringRender) {
 			this.stringRender = stringRender;
-			this.drawingCtx = drawingCtx || stringRender.drawingCtx;
-
 			this.bidiFlow = new AscWord.BidiFlow(this);
-
+			this.drawingCtx = this.stringRender.drawingCtx;
 			this.x = 0;
 			this.y = 0;
 			this.baseY = 0;
 			this.zoom = 1;
 			this.ppiy = 96;
-
 			this.currentFont = null;
 			this.currentColor = null;
 			this.textColor = null;
 			this.angle = 0;
-
-			this.mainDirection = null;
 			this.currentLine = null;
-
 			this.startIdx = 0;
-
 		}
 
 
@@ -1459,8 +1433,7 @@
 			if (this.stringRender.codesHypSp[char]) {
 				return AscBidi.TYPE.WS;
 			}
-			let type = AscBidi.getType(char);
-			return type;
+			return  AscBidi.getType(char);
 		};
 		TableCellDrawState.prototype.beginFragment = function(begin, end, prop) {
 			let i = begin;
@@ -1518,34 +1491,35 @@
 			this.y = y;
 			this.baseY = y;
 
-			this.bidiFlow.begin(this.mainDirection === AscBidi.TYPE.R);
+			this.bidiFlow.begin(this.getMainDirection() === AscBidi.TYPE.R);
 		};
 
 
 
-		TableCellDrawState.prototype.init = function(textColor, flags, angle) {
-			this.textColor = textColor;
+		TableCellDrawState.prototype.reset = function(drawingCtx, textColor, flags, angle) {
+			this.drawingCtx = drawingCtx || this.stringRender.drawingCtx;
+			this.x = 0;
+			this.y = 0;
+			this.baseY = 0;
+			this.currentFont = null;
+			this.currentColor = null;
+			this.currentLine = null;
+			this.startIdx = 0;
+			this.textColor = textColor || null;
 			this.angle = angle || 0;
 			this.zoom = this.drawingCtx.getZoom();
 			this.ppiy = this.drawingCtx.getPPIY();
-
-			let readingOrder = flags ? flags.getReadingOrder() : null;
-			this.mainDirection = this.determineMainDirection(readingOrder);
 		};
-
-		TableCellDrawState.prototype.determineMainDirection = function(readingOrder) {
-
+		TableCellDrawState.prototype.getMainDirection = function() {
+			let readingOrder = this.stringRender.flags ? this.stringRender.flags.getReadingOrder() : null;
 			if (readingOrder === 1) {
 				return AscBidi.TYPE.L;
 			} else if (readingOrder === 2) {
 				return AscBidi.TYPE.R;
 			}
-
 			for (let i = 0; i < this.stringRender.chars.length; ++i) {
 				let char = this.stringRender.chars[i];
 				let type = AscBidi.getType(char);
-
-
 				if (type & AscBidi.FLAG.STRONG) {
 					if (type & AscBidi.FLAG.RTL) {
 						return AscBidi.TYPE.R;
@@ -1557,7 +1531,6 @@
 
 			return AscBidi.TYPE.L;
 		};
-
 	}
 
 

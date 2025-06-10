@@ -1056,7 +1056,6 @@
         }
     
         AscCommon.stopEvent(e);
-        Asc.editor.getPDFDoc().UpdateCopyCutState();
         
         return false;
     };
@@ -1170,10 +1169,11 @@
                     let idx = this.selectedPages.indexOf(dp.num);
                     if (idx === -1) {
                         this.selectedPages.push(dp.num);
-                    } else {
+                        this.repaint();
+                    } else if (this.selectedPages.length > 1) {
                         this.selectedPages.splice(idx, 1);
+                        this.repaint();
                     }
-                    this.repaint();
                 } else {
                     // Обычный клик без модификаторов
                     if (!this.selectedPages.includes(dp.num) || this.selectedPages.length > 1) {
@@ -1206,7 +1206,21 @@
         this._ctrlPressed = false;
     
         if (e && e.preventDefault) e.preventDefault();
+
+        const oDoc = Asc.editor.getPDFDoc();
+        oDoc.UpdateCopyCutState();
+        
         return false;
+    };
+
+    CDocument.prototype.selectAll = function() {
+        this.resetSelection();
+        
+        for (let i = 0; i < this.pages.length; i++) {
+            this.selectedPages.push(i);
+        }
+
+        this.repaint();
     };
     
     // Create "ghost" for dragging

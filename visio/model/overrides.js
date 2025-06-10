@@ -724,10 +724,10 @@ AscCommonWord.CPresentationField.prototype.private_GetString = function()
 	var oDateTime;
 	if(typeof this.FieldType === 'string')
 	{
-		// let format;
-		// if (this.vsdxFieldFormat) {
-		// 	format = parseFieldPictureFormat(this.vsdxFieldValue, this.vsdxFieldFormat);
-		// }
+		let format;
+		if (this.vsdxFieldFormat) {
+			format = parseFieldPictureFormat(this.vsdxFieldValue, this.vsdxFieldFormat);
+		}
 		let logicDocument = this.Paragraph && this.Paragraph.GetLogicDocument();
 		const sFieldType = this.FieldType.toUpperCase();
 
@@ -780,7 +780,7 @@ AscCommonWord.CPresentationField.prototype.private_GetString = function()
 		// 	//leave value
 		// }
 		else if ((this.vsdxFieldValue.u === "STR" || !this.vsdxFieldValue.u) && (sFieldType === "INH" || !sFieldType)
-			&& !this.vsdxFieldFormat) {
+			&& (!this.vsdxFieldFormat || "General" === format || "@" === format)) {
 		// else if (this.vsdxFieldValue.u === "STR" && (sFieldType === "INH" || !sFieldType)) {
 			// handle simple values. consider is function is INH value is calculated correctly already
 			// like
@@ -807,10 +807,6 @@ AscCommonWord.CPresentationField.prototype.private_GetString = function()
 		// 	// const oFormat = AscCommon.oNumFormatCache.get(format, AscCommon.NumFormatType.Excel);
 		// 	// sStr =  format._formatToText(val, AscCommon.CellValueType.String, 15, oCultureInfo);
 		// } else {
-		let format;
-		if (this.vsdxFieldFormat) {
-			format = parseFieldPictureFormat(this.vsdxFieldValue, this.vsdxFieldFormat);
-		}
 		const oFormat = AscCommon.oNumFormatCache.get(format, AscCommon.NumFormatType.Excel);
 		sStr =  oFormat._formatToText(val, AscCommon.CellValueType.String, 15, oCultureInfo);
 		// sStr = val + "";

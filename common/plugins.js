@@ -1116,6 +1116,11 @@
 				}
 			}
 
+			if (this.api.aiPluginSettings && eventMap["onAIPluginSettings"])
+			{
+				runObject.startData.setAttribute("aiPluginSettings", this.api.aiPluginSettings);
+			}
+
 			if (AscCommon.AscBrowser.isIE && !AscCommon.AscBrowser.isIeEdge)
 			{
 				let ie_frame_id = runObject.frameId;
@@ -1293,9 +1298,6 @@
 
 			if (this.api.CoAuthoringApi)
 				pluginData.setAttribute("jwt", this.api.CoAuthoringApi.get_jwt());
-
-			if (this.api.aiPluginSettings)
-				pluginData.setAttribute("aiPluginSettings", this.api.aiPluginSettings);
 
 			if (this.api.pluginsExternalData)
 				pluginData.setAttribute("externalData", this.api.pluginsExternalData);

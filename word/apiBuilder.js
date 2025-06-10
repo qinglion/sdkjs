@@ -6301,9 +6301,7 @@
 	 */
 	ApiCustomXmlNode.prototype.GetXPath = function()
 	{
-		let parent		= this.GetParent();
-		let parentText	= parent ? parent.GetXPath() + "/" : "/";
-		return parentText + this.CustomXmlContent.getNodeName();
+		return this.CustomXmlContent.getXPath();
 	};
 
 	/**
@@ -20045,6 +20043,25 @@
 		}
 		return false;
 	};
+	
+	/**
+	 * Determines whether a checkbox content control is currently checked or unchecked.
+	 *
+	 * Throws: Error if the content control is not a checkbox type.
+	 *
+	 * @memberof ApiInlineLvlSdt
+	 * @typeofeditors ["CDE"]
+	 * @since 9.0.0
+	 * @returns {boolean} Returns `true` if the checkbox is checked, `false` if the checkbox is unchecked.
+	 * @see office-js-api/Examples/{Editor}/ApiInlineLvlSdt/Methods/IsCheckBoxChecked.js
+	 */
+	ApiInlineLvlSdt.prototype.IsCheckBoxChecked = function()
+	{
+		if (!this.Sdt || !this.Sdt.IsCheckBox())
+			throwException(new Error("Content control must be a checkbox"));
+		
+		return this.Sdt.IsCheckBoxChecked();
+	};
 
 	/**
 	 * Checks whether the content control is a picture type.
@@ -20283,6 +20300,26 @@
 		}
 
 		return false;
+	};
+	
+	/**
+	 * Retrieves the selected date value from a date picker content control and returns it as a Date object.
+	 *
+	 * Throws: Error if the content control is not a date picker type
+	 *
+	 * @memberof ApiInlineLvlSdt
+	 * @typeofeditors ["CDE"]
+	 * @since 9.0.0
+	 * @returns {Date} Date object representing the selected date in the date picker control.
+	 * @see office-js-api/Examples/{Editor}/ApiInlineLvlSdt/Methods/GetDate.js
+	 */
+	ApiInlineLvlSdt.prototype.GetDate = function()
+	{
+		if (!this.Sdt || !this.Sdt.IsDatePicker())
+			throwException(new Error("Content control must be a date picker"));
+		
+		let fullDate = this.Sdt.GetDatePickerPr().GetFullDate();
+		return new Date(fullDate);
 	};
 
 	/**
@@ -25932,7 +25969,9 @@
 	ApiInlineLvlSdt.prototype["RemoveListItem"]         = ApiInlineLvlSdt.prototype.RemoveListItem;
 	ApiInlineLvlSdt.prototype["Select"]                 = ApiInlineLvlSdt.prototype.Select;
 	ApiInlineLvlSdt.prototype["SetCheckBoxChecked"]     = ApiInlineLvlSdt.prototype.SetCheckBoxChecked;
+	ApiInlineLvlSdt.prototype["IsCheckBoxChecked"]      = ApiInlineLvlSdt.prototype.IsCheckBoxChecked;
 	ApiInlineLvlSdt.prototype["SetDate"]                = ApiInlineLvlSdt.prototype.SetDate;
+	ApiInlineLvlSdt.prototype["GetDate"]                = ApiInlineLvlSdt.prototype.GetDate;
 	ApiInlineLvlSdt.prototype["SetDateFormat"]          = ApiInlineLvlSdt.prototype.SetDateFormat;
 	ApiInlineLvlSdt.prototype["SetPicture"]             = ApiInlineLvlSdt.prototype.SetPicture;
 	ApiInlineLvlSdt.prototype["SetPictureSize"]         = ApiInlineLvlSdt.prototype.SetPictureSize;

@@ -2402,9 +2402,13 @@
 			fragments.push(tempFragment);
 			tm = sr.measureString(fragments, cellFlags, width);
 
-			var width_padding = 4;
-			if (oStyle.xfs && oStyle.xfs.align && oStyle.xfs.align.hor === AscCommon.align_Center) {
+			let textAlign = sr.getEffectiveAlign();
+			let width_padding = 4;
+			if (textAlign === AscCommon.align_Center) {
 				width_padding = Asc.round(0.5 * (width - tm.width));
+			}
+			else if(textAlign === AscCommon.align_Right) {
+				width_padding = Asc.round(width - tm.width - width_padding);
 			}
 
 			// Текст будем рисовать по центру (в Excel чуть по другому реализовано, у них постоянный отступ снизу)

@@ -11958,7 +11958,11 @@
         oSlide.draw(oGraphics);
         oGraphics.RestoreGrState();
 
-        oSlide.getDrawingDocument().m_oWordControl.DemonstrationManager.CheckWatermarkInternal(oGraphics.m_oContext, oRect);
+				const oDemonstrationManager = oSlide.getDrawingDocument().m_oWordControl.DemonstrationManager;
+				if (oDemonstrationManager) {
+					oDemonstrationManager.CheckWatermarkInternal(oGraphics.m_oContext, oRect);
+					oDemonstrationManager.CheckAnnotationsInternal(oGraphics, oSlide);
+				}
     };
     CAnimationDrawer.prototype.isDrawingVisible = function(sDrawingId, oSandwich) {
         oSandwich = oSandwich || this.getSandwich(sDrawingId);

@@ -104,6 +104,28 @@
         return null;        
     };
 
+    /**
+     * Gets event object
+     * @memberof ApiDocument
+     * @typeofeditors ["PDF"]
+     */
+    Object.defineProperty(ApiDocument.prototype, "event", {
+        get: function() {
+            return this.doc.event;
+        }
+    });
+    
+    /**
+     * The base file name, with extension, of the document referenced by the Doc
+     * @memberof ApiDocument
+     * @typeofeditors ["PDF"]
+     */
+    Object.defineProperty(ApiDocument.prototype, "documentFileName", {
+        get: function() {
+            return Asc.editor.documentTitle;
+        }
+    });
+
     // base form class with attributes and method for all types of forms
 	function ApiBaseField(oField)
     {

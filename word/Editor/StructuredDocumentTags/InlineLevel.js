@@ -98,7 +98,7 @@ CInlineLevelSdt.prototype.Add = function(Item)
 	{
 		if (para_Tab === Item.Type)
 			return CParagraphContentWithParagraphLikeContent.prototype.Add.call(this, new AscWord.CRunSpace());
-		else if (Item.Type !== para_Text && Item.Type !== para_Space && (!(Item instanceof AscWord.CRunBreak) || !Item.IsLineBreak() || !this.IsMultiLineForm()))
+		else if (Item.Type !== para_Text && Item.Type !== para_Space && (!(Item instanceof AscWord.CRunBreak) || !Item.IsLineBreak() || (!this.IsMultiLineForm() && this.IsFixedForm())))
 			return;
 
 		oTextFormRun = this.MakeSingleRunElement(false);
@@ -1670,7 +1670,7 @@ CInlineLevelSdt.prototype.private_FillPlaceholderContent = function()
 		if (this.IsContentControlEquation())
 		{
 			var oParaMath = new ParaMath();
-			oParaMath.Root.Load_FromMenu(c_oAscMathType.Default_Text, this.GetParagraph(), null, oFirstParagraph.GetText({ParaSeparator : "", TableRowSeparator : "", TableCellSeparator : ""}));
+			oParaMath.Root.Load_FromMenu(c_oAscMathType.Default_Text, this.GetParagraph(), oFirstParagraph.GetFirstRunPr().Copy(), oFirstParagraph.GetText({ParaSeparator : "", TableRowSeparator : "", TableCellSeparator : ""}));
 			oParaMath.Root.Correct_Content(true);
 			this.AddToContent(0, oParaMath);
 		}
@@ -3230,6 +3230,9 @@ CInlineLevelSdt.prototype.ConvertFormToFixed = function(nW, nH)
 		nH = Math.max(nH, 22 * g_dKoef_pt_to_mm);
 	}
 	
+	// Удаляем переносы строк и все лишнее, т.к. изначально конвертим в однострочную форму
+	this.CorrectSingleLineFormContent();
+	
 	// Для билдера, чтобы мы могли конвертить форму, даже если она нигде не лежит
 	if (!oParent)
 		return this.private_ConvertFormToFixed(nW, nH);
@@ -3914,7 +3917,8 @@ CInlineLevelSdt.prototype.SetInnerText = function(sText)
 CInlineLevelSdt.prototype.GetInnerText = function()
 {
 	var oText = {
-		Text: ""
+		Text: "",
+		NewLineSeparator : "\r\n"
 	};
 
 	this.Get_Text(oText);
