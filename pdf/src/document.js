@@ -1377,18 +1377,18 @@ var CPresentation = CPresentation || function(){};
         }
         
         let isSameType = (oCurObject && oFloatObject) && ( (oCurObject.IsAnnot() && oFloatObject.IsAnnot()) || (oCurObject.IsDrawing() && oFloatObject.IsDrawing()) || (oCurObject.IsForm() && oFloatObject.IsForm()) ); 
+        let isFloatSelected = oFloatObject && (oController.selectedObjects.includes(oFloatObject) || oController.selectedObjects.find(function(drawing) {
+            return drawing.IsEditFieldShape() && drawing.GetEditField() == oFloatObject;
+        }));
+
         // докидываем в селект
-        if (e.CtrlKey && (oCurObject && oFloatObject) && (oCurObject != oFloatObject) && isSameType) {
+        if (e.CtrlKey && (oCurObject && oFloatObject) && (oCurObject != oFloatObject) && isSameType && !isFloatSelected) {
             oController.selection.groupSelection = null;
             oController.selectObject(oFloatObject.IsForm() ? oFloatObject.GetEditShape() : oFloatObject, oFloatObject.GetPage());
             return;
         }
 
         // оставляем текущий объет к селекте, если кликнули по нему же
-        let isFloatSelected = oFloatObject && (oController.selectedObjects.includes(oFloatObject) || oController.selectedObjects.find(function(drawing) {
-            return drawing.IsEditFieldShape() && drawing.GetEditField() == oFloatObject;
-        }));
-        
         let isObjectSelected = (oCurObject && ([oMouseDownField, oMouseDownAnnot, oMouseDownDrawing, oMouseDownLink].includes(oCurObject)) || isFloatSelected);
         if (null == oCurObject || !isObjectSelected || !isSameType)
             this.SetMouseDownObject(oMouseDownField || oMouseDownAnnot || oMouseDownDrawing || oMouseDownLink);
