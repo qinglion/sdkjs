@@ -21796,6 +21796,19 @@
 	 */
 	ApiFormBase.prototype.GetClassType = function()
 	{
+		if (this instanceof ApiTextForm)
+			return "textForm";
+		else if (this instanceof ApiComboBoxForm)
+			return "comboBoxForm";
+		else if (this instanceof ApiDateForm)
+			return "dateForm";
+		else if (this instanceof ApiCheckBoxForm)
+			return "checkBoxForm";
+		else if (this instanceof ApiPictureForm)
+			return "pictureForm";
+		else if (this instanceof ApiComplexForm)
+			return "complexForm";
+		
 		return "form";
 	};
 	/**
@@ -22142,19 +22155,17 @@
 	 *Used if possible for this type of form*
 	 * @memberof ApiFormBase
 	 * @typeofeditors ["CDE", "CFE"]
-	 * @param {ApiTextPr} oTextPr - The text properties that will be set to the current form.
+	 * @param {ApiTextPr} textPr - The text properties that will be set to the current form.
 	 * @return {boolean}  
 	 * @see office-js-api/Examples/{Editor}/ApiFormBase/Methods/SetTextPr.js
 	 */
-	ApiFormBase.prototype.SetTextPr = function(oTextPr)
+	ApiFormBase.prototype.SetTextPr = function(textPr)
 	{
-		if (oTextPr && oTextPr.GetClassType && oTextPr.GetClassType() === "textPr")
-		{
-			this.Sdt.Apply_TextPr(oTextPr.TextPr);
-			return true;
-		}
-
-		return false;
+		if (!textPr || !(textPr instanceof ApiTextPr))
+			throwException("The textPr parameter must be an instance of ApiTextPr");
+		
+		this.Sdt.Apply_TextPr(textPr.TextPr, undefined, true);
+		return true;
 	};
 	/**
 	 * Returns the text properties from the current form.
@@ -26122,6 +26133,7 @@
 	ApiComplexForm.prototype["Add"]          = ApiComplexForm.prototype.Add;
 	ApiComplexForm.prototype["GetSubForms"]  = ApiComplexForm.prototype.GetSubForms;
 	ApiComplexForm.prototype["ClearContent"] = ApiComplexForm.prototype.ClearContent;
+	ApiComplexForm.prototype["Copy"]         = ApiComplexForm.prototype.Copy;
 
 	ApiComboBoxForm.prototype["GetListValues"]       = ApiComboBoxForm.prototype.GetListValues;
 	ApiComboBoxForm.prototype["SetListValues"]       = ApiComboBoxForm.prototype.SetListValues;
@@ -27567,7 +27579,7 @@
 	};
 	ApiFormBase.prototype.OnChangeTextPr  = function(oApiTextPr)
 	{
-		this.Sdt.Apply_TextPr(oApiTextPr.TextPr);
+		this.Sdt.Apply_TextPr(oApiTextPr.TextPr, undefined, true);
 		oApiTextPr.TextPr = this.Sdt.Pr.TextPr;
 	};
 	ApiFormBase.prototype.OnChangeValue = function()
