@@ -2279,17 +2279,22 @@
 		let selStart = pdfDoc.event["selStart"];
 		let selEnd   = pdfDoc.event["selEnd"];
 		
-		this.content.RemoveSelection();
+        if (selStart !== undefined && selEnd !== undefined) {
+            this.content.RemoveSelection();
 		
-		let docPos = this.CalcDocPos(selStart, selEnd);
-		
-		if (selStart === selEnd) {
-			this.content.SetContentPosition(docPos.startPos, 0, 0);
-		}
-		else {
-			this.content.SetSelectionByContentPositions(docPos.startPos, docPos.endPos);
-			this.content.Remove(-1, true, false, false, false);
-		}
+            let docPos = this.CalcDocPos(selStart, selEnd);
+            
+            if (selStart === selEnd) {
+                this.content.SetContentPosition(docPos.startPos, 0, 0);
+            }
+            else {
+                this.content.SetSelectionByContentPositions(docPos.startPos, docPos.endPos);
+                this.content.Remove(-1, true, false, false, false);
+            }
+        }
+        else if (this.content.IsSelectionUse() && !this.content.IsSelectionEmpty()) {
+            this.content.Remove(-1, true, false, false, false);
+        }
 		
 		this.SetNeedRecalc(true);
 	};
