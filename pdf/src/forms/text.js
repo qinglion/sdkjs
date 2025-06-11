@@ -394,23 +394,24 @@
 
         AscCommon.History.StartNoHistoryMode();
 
-        AscFonts.FontPickerByCharacter.getFontsByString(displayValue);
-        if (!oDoc.checkFieldFont(this, function() {
-            _t.UpdateDisplayValue(displayValue);
-        })) {
-            AscCommon.History.EndNoHistoryMode();
-            return;
-        }
+        if (isOnOpen == false && typeof(displayValue) == "string" && Asc.editor.isDocumentLoadComplete) {
+            if (!oDoc.checkFieldFont(this, function() {
+                _t.UpdateDisplayValue(displayValue);
+            })) {
+                AscCommon.History.EndNoHistoryMode();
+                return;
+            }
 
-        if (isOnOpen == false && this.GetType() == AscPDF.FIELD_TYPES.text && typeof(displayValue) == "string" && Asc.editor.isDocumentLoadComplete) {
-            let aChars      = displayValue.codePointsArray();
-            let nCharsCount = AscWord.GraphemesCounter.GetCount(aChars, this.content.GetCalculatedTextPr());
-            let nCharLimit  = this.GetCharLimit();
+            if (this.GetType() == AscPDF.FIELD_TYPES.text) {
+                let aChars      = displayValue.codePointsArray();
+                let nCharsCount = AscWord.GraphemesCounter.GetCount(aChars, this.content.GetCalculatedTextPr());
+                let nCharLimit  = this.GetCharLimit();
 
-            if (0 !== nCharLimit && nCharsCount > nCharLimit)
-                aChars.length = nCharLimit;
-            
-            displayValue = String.fromCharCode.apply(null, aChars);
+                if (0 !== nCharLimit && nCharsCount > nCharLimit)
+                    aChars.length = nCharLimit;
+                
+                displayValue = String.fromCharCode.apply(null, aChars);
+            }
         }
 
         if (displayValue === this._displayValue && this._useDisplayValue == true) {
@@ -1759,8 +1760,7 @@
 	 * @typeofeditors ["PDF"]
 	 */
     CTextField.prototype.Commit = function() {
-        let oDoc        = this.GetDocument();
-        let aFields     = this.GetDocument().GetAllWidgets(this.GetFullName());
+        let aFields = this.GetDocument().GetAllWidgets(this.GetFullName());
 
         if (this.DoFormatAction() == false) {
             this.UndoNotAppliedChanges();
@@ -1771,11 +1771,6 @@
         }
         
         let sNewValue = this.GetValue();
-        if (oDoc.event["rc"] == false) {
-            this.needValidate = true;
-            return;
-        }
-
         for (let i = 0; i < aFields.length; i++) {
             if (aFields[i].IsChanged() == false)
                 aFields[i].SetWasChanged(true); // фиксируем, что форма была изменена
@@ -1812,7 +1807,6 @@
         });
 
         this.SetNeedCommit(false);
-        this.needValidate = true;
     };
 	CTextField.prototype.SetAlign = function(nAlignType) {
         AscCommon.History.Add(new CChangesPDFTextFormAlign(this, this._alignment, nAlignType));
@@ -1869,6 +1863,7 @@
         
         // set invoker field
         if (!oKeystrokeTrigger) {
+            oDoc.SetEvent({});
             return true;
         }
 
@@ -1921,21 +1916,26 @@
             }
         }
 
+        let oEventPr = {
+            "name":         AscPDF.CFormTrigger.GetName(AscPDF.FORMS_TRIGGERS_TYPES.Keystroke),
+            "target":       this.GetFormApi(),
+            "value":        sValue,
+            "change":       aChars.map(function(char) {
+                return String.fromCharCode(char);
+            }).join(""),
+            "willCommit":   !!isOnCommit,
+            "selStart":     nSelStart,
+            "selEnd":       nSelEnd
+        }
+
         if (!sValue && aChars.length == 0) {
+            oEventPr["rc"] = true;
+            oDoc.SetEvent(oEventPr);
             return isCanEnter;
         }
+        
         if (oActionRunScript) {
-            oActionRunScript.RunScript({
-                "name":         AscPDF.CFormTrigger.GetName(AscPDF.FORMS_TRIGGERS_TYPES.Format),
-                "target":       this.GetFormApi(),
-                "value":        sValue,
-                "change":       aChars.map(function(char) {
-                    return String.fromCharCode(char);
-                }).join(""),
-                "willCommit":   !!isOnCommit,
-                "selStart":     nSelStart,
-                "selEnd":       nSelEnd
-            });
+            oActionRunScript.RunScript(oEventPr);
             isCanEnter = oDoc.event["rc"];
         }
 
@@ -1991,8 +1991,7 @@
 		let oDoc = this.GetDocument();
 		this.UpdateSelectionByEvent();
 		
-		if (this.content.IsSelectionUse())
-			this.content.Remove(nDirection, true, false, false, isCtrlKey);
+        this.content.Remove(nDirection, true, false, false, isCtrlKey);
 
         // скрипт keystroke мог поменять change значение, поэтому
         let oKeystrokeTrigger = this.GetTrigger(AscPDF.FORMS_TRIGGERS_TYPES.Keystroke);
@@ -2188,7 +2187,7 @@
 	CTextField.prototype.UpdateSelectionByEvent = function() {
 		// убираем селект, выставляем из nSelStart/nSelEnd
 		let doc = this.GetDocument();
-		
+
 		let selStart = doc.event["selStart"];
 		let selEnd   = doc.event["selEnd"];
 		
@@ -2275,21 +2274,26 @@
 	};
 	CTextField.prototype.removeBeforePaste = function() {
 		let pdfDoc = this.GetDocument();
-		
+
 		let selStart = pdfDoc.event["selStart"];
 		let selEnd   = pdfDoc.event["selEnd"];
 		
-		this.content.RemoveSelection();
+        if (selStart !== undefined && selEnd !== undefined) {
+            this.content.RemoveSelection();
 		
-		let docPos = this.CalcDocPos(selStart, selEnd);
-		
-		if (selStart === selEnd) {
-			this.content.SetContentPosition(docPos.startPos, 0, 0);
-		}
-		else {
-			this.content.SetSelectionByContentPositions(docPos.startPos, docPos.endPos);
-			this.content.Remove(-1, true, false, false, false);
-		}
+            let docPos = this.CalcDocPos(selStart, selEnd);
+            
+            if (selStart === selEnd) {
+                this.content.SetContentPosition(docPos.startPos, 0, 0);
+            }
+            else {
+                this.content.SetSelectionByContentPositions(docPos.startPos, docPos.endPos);
+                this.content.Remove(-1, true, false, false, false);
+            }
+        }
+        else if (this.content.IsSelectionUse() && !this.content.IsSelectionEmpty()) {
+            this.content.Remove(-1, true, false, false, false);
+        }
 		
 		this.SetNeedRecalc(true);
 	};

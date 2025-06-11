@@ -505,7 +505,6 @@
         });
 
         this.SetNeedCommit(false);
-        this.needValidate = true;
     };
 	CComboBoxField.prototype.InsertChars = function(aChars) {
 		this.content.EnterText(aChars);

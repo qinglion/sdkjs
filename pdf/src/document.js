@@ -1235,7 +1235,6 @@ var CPresentation = CPresentation || function(){};
         }
 
         if (isValid && !this.IsCalcFieldsLocked()) {
-            oField.needValidate = false; 
             oField.Commit();
             if (this.event["rc"] !== false && this.IsNeedDoCalculate()) {
                 this.DoCalculateFields(oField);
@@ -1377,18 +1376,18 @@ var CPresentation = CPresentation || function(){};
         }
         
         let isSameType = (oCurObject && oFloatObject) && ( (oCurObject.IsAnnot() && oFloatObject.IsAnnot()) || (oCurObject.IsDrawing() && oFloatObject.IsDrawing()) || (oCurObject.IsForm() && oFloatObject.IsForm()) ); 
+        let isFloatSelected = oFloatObject && (oController.selectedObjects.includes(oFloatObject) || oController.selectedObjects.find(function(drawing) {
+            return drawing.IsEditFieldShape() && drawing.GetEditField() == oFloatObject;
+        }));
+
         // докидываем в селект
-        if (e.CtrlKey && (oCurObject && oFloatObject) && (oCurObject != oFloatObject) && isSameType) {
+        if (e.CtrlKey && (oCurObject && oFloatObject) && (oCurObject != oFloatObject) && isSameType && !isFloatSelected) {
             oController.selection.groupSelection = null;
             oController.selectObject(oFloatObject.IsForm() ? oFloatObject.GetEditShape() : oFloatObject, oFloatObject.GetPage());
             return;
         }
 
         // оставляем текущий объет к селекте, если кликнули по нему же
-        let isFloatSelected = oFloatObject && (oController.selectedObjects.includes(oFloatObject) || oController.selectedObjects.find(function(drawing) {
-            return drawing.IsEditFieldShape() && drawing.GetEditField() == oFloatObject;
-        }));
-        
         let isObjectSelected = (oCurObject && ([oMouseDownField, oMouseDownAnnot, oMouseDownDrawing, oMouseDownLink].includes(oCurObject)) || isFloatSelected);
         if (null == oCurObject || !isObjectSelected || !isSameType)
             this.SetMouseDownObject(oMouseDownField || oMouseDownAnnot || oMouseDownDrawing || oMouseDownLink);
@@ -1409,7 +1408,7 @@ var CPresentation = CPresentation || function(){};
                     return;
                 }
 
-                if ((oMouseDownObject.IsNeedDrawFromStream() || oMouseDownObject.IsNeedRecalc()) && oMouseDownObject.GetType() != AscPDF.FIELD_TYPES.button) {
+                if (false == this.IsEditFieldsMode() && (oMouseDownObject.IsNeedDrawFromStream() || oMouseDownObject.IsNeedRecalc()) && oMouseDownObject.GetType() != AscPDF.FIELD_TYPES.button) {
                     oMouseDownObject.Recalculate();
                     oMouseDownObject.SetNeedRecalc(true);
                 }
@@ -1533,7 +1532,11 @@ var CPresentation = CPresentation || function(){};
             return;
         }
 
-        if (this.GetActiveObject() == oObject || (oObject.IsUseInDocument && false == oObject.IsUseInDocument())) {
+        if (oObject.IsUseInDocument && false == oObject.IsUseInDocument()) {
+            this.BlurActiveObject();
+            return;
+        }
+        else if (this.GetActiveObject() == oObject) {
             return;
         }
 
@@ -6748,6 +6751,9 @@ var CPresentation = CPresentation || function(){};
     CPDFDoc.prototype.TurnOnCheckChartSelection = function() {};
     CPDFDoc.prototype.UpdateRulers = function() {};
     CPDFDoc.prototype.UpdateSelection = function() {};
+    CPDFDoc.prototype.Document_Undo = function() {
+        return this.DoUndo();
+    };
     CPDFDoc.prototype.GetCurrentParagraph = function(ignoreSelection, returnSelectedArray, pr) {
 		let textController = this.getTextController();
 		if (!textController)
@@ -7487,6 +7493,9 @@ var CPresentation = CPresentation || function(){};
         return this.checkFonts(["Arial", "Symbol", "Wingdings", "Courier New", "Times New Roman"], callback);
     };
     CPDFDoc.prototype.checkFieldFont = function(oField, callback) {
+        let fontsToLoad = [];
+        let fontMap     = {};
+
         if (!oField)
             return true;
         
@@ -7494,19 +7503,36 @@ var CPresentation = CPresentation || function(){};
         if (oField.GetType() == AscPDF.FIELD_TYPES.button && oField.IsNeedDrawFromStream())
             return true;
 
-		let sFontName = oField.GetTextFontActual();
+        if (oField.content) {
+            AscFonts.FontPickerByCharacter.getFontsByString(oField.content.getAllText());
+        }
+        if (oField.contentFormat) {
+            AscFonts.FontPickerByCharacter.getFontsByString(oField.contentFormat.getAllText());
+        }
 
-        if (!sFontName)
-            return true;
-        
-		if (this.loadedFonts.includes(sFontName))
-            return true;
+        let aFontsNames = [oField.GetTextFontActual()];
+        let aExtended = [];
+        AscFonts.FontPickerByCharacter.extendFonts(aExtended);
+        aExtended.forEach(function(font) {
+            aFontsNames.push(font.name);
+        });
+
+		for (let i = 0; i < aFontsNames.length; i++) {
+			if (this.loadedFonts.includes(aFontsNames[i]) || fontsToLoad.includes(aFontsNames[i]))
+				continue;
+			
+			fontsToLoad.push(aFontsNames[i]);
+			fontMap[aFontsNames[i]] = true;
+		}
+		
+		if (!fontsToLoad.length)
+			return true;
 		
 		let _t = this;
-		this.fontLoader.LoadFonts([sFontName],
+		this.fontLoader.LoadFonts(fontMap,
 			function()
 			{
-				_t.loadedFonts.push(sFontName);
+				_t.loadedFonts = _t.loadedFonts.concat(fontsToLoad);
 				if (callback)
 					callback();
 			}
