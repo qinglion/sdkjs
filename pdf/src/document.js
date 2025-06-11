@@ -1409,7 +1409,7 @@ var CPresentation = CPresentation || function(){};
                     return;
                 }
 
-                if ((oMouseDownObject.IsNeedDrawFromStream() || oMouseDownObject.IsNeedRecalc()) && oMouseDownObject.GetType() != AscPDF.FIELD_TYPES.button) {
+                if (false == this.IsEditFieldsMode() && (oMouseDownObject.IsNeedDrawFromStream() || oMouseDownObject.IsNeedRecalc()) && oMouseDownObject.GetType() != AscPDF.FIELD_TYPES.button) {
                     oMouseDownObject.Recalculate();
                     oMouseDownObject.SetNeedRecalc(true);
                 }
