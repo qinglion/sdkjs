@@ -394,23 +394,24 @@
 
         AscCommon.History.StartNoHistoryMode();
 
-        AscFonts.FontPickerByCharacter.getFontsByString(displayValue);
-        if (!oDoc.checkFieldFont(this, function() {
-            _t.UpdateDisplayValue(displayValue);
-        })) {
-            AscCommon.History.EndNoHistoryMode();
-            return;
-        }
+        if (isOnOpen == false && typeof(displayValue) == "string" && Asc.editor.isDocumentLoadComplete) {
+            if (!oDoc.checkFieldFont(this, function() {
+                _t.UpdateDisplayValue(displayValue);
+            })) {
+                AscCommon.History.EndNoHistoryMode();
+                return;
+            }
 
-        if (isOnOpen == false && this.GetType() == AscPDF.FIELD_TYPES.text && typeof(displayValue) == "string" && Asc.editor.isDocumentLoadComplete) {
-            let aChars      = displayValue.codePointsArray();
-            let nCharsCount = AscWord.GraphemesCounter.GetCount(aChars, this.content.GetCalculatedTextPr());
-            let nCharLimit  = this.GetCharLimit();
+            if (this.GetType() == AscPDF.FIELD_TYPES.text) {
+                let aChars      = displayValue.codePointsArray();
+                let nCharsCount = AscWord.GraphemesCounter.GetCount(aChars, this.content.GetCalculatedTextPr());
+                let nCharLimit  = this.GetCharLimit();
 
-            if (0 !== nCharLimit && nCharsCount > nCharLimit)
-                aChars.length = nCharLimit;
-            
-            displayValue = String.fromCharCode.apply(null, aChars);
+                if (0 !== nCharLimit && nCharsCount > nCharLimit)
+                    aChars.length = nCharLimit;
+                
+                displayValue = String.fromCharCode.apply(null, aChars);
+            }
         }
 
         if (displayValue === this._displayValue && this._useDisplayValue == true) {
