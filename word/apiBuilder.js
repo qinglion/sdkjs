@@ -23183,65 +23183,75 @@
 	//------------------------------------------------------------------------------------------------------------------
 
 	/**
-	 * Inserts a given form element into the current complex form.
+	 * Append the text content of the given form to the end of the current complex form.
 	 * @memberof ApiComplexForm
-	 * @param oField {ApiDateForm|ApiPictureForm|ApiCheckBoxForm|ApiComboBoxForm|ApiTextForm} - The form element to insert.
+	 * @param value {string|ApiDateForm|ApiPictureForm|ApiCheckBoxForm|ApiComboBoxForm|ApiTextForm} - Text or the form to add.
 	 * @typeofeditors ["CDE", "CFE"]
 	 * @returns {boolean}
 	 * @since 9.0.0
-	 * @see office-js-api/Examples/{Editor}/ApiComplexForm/Methods/InsertForm.js
+	 * @see office-js-api/Examples/{Editor}/ApiComplexForm/Methods/Add.js
 	 */
-	ApiComplexForm.prototype.InsertForm = function(oField)
+	ApiComplexForm.prototype.Add = function(value)
 	{
+		if (!value)
+			return false;
+		
 		return executeNoFormLockCheck(function(){
-			if (!oField || !(oField instanceof ApiDateForm
-				|| oField instanceof ApiPictureForm
-				|| oField instanceof ApiCheckBoxForm
-				|| oField instanceof ApiComboBoxForm
-				|| oField instanceof ApiTextForm))
-				return false;
+			if (value instanceof ApiDateForm
+				|| value instanceof ApiPictureForm
+				|| value instanceof ApiCheckBoxForm
+				|| value instanceof ApiComboBoxForm
+				|| value instanceof ApiTextForm)
+			{
+				if (value.Sdt.IsUseInDocument())
+					return false;
+				
+				if (this.Sdt.IsPlaceHolder())
+					this.Sdt.private_ReplacePlaceHolderWithContent();
+				
+				this.Sdt.Add_ToContent(this.Sdt.Content.length, value.Sdt);
+			}
+			else if (typeof(value) === "string")
+			{
+				if (this.Sdt.IsPlaceHolder())
+					this.Sdt.private_ReplacePlaceHolderWithContent();
+				
+				let lastElement = this.Sdt.Content[this.Sdt.Content.length - 1];
+				if (lastElement instanceof AscWord.Run)
+				{
+					lastElement.AddText(value);
+				}
+				else
+				{
+					let run = new AscWord.Run();
+					run.AddText(value);
+					this.Sdt.Add_ToContent(this.Sdt.Content.length, run);
+				}
+			}
 
-			if (this.Sdt.IsPlaceHolder())
-				this.Sdt.private_ReplacePlaceHolderWithContent();
-
-			this.Sdt.Add_ToContent(this.Sdt.Content.length, oField.Sdt);
 			this.OnChangeValue();
 			return true;
 		}, this);
 	};
 	/**
-	 * Adds text content to the current complex form.
+	 * Get an ordered list of subforms.
 	 * @memberof ApiComplexForm
-	 * @param sText {string}
 	 * @typeofeditors ["CDE", "CFE"]
-	 * @returns {boolean}
+	 * @returns {ApiForm[]}
 	 * @since 9.0.0
-	 * @see office-js-api/Examples/{Editor}/ApiComplexForm/Methods/AddText.js
+	 * @see office-js-api/Examples/{Editor}/ApiComplexForm/Methods/GetSubForms.js
 	 */
-	ApiComplexForm.prototype.AddText = function(sText)
+	ApiComplexForm.prototype.GetSubForms = function()
 	{
-		return executeNoFormLockCheck(function(){
-			let _sText = GetStringParameter(sText, null);
-			if (!_sText)
-				return false;
-
-			if (this.Sdt.IsPlaceHolder())
-				this.Sdt.private_ReplacePlaceHolderWithContent();
-
-			let lastElement = this.Sdt.Content[this.Sdt.Content.length - 1];
-			if (lastElement instanceof ParaRun)
-			{
-				lastElement.AddText(sText);
-			}
-			else
-			{
-				let oRun = new ParaRun(this.Sdt.GetParagraph(), false);
-				oRun.AddText(sText);
-				this.Sdt.Add_ToContent(this.Sdt.Content.length, oRun);
-			}
-			this.OnChangeValue();
-			return true;
-		}, this);
+		let forms = this.Sdt.GetAllSubForms();
+		let result = [];
+		for (let i = 0; i < forms.length; ++i)
+		{
+			let apiForm = ToApiForm(forms[i]);
+			if (apiForm)
+				result.push(apiForm);
+		}
+		return result;
 	};
 	/**
 	 * Clears all content from the current complex form, resetting it to its placeholder state.
@@ -26108,6 +26118,10 @@
 	ApiDateForm.prototype["SetDate"]     = ApiDateForm.prototype.SetDate;
 	ApiDateForm.prototype["GetDate"]     = ApiDateForm.prototype.GetDate;
 	ApiDateForm.prototype["Copy"]        = ApiDateForm.prototype.Copy;
+	
+	ApiComplexForm.prototype["Add"]          = ApiComplexForm.prototype.Add;
+	ApiComplexForm.prototype["GetSubForms"]  = ApiComplexForm.prototype.GetSubForms;
+	ApiComplexForm.prototype["ClearContent"] = ApiComplexForm.prototype.ClearContent;
 
 	ApiComboBoxForm.prototype["GetListValues"]       = ApiComboBoxForm.prototype.GetListValues;
 	ApiComboBoxForm.prototype["SetListValues"]       = ApiComboBoxForm.prototype.SetListValues;
@@ -26266,43 +26280,43 @@
 	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	// Export for internal usage
 	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-	window['AscBuilder'] = window['AscBuilder'] || {};
-	window['AscBuilder'].Api                = Api;
-	window['AscBuilder'].ApiDocumentContent = ApiDocumentContent;
-	window['AscBuilder'].ApiRange           = ApiRange;
-	window['AscBuilder'].ApiDocument        = ApiDocument;
-	window['AscBuilder'].ApiParagraph       = ApiParagraph;
-	window['AscBuilder'].ApiRun             = ApiRun;
-	window['AscBuilder'].ApiHyperlink       = ApiHyperlink;
-	window['AscBuilder'].ApiSection         = ApiSection;
-	window['AscBuilder'].ApiTable           = ApiTable;
-	window['AscBuilder'].ApiTableRow        = ApiTableRow;
-	window['AscBuilder'].ApiTableCell       = ApiTableCell;
-	window['AscBuilder'].ApiStyle           = ApiStyle;
-	window['AscBuilder'].ApiNumbering       = ApiNumbering;
-	window['AscBuilder'].ApiNumberingLevel  = ApiNumberingLevel;
-	window['AscBuilder'].ApiTextPr          = ApiTextPr;
-	window['AscBuilder'].ApiParaPr          = ApiParaPr;
-	window['AscBuilder'].ApiTablePr         = ApiTablePr;
-	window['AscBuilder'].ApiTableRowPr      = ApiTableRowPr;
-	window['AscBuilder'].ApiTableCellPr     = ApiTableCellPr;
-	window['AscBuilder'].ApiTableStylePr    = ApiTableStylePr;
-	window['AscBuilder'].ApiDrawing         = ApiDrawing;
-	window['AscBuilder'].ApiImage           = ApiImage;
-	window['AscBuilder'].ApiShape           = ApiShape;
-	window['AscBuilder'].ApiChart           = ApiChart;
-	window['AscBuilder'].ApiGroup           = ApiGroup;
-	window['AscBuilder'].ApiOleObject       = ApiOleObject;
-	window['AscBuilder'].ApiInlineLvlSdt    = ApiInlineLvlSdt;
-	window['AscBuilder'].ApiBlockLvlSdt     = ApiBlockLvlSdt;
-	window['AscBuilder'].ApiFormBase        = ApiFormBase;
-	window['AscBuilder'].ApiTextForm        = ApiTextForm;
-	window['AscBuilder'].ApiPictureForm     = ApiPictureForm;
-	window['AscBuilder'].ApiDateForm        = ApiDateForm;
-	window['AscBuilder'].ApiComboBoxForm    = ApiComboBoxForm;
-	window['AscBuilder'].ApiCheckBoxForm    = ApiCheckBoxForm;
-	window['AscBuilder'].ApiComplexForm     = ApiComplexForm;
-	window['AscBuilder'].ApiCore            = ApiCore;
+	window['AscBuilder']                     = window['AscBuilder'] || {};
+	window['AscBuilder'].Api                 = Api;
+	window['AscBuilder'].ApiDocumentContent  = ApiDocumentContent;
+	window['AscBuilder'].ApiRange            = ApiRange;
+	window['AscBuilder'].ApiDocument         = ApiDocument;
+	window['AscBuilder'].ApiParagraph        = ApiParagraph;
+	window['AscBuilder'].ApiRun              = ApiRun;
+	window['AscBuilder'].ApiHyperlink        = ApiHyperlink;
+	window['AscBuilder'].ApiSection          = ApiSection;
+	window['AscBuilder'].ApiTable            = ApiTable;
+	window['AscBuilder'].ApiTableRow         = ApiTableRow;
+	window['AscBuilder'].ApiTableCell        = ApiTableCell;
+	window['AscBuilder'].ApiStyle            = ApiStyle;
+	window['AscBuilder'].ApiNumbering        = ApiNumbering;
+	window['AscBuilder'].ApiNumberingLevel   = ApiNumberingLevel;
+	window['AscBuilder'].ApiTextPr           = ApiTextPr;
+	window['AscBuilder'].ApiParaPr           = ApiParaPr;
+	window['AscBuilder'].ApiTablePr          = ApiTablePr;
+	window['AscBuilder'].ApiTableRowPr       = ApiTableRowPr;
+	window['AscBuilder'].ApiTableCellPr      = ApiTableCellPr;
+	window['AscBuilder'].ApiTableStylePr     = ApiTableStylePr;
+	window['AscBuilder'].ApiDrawing          = ApiDrawing;
+	window['AscBuilder'].ApiImage            = ApiImage;
+	window['AscBuilder'].ApiShape            = ApiShape;
+	window['AscBuilder'].ApiChart            = ApiChart;
+	window['AscBuilder'].ApiGroup            = ApiGroup;
+	window['AscBuilder'].ApiOleObject        = ApiOleObject;
+	window['AscBuilder'].ApiInlineLvlSdt     = ApiInlineLvlSdt;
+	window['AscBuilder'].ApiBlockLvlSdt      = ApiBlockLvlSdt;
+	window['AscBuilder'].ApiFormBase         = ApiFormBase;
+	window['AscBuilder'].ApiTextForm         = ApiTextForm;
+	window['AscBuilder'].ApiPictureForm      = ApiPictureForm;
+	window['AscBuilder'].ApiDateForm         = ApiDateForm;
+	window['AscBuilder'].ApiComboBoxForm     = ApiComboBoxForm;
+	window['AscBuilder'].ApiCheckBoxForm     = ApiCheckBoxForm;
+	window['AscBuilder'].ApiComplexForm      = ApiComplexForm;
+	window['AscBuilder'].ApiCore             = ApiCore;
 	window['AscBuilder'].ApiCustomProperties = ApiCustomProperties;
 	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	// Area for internal usage
