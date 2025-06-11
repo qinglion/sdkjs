@@ -1046,7 +1046,7 @@
             // Вместо выбора страницы - просто запомним, что было нажато.
             this._mouseDownPage  = dp.num;
             this._shiftPressed   = e.shiftKey;
-            this._ctrlPressed    = e.ctrlKey;
+            this._ctrlPressed    = e.ctrlKey || e.metaKey;
     
             // Готовимся к потенциальному drag&drop
             this.pendingDrag = true;
@@ -1208,8 +1208,7 @@
         if (e && e.preventDefault) e.preventDefault();
 
         const oDoc = Asc.editor.getPDFDoc();
-        oDoc.UpdateCopyCutState();
-        
+        oDoc.UpdateInterface();
         return false;
     };
 
