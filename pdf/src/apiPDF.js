@@ -1272,7 +1272,6 @@
                         if (isValid) {
                             oWidget.SetValue(value);
 
-                            oWidget.needValidate = false; 
                             oWidget.Commit();
                             if (oCalcInfo.IsInProgress() == false) {
                                 if (oDoc.event["rc"] !== false && oDoc.IsNeedDoCalculate()) {
@@ -1471,7 +1470,6 @@
 
                     if (isValid) {
                         oWidget.SetCurIdxs([nIdx]);
-                        oWidget.needValidate = false; 
                         oWidget.Commit();
                         if (oCalcInfo.IsInProgress() == false) {
                             if (oDoc.event["rc"] !== false && oDoc.IsNeedDoCalculate()) {
@@ -1559,7 +1557,6 @@
 
                         if (isValid) {
                             oWidget.SetValue(value);
-                            oWidget.needValidate = false; 
                             oWidget.Commit();
                             if (oCalcInfo.IsInProgress() == false) {
                                 if (oDoc.event["rc"] !== false && oDoc.IsNeedDoCalculate()) {

@@ -1235,7 +1235,6 @@ var CPresentation = CPresentation || function(){};
         }
 
         if (isValid && !this.IsCalcFieldsLocked()) {
-            oField.needValidate = false; 
             oField.Commit();
             if (this.event["rc"] !== false && this.IsNeedDoCalculate()) {
                 this.DoCalculateFields(oField);

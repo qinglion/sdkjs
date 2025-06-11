@@ -1760,8 +1760,7 @@
 	 * @typeofeditors ["PDF"]
 	 */
     CTextField.prototype.Commit = function() {
-        let oDoc        = this.GetDocument();
-        let aFields     = this.GetDocument().GetAllWidgets(this.GetFullName());
+        let aFields = this.GetDocument().GetAllWidgets(this.GetFullName());
 
         if (this.DoFormatAction() == false) {
             this.UndoNotAppliedChanges();
@@ -1772,11 +1771,6 @@
         }
         
         let sNewValue = this.GetValue();
-        if (oDoc.event["rc"] == false) {
-            this.needValidate = true;
-            return;
-        }
-
         for (let i = 0; i < aFields.length; i++) {
             if (aFields[i].IsChanged() == false)
                 aFields[i].SetWasChanged(true); // фиксируем, что форма была изменена
@@ -1813,7 +1807,6 @@
         });
 
         this.SetNeedCommit(false);
-        this.needValidate = true;
     };
 	CTextField.prototype.SetAlign = function(nAlignType) {
         AscCommon.History.Add(new CChangesPDFTextFormAlign(this, this._alignment, nAlignType));
@@ -1870,6 +1863,7 @@
         
         // set invoker field
         if (!oKeystrokeTrigger) {
+            oDoc.SetEvent({});
             return true;
         }
 
@@ -1922,21 +1916,26 @@
             }
         }
 
+        let oEventPr = {
+            "name":         AscPDF.CFormTrigger.GetName(AscPDF.FORMS_TRIGGERS_TYPES.Keystroke),
+            "target":       this.GetFormApi(),
+            "value":        sValue,
+            "change":       aChars.map(function(char) {
+                return String.fromCharCode(char);
+            }).join(""),
+            "willCommit":   !!isOnCommit,
+            "selStart":     nSelStart,
+            "selEnd":       nSelEnd
+        }
+
         if (!sValue && aChars.length == 0) {
+            oEventPr["rc"] = true;
+            oDoc.SetEvent(oEventPr);
             return isCanEnter;
         }
+        
         if (oActionRunScript) {
-            oActionRunScript.RunScript({
-                "name":         AscPDF.CFormTrigger.GetName(AscPDF.FORMS_TRIGGERS_TYPES.Format),
-                "target":       this.GetFormApi(),
-                "value":        sValue,
-                "change":       aChars.map(function(char) {
-                    return String.fromCharCode(char);
-                }).join(""),
-                "willCommit":   !!isOnCommit,
-                "selStart":     nSelStart,
-                "selEnd":       nSelEnd
-            });
+            oActionRunScript.RunScript(oEventPr);
             isCanEnter = oDoc.event["rc"];
         }
 
@@ -1992,8 +1991,7 @@
 		let oDoc = this.GetDocument();
 		this.UpdateSelectionByEvent();
 		
-		if (this.content.IsSelectionUse())
-			this.content.Remove(nDirection, true, false, false, isCtrlKey);
+        this.content.Remove(nDirection, true, false, false, isCtrlKey);
 
         // скрипт keystroke мог поменять change значение, поэтому
         let oKeystrokeTrigger = this.GetTrigger(AscPDF.FORMS_TRIGGERS_TYPES.Keystroke);
@@ -2189,7 +2187,7 @@
 	CTextField.prototype.UpdateSelectionByEvent = function() {
 		// убираем селект, выставляем из nSelStart/nSelEnd
 		let doc = this.GetDocument();
-		
+
 		let selStart = doc.event["selStart"];
 		let selEnd   = doc.event["selEnd"];
 		
@@ -2276,7 +2274,7 @@
 	};
 	CTextField.prototype.removeBeforePaste = function() {
 		let pdfDoc = this.GetDocument();
-		
+
 		let selStart = pdfDoc.event["selStart"];
 		let selEnd   = pdfDoc.event["selEnd"];
 		
