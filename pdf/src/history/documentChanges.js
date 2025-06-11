@@ -244,7 +244,6 @@ CChangesPDFDocumentAnnotsContent.prototype.Undo = function()
         }
     }
 
-    oDocument.SetMouseDownObject(null);
     oDocument.private_UpdateTargetForCollaboration(true);
 };
 CChangesPDFDocumentAnnotsContent.prototype.Redo = function()
@@ -288,7 +287,6 @@ CChangesPDFDocumentAnnotsContent.prototype.Redo = function()
         }
     }
 
-    oDocument.SetMouseDownObject(null);
     oDocument.private_UpdateTargetForCollaboration(true);
 };
 CChangesPDFDocumentAnnotsContent.prototype.Load = function() {
@@ -332,7 +330,6 @@ CChangesPDFDocumentAnnotsContent.prototype.private_InsertInArrayLoad = function(
         oItem.AddToRedraw();
     }
 
-    oDocument.SetMouseDownObject(null);
     oDocument.private_UpdateTargetForCollaboration(true);
 };
 CChangesPDFDocumentAnnotsContent.prototype.private_RemoveInArrayLoad = function()
@@ -370,7 +367,6 @@ CChangesPDFDocumentAnnotsContent.prototype.private_RemoveInArrayLoad = function(
         oViewer.DrawingObjects.resetSelection();
     }
 
-    oDocument.SetMouseDownObject(null);
     oDocument.private_UpdateTargetForCollaboration(true);
 };
 CChangesPDFDocumentAnnotsContent.prototype.private_GetContentChanges = function() {
@@ -662,7 +658,6 @@ CChangesPDFDocumentDrawingsContent.prototype.Undo = function()
         }
     }
 
-    oDocument.SetMouseDownObject(null);
     oDocument.private_UpdateTargetForCollaboration(true);
 };
 CChangesPDFDocumentDrawingsContent.prototype.Redo = function()
@@ -703,7 +698,6 @@ CChangesPDFDocumentDrawingsContent.prototype.Redo = function()
         }
     }
 
-    oDocument.SetMouseDownObject(null);
     oDocument.private_UpdateTargetForCollaboration(true);
 };
 CChangesPDFDocumentDrawingsContent.prototype.Load = function() {
@@ -742,7 +736,6 @@ CChangesPDFDocumentDrawingsContent.prototype.private_InsertInArrayLoad = functio
         oItem.AddToRedraw();
     }
 
-    oDocument.SetMouseDownObject(null);
     oDocument.private_UpdateTargetForCollaboration(true);
 };
 CChangesPDFDocumentDrawingsContent.prototype.private_RemoveInArrayLoad = function()
@@ -777,7 +770,6 @@ CChangesPDFDocumentDrawingsContent.prototype.private_RemoveInArrayLoad = functio
         oViewer.DrawingObjects.resetSelection();
     }
 
-    oDocument.SetMouseDownObject(null);
     oDocument.private_UpdateTargetForCollaboration(true);
 };
 CChangesPDFDocumentDrawingsContent.prototype.private_GetContentChanges = function() {
@@ -838,7 +830,6 @@ CChangesPDFDocumentPagesContent.prototype.Undo = function() {
     }
 	
 	
-	oDocument.SetMouseDownObject(null);
 	oDrDoc.TargetEnd();
 };
 CChangesPDFDocumentPagesContent.prototype.Redo = function() {
@@ -859,8 +850,6 @@ CChangesPDFDocumentPagesContent.prototype.Redo = function() {
         }
     }
 	
-
-	oDocument.SetMouseDownObject(null);
 	oDrDoc.TargetEnd();
 };
 CChangesPDFDocumentPagesContent.prototype.Load = function()

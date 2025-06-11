@@ -91,7 +91,7 @@
 			return this.group.IsUseInDocument();
 		
         let oPage = this.GetParentPage();
-        if (oPage && oPage.drawings.includes(this)) {
+        if (oPage && oPage.drawings.includes(this) && oPage.GetIndex() !== -1) {
             return true;
         }
 
@@ -102,7 +102,8 @@
             }
         }
         
-        return false;	};
+        return false;
+    };
     CPdfDrawingPrototype.prototype.OnBlur = function() {
         AscCommon.History.ForbidUnionPoint();
     };
