@@ -6752,6 +6752,9 @@ var CPresentation = CPresentation || function(){};
     CPDFDoc.prototype.TurnOnCheckChartSelection = function() {};
     CPDFDoc.prototype.UpdateRulers = function() {};
     CPDFDoc.prototype.UpdateSelection = function() {};
+    CPDFDoc.prototype.Document_Undo = function() {
+        return this.DoUndo();
+    };
     CPDFDoc.prototype.GetCurrentParagraph = function(ignoreSelection, returnSelectedArray, pr) {
 		let textController = this.getTextController();
 		if (!textController)
