@@ -4256,6 +4256,9 @@ var CPresentation = CPresentation || function(){};
     CPDFDoc.prototype.CanCopyCut = function() {
         let _t              = this;
         let oViewer         = editor.getDocumentRenderer();
+        if (!oViewer.file)
+            return false;
+
         let oActiveForm     = this.activeForm;
         let oActiveAnnot    = this.mouseDownAnnot;
         let oActiveDrawing  = this.activeDrawing;
