@@ -8167,6 +8167,10 @@ var CPresentation = CPresentation || function(){};
         return this.compositeInput;
     };
 
+    CPDFDoc.prototype.HaveInks = function() {
+        return false;
+    };
+
     /**
 	 * Converts global coords to page coords.
      * Note: use scaled coordinates like pagePos_ from field, and not original like _origRect from field.
