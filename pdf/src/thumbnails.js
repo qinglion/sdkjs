@@ -1411,11 +1411,11 @@
 
         // здесь - имитируем моус мув ---------------------------
         var _e   = {};
-        _e.pageX = AscCommon.global_mouseEvent.X;
-        _e.pageY = AscCommon.global_mouseEvent.Y;
+        _e.pageX = AscCommon.global_mouseEvent.X / AscCommon.AscBrowser.zoom;
+        _e.pageY = AscCommon.global_mouseEvent.Y / AscCommon.AscBrowser.zoom;
 
-        _e.clientX = AscCommon.global_mouseEvent.X;
-        _e.clientY = AscCommon.global_mouseEvent.Y;
+        _e.clientX = AscCommon.global_mouseEvent.X / AscCommon.AscBrowser.zoom;
+        _e.clientY = AscCommon.global_mouseEvent.Y / AscCommon.AscBrowser.zoom;
 
         _e.altKey   = AscCommon.global_mouseEvent.AltKey;
         _e.shiftKey = AscCommon.global_mouseEvent.ShiftKey;
