@@ -735,8 +735,8 @@
         AscCommon.calculateCanvasSize(this.canvasOverlay);
 
         var canvasBounds = this.canvas.getBoundingClientRect();
-        this.coordsOffset.x = canvasBounds ? canvasBounds.left : 0;
-        this.coordsOffset.y = canvasBounds ? canvasBounds.top : 0;
+        this.coordsOffset.x = canvasBounds ? canvasBounds.left * AscCommon.AscBrowser.zoom : 0;
+        this.coordsOffset.y = canvasBounds ? canvasBounds.top * AscCommon.AscBrowser.zoom : 0;
 
         var scrollV = document.getElementById("id_vertical_scroll_th");
         scrollV.style.display = "none";
