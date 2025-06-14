@@ -1499,7 +1499,7 @@ function CBinaryFileWriter()
         this._WriteBool2(1, _note.showMasterSp);
         this.WriteUChar(g_nodeAttributeEnd);
         this.WriteRecord1(0, _note.cSld, this.WriteCSld);
-        this.WriteRecord2(1, _note.clrMap, this.WriteClrMapOvr);
+        this.WriteRecord1(1, _note.clrMap, this.WriteClrMapOvr);
         this.EndRecord();
     };
 
