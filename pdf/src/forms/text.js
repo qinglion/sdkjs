@@ -1779,10 +1779,9 @@
                 aFields[i].content.MoveCursorToStartPos();
             }
 
-            // not skip current field for history
-            // if (aFields[i] == this) {
-            //     continue;
-            // }
+            if (aFields[i] == this) {
+                aFields[i]._useDisplayValue = true;
+            }
             
             aFields[i].SetValue(sNewValue);
             aFields[i].SetNeedRecalc(true);
