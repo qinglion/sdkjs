@@ -1129,9 +1129,8 @@
                 break;
         }
 
-        oField.DoValidateAction(String(nResult));
-        
-        if (oDoc.event["rc"]) {
+        let isCanCommit = oField.IsCanCommit(String(nResult));
+        if (isCanCommit) {
             oField.SetValue(String(nResult));
             oField.SetNeedCommit(true);
         }

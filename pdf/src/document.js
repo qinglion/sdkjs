@@ -142,23 +142,12 @@ var CPresentation = CPresentation || function(){};
         this.actionsInfo            = new CActionQueue(this);
         this.calculateInfo          = new CCalculateInfo(this);
         this.fieldsToCommit         = [];
+        this.eventsStack            = [];
         this.event                  = {};
         this.lastDatePickerInfo     = null;
         this.AutoCorrectSettings    = new AscCommon.CAutoCorrectSettings();
 
         this.pagesTransform = [];
-
-        Object.defineProperties(this.event, {
-            "change": {
-                set: function(value) {
-                    if (value != null && value.toString)
-                        this._change = value.toString();
-                },
-                get: function() {
-                    return this._change;
-                }
-            }
-        });
 
         this._parentsMap = {}; // map при открытии форм
         this.api = this.GetDocumentApi();
@@ -1224,25 +1213,23 @@ var CPresentation = CPresentation || function(){};
         }, AscDFH.historydescription_Pdf_FieldCommit, this);
     };
     CPDFDoc.prototype.private_CommitField = function(oField) {
-        let isValid = true;
+        let isCanCommit = true;
         
         if (oField.IsNeedRevertShiftView()) {
             oField.RevertContentView();
         }
 
         if ([AscPDF.FIELD_TYPES.text, AscPDF.FIELD_TYPES.combobox].includes(oField.GetType())) {
-            isValid = oField.DoValidateAction(oField.GetValue(true));
+            isCanCommit = oField.IsCanCommit(oField.GetValue(true));
         }
 
-        if (isValid && !this.IsCalcFieldsLocked()) {
+        if (isCanCommit && !this.IsCalcFieldsLocked()) {
             oField.Commit();
-            if (this.event["rc"] !== false && this.IsNeedDoCalculate()) {
+            if (this.IsNeedDoCalculate()) {
                 this.DoCalculateFields(oField);
                 this.AddFieldToCommit(oField);
                 this.CommitFields();
             }
-
-            isValid = this.event["rc"];
         }
         else {
             oField.UndoNotAppliedChanges();
@@ -1253,7 +1240,7 @@ var CPresentation = CPresentation || function(){};
 
         oField.SetNeedCommit(false);
 
-        return isValid;
+        return isCanCommit;
     }
     CPDFDoc.prototype.EnterDownActiveField = function() {
         this.SetGlobalHistory();
@@ -2511,33 +2498,40 @@ var CPresentation = CPresentation || function(){};
         return this.mouseDownField || this.mouseDownAnnot || this.activeDrawing;
     };
 
-    CPDFDoc.prototype.SetEvent = function(oEventPr) {
-        this.event["name"] = oEventPr["name"];
-        this.event["target"] = oEventPr["target"];
-        this.event["rc"] = oEventPr["rc"] != null ? oEventPr["rc"] : true;
-        this.event["change"] = oEventPr["change"];
-        this.event["willCommit"] = oEventPr["willCommit"];
-        this.event["willCommit"] = oEventPr["willCommit"];
-        this.event["selStart"] = oEventPr["selStart"];
-        this.event["selEnd"] = oEventPr["selEnd"];
+    CPDFDoc.prototype.CreateEvent = function(oEventPr) {
+        const oEvent = {};
+        Object.defineProperties(oEvent, {
+            "change": {
+                set: function(value) {
+                    if (value != null && value.toString)
+                        this._change = value.toString();
+                },
+                get: function() {
+                    return this._change;
+                }
+            }
+        });
 
-        if (this.event["name"] == "Calculate" && this.event["target"]) {
-            delete this.event["value"];
-            
-            Object.defineProperty(this.event, "value", {
+        oEvent["name"] = oEventPr["name"];
+        oEvent["target"] = oEventPr["target"];
+        oEvent["rc"] = oEventPr["rc"] != null ? oEventPr["rc"] : true;
+        oEvent["change"] = oEventPr["change"];
+        oEvent["willCommit"] = oEventPr["willCommit"];
+        oEvent["selStart"] = oEventPr["selStart"];
+        oEvent["selEnd"] = oEventPr["selEnd"];
+
+        if (oEvent["name"] == "Calculate" && oEvent["target"]) {
+            Object.defineProperty(oEvent, "value", {
                 get: function () {
                     return this.target.value;
                 },
                 set: function(value) {
                     this.target.value = value;
-                },
-                configurable: true
+                }
             });
         }
-        else if (this.event["name"] == "Format" && this.event["target"]) {
-            delete this.event["value"];
-
-            Object.defineProperty(this.event, "value", {
+        else if (oEvent["name"] == "Format" && oEvent["target"]) {
+            Object.defineProperty(oEvent, "value", {
                 get: function () {
                     return this.target.value;
                 },
@@ -2546,14 +2540,14 @@ var CPresentation = CPresentation || function(){};
                     aAllWidgets.forEach(function(widget) {
                         widget.SetFormatValue(value);
                     });
-                },
-                configurable: true
+                }
             });
         }
         else {
-            delete this.event["value"];
-            this.event["value"] = oEventPr["value"];
+            oEvent["value"] = oEventPr["value"];
         }
+
+        return oEvent;
     };
     CPDFDoc.prototype.SetWarningInfo = function(oInfo) {
         this.warningInfo = oInfo;
