@@ -149,7 +149,7 @@ var CPresentation = CPresentation || function(){};
 
         this.pagesTransform = [];
 
-        this._parentsMap = {}; // map при открытии форм
+        this._fieldsChildsMap = {}; // map при открытии форм
         this.api = this.GetDocumentApi();
 		
 
@@ -453,13 +453,13 @@ var CPresentation = CPresentation || function(){};
 
     /////////// методы для открытия //////////////
     CPDFDoc.prototype.AddFieldToChildsMap = function(oField, nParentIdx) {
-        if (this._parentsMap[nParentIdx] == null)
-            this._parentsMap[nParentIdx] = [];
+        if (this._fieldsChildsMap[nParentIdx] == null)
+            this._fieldsChildsMap[nParentIdx] = [];
 
-        this._parentsMap[nParentIdx].push(oField);
+        this._fieldsChildsMap[nParentIdx].push(oField);
     };
-    CPDFDoc.prototype.GetParentsMap = function() {
-        return this._parentsMap;
+    CPDFDoc.prototype.GetFieldsChildsMap = function() {
+        return this._fieldsChildsMap;
     };
     CPDFDoc.prototype.OnEndFormsActions = function() {
         let oViewer = editor.getDocumentRenderer();
@@ -691,19 +691,18 @@ var CPresentation = CPresentation || function(){};
         return oListboxField;
     };
     CPDFDoc.prototype.FillFormsParents = function(aParentsInfo) {
-        let oChilds = this.GetParentsMap();
+        let oChildsMap = this.GetFieldsChildsMap();
+        let oParentsMap = {};
 
         for (let i = 0; i < aParentsInfo.length; i++) {
             let nIdx = aParentsInfo[i]["i"];
-            if (!oChilds[nIdx])
+            if (!oChildsMap[nIdx])
                 continue;
 
-            let nType = oChilds[nIdx][0].GetType();
+            let nType = oChildsMap[nIdx][0].GetType();
 
             let oParent = this.CreateField(aParentsInfo[i]["name"], nType);
-            oChilds[nIdx].forEach(function(child) {
-                oParent.AddKid(child);
-            });
+            oParentsMap[nIdx] = oParent;
 
             if (aParentsInfo[i]["value"] != null)
                 oParent.SetParentValue(aParentsInfo[i]["value"]);
@@ -746,6 +745,17 @@ var CPresentation = CPresentation || function(){};
 
             AscPDF.ReadFieldActions(oParent, aParentsInfo[i]['AA']);
         }
+
+        // adding kids
+        for (let i = 0; i < aParentsInfo.length; i++) {
+            let nIdx = aParentsInfo[i]["i"];
+            if (!oChildsMap[nIdx])
+                continue;
+
+            oChildsMap[nIdx].forEach(function(child) {
+                oParentsMap[nIdx].AddKid(child);
+            });
+        }
     };
     CPDFDoc.prototype.SetLocalHistory = function() {
         AscCommon.History = this.LocalHistory;
@@ -785,6 +795,8 @@ var CPresentation = CPresentation || function(){};
         aRadios.forEach(function(field) {
             field.GetKid(0).UpdateAll();
         });
+
+        this._fieldsChildsMap = null;
     };
     CPDFDoc.prototype.FillButtonsIconsOnOpen = function() {
 		let oViewer = editor.getDocumentRenderer();
