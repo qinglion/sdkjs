@@ -3936,7 +3936,7 @@ var CPresentation = CPresentation || function(){};
                     if (aNames.includes(sFieldName) == true && false == aReseted.includes(sFieldName)) {
                         oField.Reset();
                         aReseted.push(sFieldName);
-                        this.AddFieldToCommit(oField);
+                        oThis.AddFieldToCommit(oField);
                     }
                 });
             }
@@ -3948,7 +3948,7 @@ var CPresentation = CPresentation || function(){};
                 if (false == aReseted.includes(sFieldName)) {
                     field.Reset();
                     aReseted.push(sFieldName);
-                    this.AddFieldToCommit(field);
+                    oThis.AddFieldToCommit(field);
                 }
             });
             if (this.widgets.length > 0)
