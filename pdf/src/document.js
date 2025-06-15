@@ -6470,6 +6470,9 @@ var CPresentation = CPresentation || function(){};
 
         this.RemoveSelection();
         this.SetMouseDownObject(State.activeObject)
+        if (State.activeObject && State.activeObject.IsForm && State.activeObject.IsForm()) {
+            this.activeForm = State.activeObject;
+        }
 
         this.GetController().Load_DocumentStateAfterLoadChanges(State);
     };
