@@ -544,6 +544,25 @@
             if (oField.IsWidget()) {
                 oField.SyncValue();
             }
+
+            if (!aOptions) {
+                aOptions = [];
+
+                let bSetOptions = false;
+
+                this._kids.forEach(function(widget) {
+                    let sExportValue = widget.GetExportValue();
+                    if (aOptions.includes(sExportValue)) {
+                        bSetOptions = true;
+                    }
+
+                    aOptions.push(sExportValue);
+                });
+
+                if (bSetOptions) {
+                    aNewOptions = aOptions;
+                }
+            }
         }
         
         if (aNewOptions) {
@@ -555,7 +574,9 @@
 
         let aOptions = this.GetOptions();
         let aNewOptions = aOptions ? aOptions.slice() : null;
+        let sExportValue;
         if (aNewOptions) {
+            sExportValue = aNewOptions[nIndex];
             aNewOptions.splice(nIndex, 1);
             this.SetOptions(aNewOptions);
         }
@@ -564,6 +585,11 @@
             this._kids.splice(nIndex, 1);
             AscCommon.History.Add(new CChangesPDFFormKidsContent(this, nIndex, [oField], false))
             oField._parent = null;
+
+            if (aNewOptions) {
+                oField.SetExportValue(sExportValue);
+            }
+
             return true;
         }
 
@@ -691,15 +717,12 @@
         AscPDF.CBaseField.prototype.DrainLogicFrom.call(this, oFieldToInherit, bClearFrom);
 
         this.SetNoToggleToOff(oFieldToInherit.IsNoToggleToOff());
-        this.SetOptions(oFieldToInherit.GetOptions());
-
         if (this.GetType() == AscPDF.FIELD_TYPES.radiobutton) {
             this.SetRadiosInUnison(oFieldToInherit.IsRadiosInUnison());
         }
 
         if (bClearFrom !== false) {
             oFieldToInherit.SetNoToggleToOff(false);
-            oFieldToInherit.SetOptions(undefined);
 
             if (this.GetType() == AscPDF.FIELD_TYPES.radiobutton) {
                 oFieldToInherit.SetRadiosInUnison(false);

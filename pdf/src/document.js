@@ -2942,6 +2942,7 @@ var CPresentation = CPresentation || function(){};
                 oParent.DrainLogicFrom(oExistsField);
 
                 oParent.AddKid(oExistsField);
+                checkFieldParams();
                 oParent.AddKid(oField);
 
                 oExistsField.SetPartialName(undefined);
@@ -2950,37 +2951,40 @@ var CPresentation = CPresentation || function(){};
             else {
                 oParent = oExistsField;
 
+                checkFieldParams();
                 oParent.AddKid(oField);
                 oField.SetPartialName(undefined);
             }
 
-            switch (oExistsField.GetType()) {
-                case AscPDF.FIELD_TYPES.radiobutton: {
-                    function getNextAvailableChoice(choices) {
-                        var usedNumbers = {};
-                      
-                        for (var i = 0; i < choices.length; i++) {
-                          var match = choices[i].match(/^Choice(\d+)$/);
-                          if (match) {
-                            usedNumbers[parseInt(match[1], 10)] = true;
-                          }
+            function checkFieldParams() {
+                switch (oExistsField.GetType()) {
+                    case AscPDF.FIELD_TYPES.radiobutton: {
+                        function getNextAvailableChoice(choices) {
+                            let usedNumbers = {};
+                        
+                            for (let i = 0; i < choices.length; i++) {
+                                let match = choices[i].match(/^Choice(\d+)$/);
+                                if (match) {
+                                    usedNumbers[parseInt(match[1], 10)] = true;
+                                }
+                            }
+                        
+                            let num = 1;
+                            while (usedNumbers[num]) {
+                                num++;
+                            }
+                        
+                            return 'Choice' + num;
                         }
-                      
-                        var num = 1;
-                        while (usedNumbers[num]) {
-                          num++;
-                        }
-                      
-                        return 'Choice' + num;
+
+                        let aOptions = oParent.GetAllWidgets().map(function(widget) {
+                            return widget.GetExportValue();
+                        });
+                        
+                        let sNewChoiceValue = getNextAvailableChoice(aOptions);
+
+                        oField.SetExportValue(sNewChoiceValue);
                     }
-
-                    let aOptions = oParent.GetAllWidgets().map(function(widget) {
-                        return widget.GetExportValue();
-                    });
-                    
-                    let sNewChoiceValue = getNextAvailableChoice(aOptions);
-
-                    oField.SetExportValue(sNewChoiceValue);
                 }
             }
         }
