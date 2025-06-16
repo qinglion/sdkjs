@@ -2824,6 +2824,10 @@ CInlineLevelSdt.prototype.SyncFormPrWithSameKey = function(form)
 	{
 		this.SetDropDownListPr(form.GetDropDownListPr());
 	}
+	else if (Asc.c_oAscContentControlSpecificType.ComboBox === this.GetSpecificType())
+	{
+		this.SetComboBoxPr(form.GetComboBoxPr());
+	}
 };
 CInlineLevelSdt.prototype.Get_ParentTextTransform = function()
 {
