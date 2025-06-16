@@ -1796,15 +1796,9 @@
         this._defaultValue = value;
         this.SetWasChanged(true);
 
+        const shouldUpdate = !value && this.GetParentValue() === sOldDefValue || value && !this.GetParentValue();
+
         let oWidget = this.IsWidget() ? this : this.GetKid(0);
-        
-        const shouldUpdate = (
-            (!value && this.GetParentValue() === sOldDefValue) ||
-            (value && (
-                !this.GetParentValue() ||
-                (this.GetType() === AscPDF.FIELD_TYPES.checkbox && this.GetParentValue() === "Off")
-            ))
-        );
 
         if (shouldUpdate) {
             if (oWidget && oWidget.IsWidget()) {

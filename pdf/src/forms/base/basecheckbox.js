@@ -69,6 +69,35 @@
         this.DrawLocks(oGraphicsPDF);
         this.DrawEdit(oGraphicsWord);
     };
+    CBaseCheckBoxField.prototype.SetDefaultValue = function(value) {
+        let oParent = this.GetParent();
+        let hasSameKids = oParent && oParent.IsAllKidsWidgets();
+
+        if (hasSameKids || this.IsWidget()) {
+            const shouldUpdate = value && !this.GetParentValue() || this.GetParentValue() !== value;
+
+            if (shouldUpdate) {
+                this.SetValue(value);
+                this.Commit();
+            }
+
+            if (hasSameKids) {
+                return oParent.SetDefaultValue(value);
+            }
+        }
+
+        let sOldDefValue = this.GetDefaultValue();
+        if (value === sOldDefValue) {
+            return true;
+        }
+
+        AscCommon.History.Add(new CChangesPDFFormDefaultValue(this, sOldDefValue, value));
+
+        this._defaultValue = value;
+        this.SetWasChanged(true);
+
+        return true;
+    };
     CBaseCheckBoxField.prototype.IsChecked = function() {
         return this._checked;
     };
@@ -488,6 +517,16 @@
     };
     CBaseCheckBoxField.prototype.GetOptions = function() {
         return this._options;
+    };
+    CBaseCheckBoxField.prototype.GetOptionsIndex = function() {
+        let oParent = this.GetParent();
+        let aOptions = oParent ? oParent.GetOptions() : null;
+        if (aOptions) {
+            let aKids = oParent.GetKids();
+            return aKids.indexOf(this);
+        }
+
+        return -1;
     };
     CBaseCheckBoxField.prototype.AddKid = function(oField) {
         let aOptions = this.GetOptions();
