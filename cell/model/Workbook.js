@@ -9955,6 +9955,9 @@
 		const pivotRange = pivotTable.getRange();
 		const location = pivotTable.location;
 		const items = isRowItem ? pivotTable.getRowItems() : pivotTable.getColItems();
+		if (!items) {
+			return;
+		}
 		const itemR = items[itemIndex].getR();
 		const r1 = isRowItem ? pivotRange.r1 + location.firstDataRow : pivotRange.r1 + location.firstHeaderRow;
 		const c1 = isRowItem ? pivotRange.c1 : pivotRange.c1 + location.firstDataCol;
@@ -9993,6 +9996,9 @@
 		const pivotRange = pivotTable.getRange();
 		const location = pivotTable.location;
 		const items = isRowItem ? pivotTable.getRowItems() : pivotTable.getColItems();
+		if (!items) {
+			return;
+		}
 		const itemR = items[itemIndex].getR();
 		const itemSummaryR = itemR + itemXIndex;
 
@@ -10033,6 +10039,9 @@
 	 */
 	Worksheet.prototype._updatePivotTableCellsRowColLablesOffsets = function(pivotTable, rowFieldsOffset, isRowItem, itemIndex, itemXIndex, query) {
 		const items = isRowItem ? pivotTable.getRowItems() : pivotTable.getColItems();
+		if (!items) {
+			return;
+		}
 		query.axis = isRowItem ? Asc.c_oAscAxis.AxisRow : Asc.c_oAscAxis.AxisCol;
 		const item = items[itemIndex];
 		if (item.t === Asc.c_oAscItemType.Data) {
