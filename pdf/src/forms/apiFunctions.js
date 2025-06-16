@@ -1129,10 +1129,13 @@
                 break;
         }
 
-        let isCanCommit = oField.IsCanCommit(String(nResult));
+        let oWidget = oField.GetKid(0);
+        let sRes = String(nResult);
+
+        let isCanCommit = oWidget.IsCanCommit(sRes);
         if (isCanCommit) {
-            oField.SetValue(String(nResult));
-            oField.SetNeedCommit(true);
+            oWidget.SetValue(sRes);
+            oWidget.SetNeedCommit(true);
         }
     }
 
