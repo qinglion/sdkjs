@@ -401,6 +401,7 @@
     };
     CBaseField.prototype.SetNeedUpdateEditShape = function(bUpdate) {
         this._needUpdateEditShape = bUpdate;
+        this.AddToRedraw();
     };
     CBaseField.prototype.IsNeedUpdateEditShape = function() {
         let oDoc = this.GetDocument();
