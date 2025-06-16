@@ -792,6 +792,10 @@
 	 * @typeofeditors ["PDF"]
 	 */
     CBaseField.prototype.SetParentValue = function(value) {
+        if (value && typeof(value) !== "string" && value.toString) {
+            value = value.toString();
+        }
+
         let oParent = this.GetParent();
         if (oParent && this.IsWidget() && oParent.IsAllKidsWidgets())
             oParent.SetParentValue(value);
