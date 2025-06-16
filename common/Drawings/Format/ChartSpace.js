@@ -4204,7 +4204,7 @@ function(window, undefined) {
 			chart.floor && chart.floor.spPr && chart.floor.spPr.checkBlipFillRasterImage(images);
 			chart.legend && chart.legend.spPr && chart.legend.spPr.checkBlipFillRasterImage(images);
 			chart.sideWall && chart.sideWall.spPr && chart.sideWall.spPr.checkBlipFillRasterImage(images);
-			chart.title && chart.title.spPr && chart.title.spPr.checkBlipFillRasterImage(images);
+			chart.title && chart.title.checkBlipFillRasterImage(images);
 			//plotArea
 			var plot_area = this.chart.plotArea;
 			if (plot_area) {
@@ -4214,7 +4214,7 @@ function(window, undefined) {
 					var axis = plot_area.axId[i];
 					if (axis) {
 						axis.spPr && axis.spPr.checkBlipFillRasterImage(images);
-						axis.title && axis.title && axis.title.spPr && axis.title.spPr.checkBlipFillRasterImage(images);
+						axis.title && axis.title.checkBlipFillRasterImage(images);
 					}
 				}
 				for (i = 0; i < plot_area.charts.length; ++i) {

@@ -5480,7 +5480,7 @@ var CPresentation = CPresentation || function(){};
         let nPageH = this.GetPageHeightMM(nPage);
         let oBodyPr = oShape.getBodyPr();
 
-        let nExtX = oShape.txBody.getMaxContentWidth(nPageW / 2, true) + oBodyPr.lIns + oBodyPr.rIns;
+        let nExtX = oShape.txBody.getMaxContentWidth(nPageW / 2, false) + oBodyPr.lIns + oBodyPr.rIns;
         let nExtY = oShape.txBody.content.GetSummaryHeight() + oBodyPr.tIns + oBodyPr.bIns;
 
         let oPos = this.private_computeDrawingAddingPos(nPage, nExtX, nExtY);
