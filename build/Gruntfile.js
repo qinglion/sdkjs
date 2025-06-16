@@ -403,6 +403,50 @@ module.exports = function(grunt) {
 		grunt.task.run('copy', 'clean');
 	});
 	grunt.registerTask('compile-sdk', ['compile-word', 'compile-cell', 'compile-slide'/* , 'compile-visio' */]);
+	
+	// 添加开发模式任务，使用WHITESPACE_ONLY级别确保保留console.log
+	function getDevCompileConfig(sdkmin, sdkall, outmin, outall, name, pathPrefix) {
+		const args = compilerArgs.concat (
+		`--define=window.AscCommon.g_cCompanyName='${companyName}'`,
+		`--define=window.AscCommon.g_cProductVersion='${version}'`,
+		`--define=window.AscCommon.g_cBuildNumber='${buildNumber}'`,
+		`--define=window.AscCommon.g_cIsBeta='${beta}'`,
+		'--rewrite_polyfills=true',
+		'--warning_level=QUIET',
+		'--language_out=ECMASCRIPT5',
+		'--compilation_level=WHITESPACE_ONLY', // 使用WHITESPACE_ONLY确保保留console.log
+		...sdkmin.map((file) => ('--js=' + file)),
+		`--chunk=${outmin}:${sdkmin.length}`,
+		`--chunk_wrapper=${outmin}:${license}\n%s`,
+		...sdkall.map((file) => ('--js=' + file)),
+		`--chunk=${outall}:${sdkall.length}:${outmin}`,
+		`--chunk_wrapper=${outall}:${license}\n(function(window, undefined) {%s})(window);`,
+		`--chunk_output_path_prefix=${pathPrefix}`);
+		return {
+			'closure-compiler': {
+				js: {
+					options: {
+						args: args,
+					}
+				}
+			}
+		}
+	}
+	
+	grunt.registerTask('compile-word-dev', 'Compile Word SDK for development', function () {
+		grunt.initConfig(getDevCompileConfig(getFilesMin(configWord), getFilesAll(configWord), 'sdk-all-min', 'sdk-all', 'word', path.join(word , '/')));
+		grunt.task.run('closure-compiler');
+	});
+	grunt.registerTask('compile-cell-dev', 'Compile Cell SDK for development', function () {
+		grunt.initConfig(getDevCompileConfig(getFilesMin(configCell), getFilesAll(configCell), 'sdk-all-min', 'sdk-all', 'cell', path.join(cell , '/')));
+		grunt.task.run('closure-compiler');
+	});
+	grunt.registerTask('compile-slide-dev', 'Compile Slide SDK for development', function () {
+		grunt.initConfig(getDevCompileConfig(getFilesMin(configSlide), getFilesAll(configSlide), 'sdk-all-min', 'sdk-all', 'slide', path.join(slide , '/')));
+		grunt.task.run('closure-compiler');
+	});
+	grunt.registerTask('compile-sdk-dev', 'Compile SDK for development with console.log preserved', ['compile-word-dev', 'compile-cell-dev', 'compile-slide-dev']);
+	
 	grunt.registerTask('clean-deploy', 'Clean deploy folder before deploying', function () {
 		grunt.initConfig({
 			clean: {
