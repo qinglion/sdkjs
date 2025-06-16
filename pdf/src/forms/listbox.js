@@ -747,6 +747,10 @@
             return;
         }
         
+        if (this.IsNeedDrawFromStream()) {
+            return;
+        }
+        
         let oContentBounds  = this.content.GetContentBounds(0);
         let oContentRect    = this.getFormRelRect();
         let aOrigRect       = this.GetOrigRect();
