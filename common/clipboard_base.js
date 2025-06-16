@@ -75,8 +75,8 @@
 		this.IsNeedDivOnCopy  = AscBrowser.isIE;
 		this.IsNeedDivOnPaste = AscBrowser.isIE/* || AscBrowser.isMozilla*/;
 
-		this.IsCopyCutOnlyInEditable = AscBrowser.isIE || AscBrowser.isMozilla;
-		this.IsPasteOnlyInEditable   = AscBrowser.isIE || AscBrowser.isMozilla || AscBrowser.isSafari;
+		this.IsCopyCutOnlyInEditable = AscBrowser.isIE || AscBrowser.isMozilla || AscBrowser.isVsCode;
+		this.IsPasteOnlyInEditable   = AscBrowser.isIE || AscBrowser.isMozilla || AscBrowser.isSafari || AscBrowser.isVsCode;
 
 		this.CommonDivClassName = "sdk-element";
 
@@ -119,7 +119,7 @@
 	{
 		_console_log : function(_obj)
 		{
-			//console.log(_obj);
+			console.log(_obj);
 		},
 
 		checkCopy : function(formats)
@@ -516,10 +516,9 @@
 					return g_clipboardBase._private_onbeforecopy(e);
 				});
 			}
-
 			if (this.IsCopyCutOnlyInEditable || this.IsPasteOnlyInEditable)
 			{
-				document.onkeydown = function(e)
+				function handleKeyboardEvent(e)
 				{
 					if (!g_clipboardBase.Api.asc_IsFocus(true) || g_clipboardBase.Api.isLongAction())
 						return;
@@ -536,9 +535,9 @@
 					{
 						var bIsBeforeCopyCutEmulate = false;
 						var _cut                    = false;
-						if (isCtrl && !isShift && (keyCode == 67 || keyCode == 88)) // copy
+						if (isCtrl && !isShift && keyCode == 67) // copy
 							bIsBeforeCopyCutEmulate = true;
-						if (!isCtrl && isShift && keyCode == 45) // cut
+						if ((!isCtrl && isShift && keyCode == 45) || (isCtrl && !isShift && keyCode == 88)) // cut
 						{
 							bIsBeforeCopyCutEmulate = true;
 							_cut                    = true;
@@ -552,13 +551,13 @@
 							var isEmulate = false;
 							try
 							{
-								isEmulate = _cut ? document.execCommand("beforecut") : document.execCommand("beforecopy");
+								isEmulate = _cut ? document.execCommand("cut") : document.execCommand("copy");
 							}
 							catch (err)
 							{
 							}
 
-							g_clipboardBase._private_onbeforecopy(undefined, !isEmulate);
+							// g_clipboardBase._private_onbeforecopy(undefined, !isEmulate);
 						}
 					}
 
@@ -576,16 +575,22 @@
 							var isEmulate = false;
 							try
 							{
-								isEmulate = document.execCommand("beforepaste");
+								isEmulate = document.execCommand("paste");
 							}
 							catch (err)
 							{
 							}
 
-							g_clipboardBase._private_onbeforepaste(undefined, !isEmulate);
+							// g_clipboardBase._private_onbeforepaste(undefined, !isEmulate);
 						}
 					}
 				};
+
+				if (AscBrowser.isVsCode) {
+					document.addEventListener("keydown", handleKeyboardEvent, true);
+				} else {
+					document.onkeydown = handleKeyboardEvent;
+				}
 			}
 
 			if (AscBrowser.isSafari && false)

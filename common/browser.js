@@ -65,7 +65,8 @@ var AscBrowser = {
     isAndroidNativeApp : false,
 	safariVersion : 17004001,
 	isTelegramWebView : false,
-	maxTouchPoints : 0
+	maxTouchPoints : 0,
+	isVsCode : false
 };
 
 // user agent lower case
@@ -182,6 +183,9 @@ AscBrowser.isNeedEmulateUpload = (AscBrowser.userAgent.indexOf("needemulateuploa
 AscBrowser.isAndroidNativeApp = (AscBrowser.userAgent.indexOf("ascandroidwebview") > -1);
 
 AscBrowser.isTelegramWebView = (typeof TelegramWebviewProxy === "object") ? true : false;
+
+// vs code detect
+AscBrowser.isVsCode = (AscBrowser.userAgent.indexOf("code-oss") > -1);
 
 AscBrowser.zoom = 1;
 
