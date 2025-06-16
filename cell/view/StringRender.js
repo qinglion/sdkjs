@@ -155,6 +155,13 @@
 		{
 			return oItem.char;
 		};
+		FragmentShaper.prototype.GetTextScript = function(nUnicode)
+		{
+			if (0x060C <= nUnicode && nUnicode <= 0x074A)
+				return AscFonts.HB_SCRIPT.HB_SCRIPT_ARABIC;
+
+			return AscFonts.hb_get_script_by_unicode(nUnicode);
+		};
 		FragmentShaper.prototype.shapeFragment = function(chars, font, stringRenderer, beginIndex) {
 			this.font           = font;
 			this.stringRenderer = stringRenderer;
