@@ -702,6 +702,11 @@ var CPresentation = CPresentation || function(){};
             let nType = oChildsMap[nIdx][0].GetType();
 
             let oParent = this.CreateField(aParentsInfo[i]["name"], nType);
+            oChildsMap[nIdx].forEach(function(child) {
+                oParent.AddKid(child);
+            });
+            
+            delete oChildsMap[nIdx];
             oParentsMap[nIdx] = oParent;
 
             if (aParentsInfo[i]["value"] != null)
@@ -795,8 +800,6 @@ var CPresentation = CPresentation || function(){};
         aRadios.forEach(function(field) {
             field.GetKid(0).UpdateAll();
         });
-
-        this._fieldsChildsMap = null;
     };
     CPDFDoc.prototype.FillButtonsIconsOnOpen = function() {
 		let oViewer = editor.getDocumentRenderer();
@@ -2939,6 +2942,7 @@ var CPresentation = CPresentation || function(){};
                 oParent.DrainLogicFrom(oExistsField);
 
                 oParent.AddKid(oExistsField);
+                checkFieldParams();
                 oParent.AddKid(oField);
 
                 oExistsField.SetPartialName(undefined);
@@ -2947,37 +2951,40 @@ var CPresentation = CPresentation || function(){};
             else {
                 oParent = oExistsField;
 
+                checkFieldParams();
                 oParent.AddKid(oField);
                 oField.SetPartialName(undefined);
             }
 
-            switch (oExistsField.GetType()) {
-                case AscPDF.FIELD_TYPES.radiobutton: {
-                    function getNextAvailableChoice(choices) {
-                        var usedNumbers = {};
-                      
-                        for (var i = 0; i < choices.length; i++) {
-                          var match = choices[i].match(/^Choice(\d+)$/);
-                          if (match) {
-                            usedNumbers[parseInt(match[1], 10)] = true;
-                          }
+            function checkFieldParams() {
+                switch (oExistsField.GetType()) {
+                    case AscPDF.FIELD_TYPES.radiobutton: {
+                        function getNextAvailableChoice(choices) {
+                            let usedNumbers = {};
+                        
+                            for (let i = 0; i < choices.length; i++) {
+                                let match = choices[i].match(/^Choice(\d+)$/);
+                                if (match) {
+                                    usedNumbers[parseInt(match[1], 10)] = true;
+                                }
+                            }
+                        
+                            let num = 1;
+                            while (usedNumbers[num]) {
+                                num++;
+                            }
+                        
+                            return 'Choice' + num;
                         }
-                      
-                        var num = 1;
-                        while (usedNumbers[num]) {
-                          num++;
-                        }
-                      
-                        return 'Choice' + num;
+
+                        let aOptions = oParent.GetAllWidgets().map(function(widget) {
+                            return widget.GetExportValue();
+                        });
+                        
+                        let sNewChoiceValue = getNextAvailableChoice(aOptions);
+
+                        oField.SetExportValue(sNewChoiceValue);
                     }
-
-                    let aOptions = oParent.GetAllWidgets().map(function(widget) {
-                        return widget.GetExportValue();
-                    });
-                    
-                    let sNewChoiceValue = getNextAvailableChoice(aOptions);
-
-                    oField.SetExportValue(sNewChoiceValue);
                 }
             }
         }
@@ -7969,16 +7976,48 @@ var CPresentation = CPresentation || function(){};
                 oFieldProps = new Asc.asc_CCheckboxFieldProperty();
                 oFieldProps.asc_putCheckboxStyle(field.GetStyle());
                 oFieldProps.asc_putExportValue(field.GetExportValue());
-                oFieldProps.asc_putDefaultChecked(field.GetDefaultValue() == field.GetExportValue());
                 oFieldProps.asc_putToggleToOff(!field.IsNoToggleToOff());
+
+                let sDefValue = field.GetDefaultValue();
+                let sExpValue = field.GetExportValue();
+                let nOptIdx = field.GetOptionsIndex();
+
+                if (nOptIdx !== -1) {
+                    let aOptions = field.GetParent().GetOptions();
+                    if (aOptions[nOptIdx] == aOptions[sDefValue]) {
+                        sExpValue = sDefValue;
+                    }
+                    else {
+                        sExpValue = String(nOptIdx);
+                    }
+                }
+
+                oFieldProps.asc_putDefaultChecked(field.GetDefaultValue() == sExpValue);
+                
                 break;
             }
             case AscPDF.FIELD_TYPES.radiobutton: {
                 oFieldProps = new Asc.asc_CRadiobuttonFieldProperty();
                 oFieldProps.asc_putCheckboxStyle(field.GetStyle());
                 oFieldProps.asc_putExportValue(field.GetExportValue());
-                oFieldProps.asc_putDefaultChecked(field.GetDefaultValue() == field.GetExportValue());
                 oFieldProps.asc_putRadiosInUnison(field.IsRadiosInUnison());
+
+                let sDefValue = field.GetDefaultValue();
+                let sExpValue = field.GetExportValue();
+                let nOptIdx = field.GetOptionsIndex();
+
+                if (nOptIdx !== -1) {
+                    let aOptions = field.GetParent().GetOptions();
+                    if (field.IsRadiosInUnison() && aOptions[nOptIdx] == aOptions[sDefValue]) {
+                        sExpValue = sDefValue;
+                    }
+                    else {
+                        sExpValue = String(nOptIdx);
+                    }
+                }
+
+                oFieldProps.asc_putDefaultChecked(field.GetDefaultValue() == sExpValue);
+                
                 break;
             }
             case AscPDF.FIELD_TYPES.button: {

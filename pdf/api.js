@@ -1991,6 +1991,15 @@
 		return oDoc.DoAction(function() {
 			oController.selectedObjects.forEach(function(shape) {
 				let field = shape.GetEditField();
+
+				if (field.GetType() == AscPDF.FIELD_TYPES.checkbox || field.GetType() == AscPDF.FIELD_TYPES.radiobutton) {
+					let nIdx = field.GetOptionsIndex();
+					if (sValue && nIdx !== -1) {
+						field.SetDefaultValue(String(nIdx));
+						return;
+					}
+				}
+				
 				field.SetDefaultValue(sValue);
 			});
 
@@ -2364,6 +2373,7 @@
 				let field = shape.GetEditField();
 				if (AscPDF.FIELD_TYPES.radiobutton == field.GetType()) {
 					field.SetRadiosInUnison(bValue);
+					field.GetKid(0).UpdateAll();
 				}
 			});
 
