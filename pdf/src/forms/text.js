@@ -722,6 +722,8 @@
             oCurMeta['regular'] = undefined
             this.SetMeta(oCurMeta);
         }
+        
+        this.SetFormatValue(undefined);
     };
     CTextField.prototype.GetFormatType = function() {
         let oFormatTrigger      = this.GetTrigger(AscPDF.FORMS_TRIGGERS_TYPES.Format);
@@ -1955,7 +1957,7 @@
     };
     CTextField.prototype.IsCanCommit = function(value) {
         if (!value) {
-            value = this.GetValue();
+            value = this.GetValue(true);
         }
 
         // first check keystroke
