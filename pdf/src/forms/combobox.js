@@ -300,9 +300,13 @@
             let oDoc = this.GetDocument();
             oDoc.History.Add(new CChangesPDFListFormCurIdxs(this, this.GetCurIdxs(), aIdxs));
 
+            let aOptions = this.GetOptions();
             if (undefined !== aIdxs[0]) {
                 this.SelectOption(aIdxs[0]);
             }
+
+            let sDisplayValue = Array.isArray(aOptions[aIdxs[0]]) ? aOptions[aIdxs[0]][0] : aOptions[aIdxs[0]];
+            this.UpdateDisplayValue(sDisplayValue)
 
             if (Asc.editor.getDocumentRenderer().IsOpenFormsInProgress)
                 this.SetParentCurIdxs(aIdxs);
@@ -419,7 +423,7 @@
 		if (!aChars.length)
 			return false;
 		
-		this.UpdateSelectionByEvent();
+		this.UpdateSelectionByEvent(oKeystrokeEvent);
 		
 		this.content.EnterText(aChars);
 		
@@ -440,6 +444,10 @@
         let aCurIdxs = this.GetCurIdxs();
         let aApiIdxs = this.GetParentCurIdxs();
 
+        let sFormatValueBefore = this.GetFormatValue();
+        this.DoFormatAction();
+        let sFormatValue = this.GetFormatValue();
+
         let sNewValue = this.GetValue();
         let isChanged = sNewValue !== this.GetParentValue();
         for (let i = 0; i < aCurIdxs.length; i++) {
@@ -448,11 +456,10 @@
                 break;
             }
         }
-        if (!isChanged) {
+        
+        if (!isChanged && sFormatValueBefore === sFormatValue) {
             return;
         }
-
-        this.DoFormatAction();
 
         for (let i = 0; i < aFields.length; i++) {
             aFields[i].SetWasChanged(true);
@@ -479,7 +486,6 @@
             aFields[i].SetNeedRecalc(true);
         }
 
-        let sFormatValue = this.GetFormatValue();
         for (let i = 0; i < aFields.length; i++) {
             if (aFields[i] == this) {
                 continue;
