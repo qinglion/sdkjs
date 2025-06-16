@@ -2389,6 +2389,7 @@ CInlineLevelSdt.prototype.SetComboBoxPr = function(oPr)
 		var _oPr = oPr ? oPr.Copy() : undefined;
 		History.Add(new CChangesSdtPrComboBox(this, this.Pr.ComboBox, _oPr));
 		this.Pr.ComboBox = _oPr;
+		this.OnChangePr();
 	}
 };
 /**
@@ -2408,6 +2409,7 @@ CInlineLevelSdt.prototype.SetDropDownListPr = function(oPr)
 		var _oPr = oPr ? oPr.Copy() : undefined;
 		History.Add(new CChangesSdtPrDropDownList(this, this.Pr.DropDown, _oPr));
 		this.Pr.DropDown = _oPr;
+		this.OnChangePr();
 	}
 };
 /**
@@ -2809,6 +2811,19 @@ CInlineLevelSdt.prototype.GetSpecificType = function()
 		return Asc.c_oAscContentControlSpecificType.DateTime;
 
 	return Asc.c_oAscContentControlSpecificType.None;
+};
+/**
+ * Sync form properties for current form and specified form
+ */
+CInlineLevelSdt.prototype.SyncFormPrWithSameKey = function(form)
+{
+	if (form.GetSpecificType() !== this.GetSpecificType())
+		return;
+	
+	if (Asc.c_oAscContentControlSpecificType.DropDownList === this.GetSpecificType())
+	{
+		this.SetDropDownListPr(form.GetDropDownListPr());
+	}
 };
 CInlineLevelSdt.prototype.Get_ParentTextTransform = function()
 {
