@@ -3143,9 +3143,9 @@
 	 *
 	 * @typeofeditors ["CPE"]
 	 * @memberof ApiSlide
-	 * @param {string} text - The text of the comment (required).
-	 * @param {string} author - The author of the comment (optional, defaults to the current user name).
-	 * @param {string} userId - The user ID of the comment author (optional, defaults to the current user ID).
+	 * @param {string} text - The comment text.
+	 * @param {string} [author] - The author's name (defaults to the current user name).
+	 * @param {string} [userId] - The user ID of the comment author (defaults to the current user ID).
 	 * @returns {boolean}
 	 * @see office-js-api/Examples/{Editor}/ApiSlide/Methods/AddComment.js
 	 */

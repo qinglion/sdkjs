@@ -20049,7 +20049,7 @@
 	/**
 	 * Determines whether a checkbox content control is currently checked or unchecked.
 	 *
-	 * Throws: Error if the content control is not a checkbox type.
+	 * Throws: Error if the content control is not a checkbox.
 	 *
 	 * @memberof ApiInlineLvlSdt
 	 * @typeofeditors ["CDE"]
@@ -20297,7 +20297,7 @@
 	/**
 	 * Retrieves the selected date value from a date picker content control and returns it as a Date object.
 	 *
-	 * Throws: Error if the content control is not a date picker type
+	 * Throws: Error if the content control is not a date picker.
 	 *
 	 * @memberof ApiInlineLvlSdt
 	 * @typeofeditors ["CDE"]
@@ -23178,9 +23178,9 @@
 	//------------------------------------------------------------------------------------------------------------------
 
 	/**
-	 * Append the text content of the given form to the end of the current complex form.
+	 * Appends the text content of the given form to the end of the current complex form.
 	 * @memberof ApiComplexForm
-	 * @param value {string|ApiDateForm|ApiPictureForm|ApiCheckBoxForm|ApiComboBoxForm|ApiTextForm} - Text or the form to add.
+	 * @param value {string | ApiDateForm | ApiPictureForm | ApiCheckBoxForm | ApiComboBoxForm | ApiTextForm} - The text or the form to add.
 	 * @typeofeditors ["CDE", "CFE"]
 	 * @returns {boolean}
 	 * @since 9.0.0
@@ -23229,7 +23229,7 @@
 		}, this);
 	};
 	/**
-	 * Get an ordered list of subforms.
+	 * Returns an ordered list of subforms.
 	 * @memberof ApiComplexForm
 	 * @typeofeditors ["CDE", "CFE"]
 	 * @returns {ApiForm[]}
