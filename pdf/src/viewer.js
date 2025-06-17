@@ -676,9 +676,13 @@
 			var isViewerTask = oThis.isRepaint;
 			if (oThis.isRepaint)
 			{
-				oThis._paint();
+				let res = oThis._paint();
 				oThis.onUpdateOverlay();
 				oThis.isRepaint = false;
+
+				if (res) {
+					oThis.afterPaintCallbacks();
+				}
 			}
 			else if (oThis.checkPagesLinks())
 			{
@@ -1108,6 +1112,8 @@
 			}
 
 			this.isDocumentReady = true;
+			
+			AscCommon.g_oIdCounter.Set_Load(false);
 		};
 
 		this.open = function(data, password)
@@ -1204,8 +1210,6 @@
 			g_fontApplication.LoadFont = g_fontApplication.LoadFontWithEmbed;
 
 			this.checkLoadCMap();
-
-			AscCommon.g_oIdCounter.Set_Load(false); // to do возможно не тут стоит выключать флаг
 
 			if (this.file && !this.file.isNeedPassword() && !this.file.isValid())
 				this.Api.sendEvent("asc_onError", Asc.c_oAscError.ID.ConvertationOpenError, Asc.c_oAscError.Level.Critical);
@@ -1441,13 +1445,11 @@
 				if (oFormInfo["locked"])
 					oForm.SetLocked(Boolean(oFormInfo["locked"]));
 				
-				if (oFormInfo["curIdxs"])
+				if (Array.isArray(oFormInfo["curIdxs"]) && oFormInfo["curIdxs"].length != 0)
 				{
 					oForm.SetCurIdxs(oFormInfo["curIdxs"]);
 					if (oFormInfo["value"] != null)
-					{
-						oForm._value = oFormInfo["value"];
-					}
+						oForm.SetParentValue(oFormInfo["value"]);
 				}
 				else if (oFormInfo["value"] != null && oForm.GetType() != AscPDF.FIELD_TYPES.button)
 				{
@@ -2205,8 +2207,10 @@
 
 		this.onMouseDown = function(e)
 		{
-			if (oThis.thumbnails) {
+			let oDoc = oThis.getPDFDoc();
+			if (oThis.thumbnails && oThis.thumbnails.isInFocus) {
 				oThis.thumbnails.isInFocus = false;
+				Asc.editor.sendEvent('asc_onCanPastePage', true);
 			}
 
 			Asc.editor.checkInterfaceElementBlur();
@@ -2226,7 +2230,6 @@
 			oThis.isFocusOnThumbnails = false;
 			AscCommon.stopEvent(e);
 
-			let oDoc = oThis.getPDFDoc();
 			oDoc.HideComments();
 
 			var mouseButton = AscCommon.getMouseButton(e || {});
@@ -2954,12 +2957,12 @@
 			
 			if (oDoc.fontLoader.isFontLoadInProgress() || this.IsOpenFormsInProgress || AscCommon.CollaborativeEditing.waitingImagesForLoad || this.isCMapLoading) {
 				this.paint();
-				return;
+				return false;
 			}
 			
 			if (!this.file || !this.file.isValid() || !this.canvas) {
 				this.paint();
-				return;
+				return false;
 			}
 
 			oDoc.UpdatePagesTransform();
@@ -2978,7 +2981,7 @@
 			
 			if (this._checkFontsOnPages(this.startVisiblePage, this.endVisiblePage) == false) {
 				this.paint();
-				return;
+				return false;
 			}
 
 			this.canvas.width = this.canvas.width;
@@ -3140,7 +3143,7 @@
 
 			this.initPaintDone = true;
 
-			this.afterPaintCallbacks();
+			return true;
 		};
 		this.afterPaintCallbacks = function() {
 			this.onAfterPaintCallback.forEach(function(callback) {
@@ -4296,7 +4299,7 @@
 		this._drawDrawingsOnCtx(nPage, ctx);
 		this._drawMarkupAnnotsOnCtx(nPage, ctx);
 		this._drawAnnotsOnCtx(nPage, ctx);
-		this._drawFieldsOnCtx(nPage, ctx);
+		this._drawFieldsOnCtx(nPage, ctx, false, true);
 
 		return ctx.canvas;
 	};

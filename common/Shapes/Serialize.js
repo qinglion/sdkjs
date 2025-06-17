@@ -8328,7 +8328,7 @@ function BinaryPPTYLoader()
 			}
 		}
 
-		if(this.presentation && Array.isArray(this.presentation.Slides)){
+		if(this.presentation && Array.isArray(this.presentation.Slides) || Asc.editor.isPdfEditor()){
             AscFormat.updateRowHeightAfterOpen(row, fRowHeight);
         }
         s.Seek2(_end_rec);

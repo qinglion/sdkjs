@@ -294,6 +294,23 @@
 			this.OnChangeTextForm(oForm);
 	};
 	/**
+	 * Sync all specific form properties for forms with the same key
+	 * @param form
+	 */
+	CFormsManager.prototype.OnChangeFormPr = function(form)
+	{
+		let userMaster = this.GetUserMasterByForm(form);
+		let allForms   = this.GetAllFormsByKey(form.GetFormKey(), form.GetSpecificType());
+		for (let i = 0, count = allForms.length; i < count; ++i)
+		{
+			let _form = allForms[i];
+			if (_form === form || userMaster !== this.GetUserMasterByForm(_form))
+				continue;
+			
+			_form.SyncFormPrWithSameKey(form);
+		}
+	};
+	/**
 	 * Проверяем корректность изменения формы
 	 * @param oForm
 	 */

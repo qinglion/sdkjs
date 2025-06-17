@@ -2806,7 +2806,7 @@ CChangesRunMathMetaData.prototype.ReadFromBinary = function(Reader)
 	if (!Reader.GetBool())
 	{
 		let oOldMetaData = new AscMath.MathMetaData();
-		oOldMetaData.ReadFromBinary(Reader);
+		oOldMetaData.Read_FromBinary(Reader);
 		this.Old = oOldMetaData;
 	}
 };

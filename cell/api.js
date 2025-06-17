@@ -7970,8 +7970,7 @@ var editor;
 			if (wsModel) {
 				var wsIndex = wsModel.getIndex();
 				var cFRule = wsModel.getCFRuleById(lockElem.Element["rangeOrObjectId"]);
-				if (cFRule && cFRule.val) {
-					cFRule = cFRule.val;
+				if (cFRule) {
 					cFRule.isLock = lockElem.UserId;
 					this.handlers.trigger("asc_onLockCFRule", wsIndex, cFRule.id, lockElem.UserId);
 				} else {
@@ -7993,8 +7992,8 @@ var editor;
 				//TODO необходимо добавить инофрмацию о локе нового добавленного правила!!!
 
 				var isLockedRules = false;
-				if (wsModel.aConditionalFormattingRules && wsModel.aConditionalFormattingRules.length) {
-					wsModel.aConditionalFormattingRules.forEach(function (_rule) {
+				if (wsModel.isConditionalFormattingRules()) {
+					wsModel.forEachConditionalFormattingRules(function (_rule) {
 						if (_rule.isLock) {
 							isLockedRules = true;
 						}
@@ -8049,8 +8048,8 @@ var editor;
 					var wsView = this.wb.getWorksheetById(sheetId);
 					var cFRule = wsModel.getCFRuleById(lockElem["rangeOrObjectId"]);
 					if (cFRule) {
-						if (cFRule.val.isLock) {
-							cFRule.val.isLock = null;
+						if (cFRule.isLock) {
+							cFRule.isLock = null;
 						} else {
 							wsView._lockAddNewRule = null;
 						}

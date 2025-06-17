@@ -2788,35 +2788,7 @@
 
 
 				setParagraphBidi: function (isRtl) {
-					let oTargetContent = this.getTargetDocContent(false, true);
-					if (!oTargetContent) {
-						return [];
-					}
-					let paragraphs = [];
-					oTargetContent.GetCurrentParagraph(false, paragraphs, {});
-					for (let i = 0; i < paragraphs.length; ++i)
-					{
-						let paragraph = paragraphs[i];
-						let isRtlParagraph = paragraph.GetParagraphBidi();
-						paragraph.SetParagraphBidi(isRtl);
-						if(isRtl !== isRtlParagraph)
-						{
-							let jc = paragraph.GetParagraphAlign();
-							switch (jc)
-							{
-								case AscCommon.align_Left :
-								{
-									paragraph.SetParagraphAlign(AscCommon.align_Right);
-									break;
-								}
-								case AscCommon.align_Right:
-								{
-									paragraph.SetParagraphAlign(AscCommon.align_Left);
-									break;
-								}
-							}
-						}
-					}
+					this.applyDocContentFunction(CDocumentContent.prototype.SetParagraphBidi, [isRtl], CTable.prototype.SetParagraphBidi);
 				},
 
 				setParagraphTabs: function (Tabs) {

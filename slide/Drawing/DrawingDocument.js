@@ -877,6 +877,10 @@ function CDrawingDocument()
 
 	this.CheckTargetDraw = function(x, y, isFocusOnSlide)
 	{
+		function roundPxForScale(value) {
+			return ((value * AscCommon.AscBrowser.retinaPixelRatio) >> 0) / AscCommon.AscBrowser.retinaPixelRatio;
+		}
+
 		var isReporter = this.m_oWordControl.m_oApi.isReporterMode;
 		if (this.TargetHtmlElementOnSlide != isFocusOnSlide)
 		{
@@ -916,7 +920,7 @@ function CDrawingDocument()
 
 		if (oldW !== newW || oldH !== newH)
 		{
-			var pixNewW = ((newW * AscCommon.AscBrowser.retinaPixelRatio) >> 0) / AscCommon.AscBrowser.retinaPixelRatio;
+			var pixNewW = roundPxForScale(newW);
 
 			this.TargetHtmlElement.style.width = pixNewW + "px";
 			this.TargetHtmlElement.style.height = newH + "px";
@@ -950,15 +954,15 @@ function CDrawingDocument()
 				pos.Y = y * g_dKoef_mm_to_pix - this.m_oWordControl.m_oNotesApi.Scroll;
 			}
 
-			this.TargetHtmlElementLeft = pos.X >> 0;
-			this.TargetHtmlElementTop = pos.Y >> 0;
+			this.TargetHtmlElementLeft = roundPxForScale(pos.X);
+			this.TargetHtmlElementTop = roundPxForScale(pos.Y);
 
 			this.TargetHtmlElement.style["transform"] = "";
 			this.TargetHtmlElement.style["msTransform"] = "";
 			this.TargetHtmlElement.style["mozTransform"] = "";
 			this.TargetHtmlElement.style["webkitTransform"] = "";
 
-			if ((!this.m_oWordControl.MobileTouchManager && !AscCommon.AscBrowser.isSafariMacOs) || !AscCommon.AscBrowser.isWebkit)
+			if ((!this.m_oWordControl.m_oApi.isMobileVersion && !AscCommon.AscBrowser.isSafariMacOs) || !AscCommon.AscBrowser.isWebkit)
 			{
 				this.TargetHtmlElement.style.left = this.TargetHtmlElementLeft + "px";
 				this.TargetHtmlElement.style.top = this.TargetHtmlElementTop + "px";
@@ -3367,6 +3371,10 @@ function CDrawingDocument()
 		if (oDemonstrationManager && oDemonstrationManager.Mode) {
 			const oSlide = oDemonstrationManager.GetCurrentSlide();
 			if (oSlide && oSlide.checkImageDraw(sCheckImage)) {
+				const oPlayer = oSlide.getAnimationPlayer();
+				if (oPlayer) {
+					oPlayer.clearImageCache(sCheckImage);
+				}
 				oDemonstrationManager.Resize(true);
 			}
 		}

@@ -3138,6 +3138,35 @@
         return false;
     };
 
+	/**
+	 * Adds a comment to the current slide.
+	 *
+	 * @typeofeditors ["CPE"]
+	 * @memberof ApiSlide
+	 * @param {string} text - The text of the comment (required).
+	 * @param {string} author - The author of the comment (optional, defaults to the current user name).
+	 * @param {string} userId - The user ID of the comment author (optional, defaults to the current user ID).
+	 * @returns {boolean}
+	 * @see office-js-api/Examples/{Editor}/ApiSlide/Methods/AddComment.js
+	 */
+	ApiSlide.prototype.AddComment = function (text, author, userId) {
+		if (!text || typeof text !== 'string') return false;
+
+		const currentDate = new Date();
+
+		const commentData = new AscCommon.CCommentData();
+		commentData.m_sText = text;
+		commentData.m_sUserName = author || AscCommon.UserInfoParser.getCurrentName();
+		commentData.m_sUserId = userId || Asc.editor.documentUserId;
+		commentData.m_sOOTime = currentDate.getTime().toString();
+		commentData.m_nTimeZoneBias = currentDate.getTimezoneOffset();
+		commentData.m_sTime = (currentDate.getTime() - currentDate.getTimezoneOffset() * 60 * 1000).toString();
+		commentData.m_sGuid = AscCommon.CreateGUID();
+
+		const comment = this.Slide.presentation.AddComment(commentData);
+		return Boolean(comment);
+	};
+
     /**
      * Removes objects (image, shape or chart) from the current slide.
      * @typeofeditors ["CPE"]
@@ -5307,6 +5336,7 @@
     ApiSlide.prototype["GetClassType"]                    = ApiSlide.prototype.GetClassType;
     ApiSlide.prototype["RemoveAllObjects"]                = ApiSlide.prototype.RemoveAllObjects;
     ApiSlide.prototype["AddObject"]                       = ApiSlide.prototype.AddObject;
+    ApiSlide.prototype["AddComment"]                      = ApiSlide.prototype.AddComment;
     ApiSlide.prototype["RemoveObject"]                    = ApiSlide.prototype.RemoveObject;
     ApiSlide.prototype["SetBackground"]                   = ApiSlide.prototype.SetBackground;
     ApiSlide.prototype["GetVisible"]                      = ApiSlide.prototype.GetVisible;

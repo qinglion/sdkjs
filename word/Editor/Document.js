@@ -2070,7 +2070,8 @@ function CDocument(DrawingDocument, isMainLogicDocument)
         Y       : 0,
         PageNum : 0
     };
-
+	
+	this.NumeralType = Asc.c_oNumeralType.arabic;
 
     // Класс для работы со статискикой документа
     this.Statistics = new CStatistics( this );
@@ -3067,6 +3068,9 @@ CDocument.prototype.private_CheckAdditionalOnFinalize = function()
 
 	if (this.Action.Additional.FormChange)
 		this.private_FinalizeFormChange();
+	
+	if (this.Action.Additional.FormPrChange)
+		this.private_FinalizeFormPrChange();
 
 	if (this.Action.Additional.RadioRequired)
 		this.private_FinalizeRadioRequired();
@@ -3251,6 +3255,18 @@ CDocument.prototype.private_FinalizeFormChange = function()
 	}
 
 	delete this.Action.Additional.FormChangeStart;
+};
+CDocument.prototype.private_FinalizeFormPrChange = function()
+{
+	this.Action.Additional.FormPrChangeStart = true;
+	
+	for (let formKey in this.Action.Additional.FormPrChange)
+	{
+		let form = this.Action.Additional.FormPrChange[formKey];
+		this.FormsManager.OnChangeFormPr(form);
+	}
+	
+	delete this.Action.Additional.FormPrChangeStart;
 };
 CDocument.prototype.private_FinalizeFormAutoFit = function(isFastRecalc)
 {
@@ -9115,7 +9131,7 @@ CDocument.prototype.OnKeyDown = function(e)
 			}
 			else if ((inlineSdt = oSelectedInfo.GetInlineLevelSdt()) && inlineSdt.IsForm())
 			{
-				if (inlineSdt.IsTextForm() && inlineSdt.IsMultiLineForm())
+				if (inlineSdt.IsTextForm() && (inlineSdt.IsMultiLineForm() || (!inlineSdt.IsFixedForm() && e.ShiftKey)))
 					this.executeShortcut(Asc.c_oAscDocumentShortcutType.InsertLineBreak);
 				else
 					this.Api.asc_MoveToFillingForm(true);
@@ -9873,7 +9889,7 @@ CDocument.prototype.executeShortcut = function(type)
 		case Asc.c_oAscDocumentShortcutType.InsertLineBreak:
 		{
 			let inlineSdt = this.GetSelectedElementsInfo().GetInlineLevelSdt();
-			let allowInForm = (inlineSdt && inlineSdt.IsForm() && inlineSdt.IsTextForm() && inlineSdt.IsMultiLineForm());
+			let allowInForm = (inlineSdt && inlineSdt.IsForm() && inlineSdt.IsTextForm() && (inlineSdt.IsMultiLineForm() || !inlineSdt.IsFixedForm()));
 			if (!this.IsSelectionLocked(AscCommon.changestype_Paragraph_Content, null, false, allowInForm))
 			{
 				let selectedInfo = this.GetSelectedElementsInfo();
@@ -26535,6 +26551,45 @@ CDocument.prototype.ClearActionOnChangeForm = function()
 		delete this.Action.Additional.FormChange;
 };
 /**
+ * Inform that form properties were changed
+ * @param {CInlineLevelSdt | CBlockLevelSdt} form
+ */
+CDocument.prototype.OnChangeFormPr = function(form)
+{
+	if (!form
+		|| !form.IsForm()
+		|| !this.Action.Start
+		|| (this.Action.Additional && this.Action.Additional.FormPrChangeStart))
+		return;
+	
+	let formKey  = form.IsRadioButton() ? form.GetRadioButtonGroupKey() : form.GetFormKey();
+	let mainForm = form.GetMainForm();
+	if (form !== mainForm)
+	{
+		formKey = mainForm.GetFormKey();
+		form    = mainForm;
+	}
+	
+	if (!formKey)
+		return;
+	
+	if (!this.Action.Additional.FormPrChange)
+		this.Action.Additional.FormPrChange = {};
+	
+	if (this.Action.Additional.FormPrChange[formKey])
+		return;
+	
+	this.Action.Additional.FormPrChange[formKey] = form;
+};
+/**
+ * Remove all additional processing for changing form settings at the end of the action
+ */
+CDocument.prototype.ClearActionOnChangeFormPr = function()
+{
+	if (this.Action.Additional.FormPrChange)
+		delete this.Action.Additional.FormPrChange;
+};
+/**
  * Сохраняем изменение, что радиогруппа должна иметь заданный статус Required
  * @param {string} sGroupKey
  * @param {boolean} isRequired
@@ -26582,7 +26637,7 @@ CDocument.prototype.ClearAllSpecialForms = function(contentControls)
 	if (!this.IsSelectionLocked(AscCommon.changestype_None, {
 		Type : changestype_2_ElementsArray_and_Type,
 		Elements : arrParagraphs,
-		CheckType : AscCommon.changestype_Paragraph_Content
+		CheckType : AscCommon.changestype_Paragraph_Properties
 	}, true, this.IsFillingFormMode()))
 	{
 		this.StartAction(AscDFH.historydescription_Document_ClearAllSpecialForms);
@@ -28231,6 +28286,14 @@ CDocument.prototype.RemoveCustomProperty = function(idx)
 	this.StartAction(AscDFH.historydescription_CustomProperties_Remove);
 	this.CustomProperties.RemoveProperty(idx)
 	this.FinalizeAction(true);
+};
+CDocument.prototype.SetNumeralType = function(type)
+{
+	this.NumeralType = type;
+};
+CDocument.prototype.GetNumeralType = function()
+{
+	return this.NumeralType;
 };
 
 function CDocumentSelectionState()

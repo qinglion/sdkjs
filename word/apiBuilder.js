@@ -2742,9 +2742,9 @@
 	 * Adds a comment to the current range.
 	 * @memberof ApiRange
 	 * @typeofeditors ["CDE"]
-	 * @param {string} sText - The comment text (required).
-	 * @param {string} sAuthor - The author's name (optional).
-	 * @param {string} sUserId - The user ID of the comment author (optional).
+	 * @param {string} sText - The comment text.
+	 * @param {string} [sAuthor] - The author's name.
+	 * @param {string} [sUserId] - The user ID of the comment author.
 	 * @returns {?ApiComment} - Returns null if the comment was not added.
 	 * @see office-js-api/Examples/{Editor}/ApiRange/Methods/AddComment.js
 	 */
@@ -4081,7 +4081,7 @@
 	/**
 	 * Form type.
 	 * The available form types.
-	 * @typedef {"textForm" | "comboBoxForm" | "dropDownForm" | "checkBoxForm" | "radioButtonForm" | "pictureForm"} FormType
+	 * @typedef {"textForm" | "comboBoxForm" | "dropDownForm" | "checkBoxForm" | "radioButtonForm" | "pictureForm" | "complexForm"} FormType
 	 * @see office-js-api/Examples/Enumerations/FormType.js
 	 */
 
@@ -5437,9 +5437,9 @@
 	 * @memberof Api
 	 * @typeofeditors ["CDE"]
 	 * @param {ApiRun[] | DocumentElement} element - The element where the comment will be added. It may be applied to any element which has the *AddComment* method.
-	 * @param {string} text - The comment text (required).
-	 * @param {string} author - The author's name (optional).
-	 * @param {string} userId - The user ID of the comment author (optional).
+	 * @param {string} text - The comment text.
+	 * @param {string} [author] - The author's name.
+	 * @param {string} [userId] - The user ID of the comment author.
 	 * @returns {ApiComment?} - Returns null if the comment was not added.
 	 * @see office-js-api/Examples/{Editor}/Api/Methods/AddComment.js
 	 */
@@ -6304,9 +6304,7 @@
 	 */
 	ApiCustomXmlNode.prototype.GetXPath = function()
 	{
-		let parent		= this.GetParent();
-		let parentText	= parent ? parent.GetXPath() + "/" : "/";
-		return parentText + this.CustomXmlContent.getNodeName();
+		return this.CustomXmlContent.getXPath();
 	};
 
 	/**
@@ -8869,9 +8867,9 @@
 	 * Adds a comment to the current document selection, or to the current word if no text is selected.
 	 * @memberof ApiDocument
 	 * @typeofeditors ["CDE"]
-	 * @param {string} sText - The comment text (required).
-	 * @param {string} sAuthor - The author's name (optional).
-	 * @param {string} sUserId - The user ID of the comment author (optional).
+	 * @param {string} sText - The comment text.
+	 * @param {string} [sAuthor] - The author's name.
+	 * @param {string} [sUserId] - The user ID of the comment author.
 	 * @returns {?ApiComment} - Returns null if the comment was not added.
 	 * @see office-js-api/Examples/{Editor}/ApiDocument/Methods/AddComment.js
 	 */
@@ -9550,9 +9548,9 @@
 	 * <note>Please note that this paragraph must be in the document.</note>
 	 * @memberof ApiParagraph
 	 * @typeofeditors ["CDE"]
-	 * @param {string} sText - The comment text (required).
-	 * @param {string} sAuthor - The author's name (optional).
-	 * @param {string} sUserId - The user ID of the comment author (optional).
+	 * @param {string} sText - The comment text.
+	 * @param {string} [sAuthor] - The author's name.
+	 * @param {string} [sUserId] - The user ID of the comment author.
 	 * @returns {ApiComment?} - Returns null if the comment was not added.
 	 * @see office-js-api/Examples/{Editor}/ApiParagraph/Methods/AddComment.js
 	 */
@@ -11795,9 +11793,9 @@
 	 * <note>Please note that this run must be in the document.</note>
 	 * @memberof ApiRun
 	 * @typeofeditors ["CDE"]
-	 * @param {string} sText - The comment text (required).
-	 * @param {string} sAuthor - The author's name (optional).
-	 * @param {string} sUserId - The user ID of the comment author (optional).
+	 * @param {string} sText - The comment text.
+	 * @param {string} [sAuthor] - The author's name.
+	 * @param {string} [sUserId] - The user ID of the comment author.
 	 * @returns {ApiComment?} - Returns null if the comment was not added.
 	 * @see office-js-api/Examples/{Editor}/ApiRun/Methods/AddComment.js
 	 */
@@ -13212,9 +13210,9 @@
 	 * <note>Please note that this table must be in the document.</note>
 	 * @memberof ApiTable
 	 * @typeofeditors ["CDE"]
-	 * @param {string} sText - The comment text (required).
-	 * @param {string} sAuthor - The author's name (optional).
-	 * @param {string} sUserId - The user ID of the comment author (optional).
+	 * @param {string} sText - The comment text.
+	 * @param {string} [sAuthor] - The author's name.
+	 * @param {string} [sUserId] - The user ID of the comment author.
 	 * @returns {ApiComment?} - Returns null if the comment was not added.
 	 * @see office-js-api/Examples/{Editor}/ApiTable/Methods/AddComment.js
 	 */
@@ -19784,9 +19782,9 @@
 	 * <note>Please note that this inline content control must be in the document.</note>
 	 * @memberof ApiInlineLvlSdt
 	 * @typeofeditors ["CDE"]
-	 * @param {string} sText - The comment text (required).
-	 * @param {string} sAuthor - The author's name (optional).
-	 * @param {string} sUserId - The user ID of the comment author (optional).
+	 * @param {string} sText - The comment text.
+	 * @param {string} [sAuthor] - The author's name.
+	 * @param {string} [sUserId] - The user ID of the comment author.
 	 * @returns {ApiComment?} - Returns null if the comment was not added.
 	 * @see office-js-api/Examples/{Editor}/ApiInlineLvlSdt/Methods/AddComment.js
 	 */
@@ -20047,6 +20045,25 @@
 		}
 		return false;
 	};
+	
+	/**
+	 * Determines whether a checkbox content control is currently checked or unchecked.
+	 *
+	 * Throws: Error if the content control is not a checkbox type.
+	 *
+	 * @memberof ApiInlineLvlSdt
+	 * @typeofeditors ["CDE"]
+	 * @since 9.0.0
+	 * @returns {boolean} Returns `true` if the checkbox is checked, `false` if the checkbox is unchecked.
+	 * @see office-js-api/Examples/{Editor}/ApiInlineLvlSdt/Methods/IsCheckBoxChecked.js
+	 */
+	ApiInlineLvlSdt.prototype.IsCheckBoxChecked = function()
+	{
+		if (!this.Sdt || !this.Sdt.IsCheckBox())
+			throwException(new Error("Content control must be a checkbox"));
+		
+		return this.Sdt.IsCheckBoxChecked();
+	};
 
 	/**
 	 * Checks whether the content control is a picture control.
@@ -20275,6 +20292,26 @@
 		}
 
 		return false;
+	};
+	
+	/**
+	 * Retrieves the selected date value from a date picker content control and returns it as a Date object.
+	 *
+	 * Throws: Error if the content control is not a date picker type
+	 *
+	 * @memberof ApiInlineLvlSdt
+	 * @typeofeditors ["CDE"]
+	 * @since 9.0.0
+	 * @returns {Date} Date object representing the selected date in the date picker control.
+	 * @see office-js-api/Examples/{Editor}/ApiInlineLvlSdt/Methods/GetDate.js
+	 */
+	ApiInlineLvlSdt.prototype.GetDate = function()
+	{
+		if (!this.Sdt || !this.Sdt.IsDatePicker())
+			throwException(new Error("Content control must be a date picker"));
+		
+		let fullDate = this.Sdt.GetDatePickerPr().GetFullDate();
+		return new Date(fullDate);
 	};
 
 	/**
@@ -21482,9 +21519,9 @@
 	 * <note>Please note that the current block content control must be in the document.</note>
 	 * @memberof ApiBlockLvlSdt
 	 * @typeofeditors ["CDE"]
-	 * @param {string} text - The comment text (required).
-	 * @param {string} author - The author's name (optional).
-	 * @param {string} userId - The user ID of the comment author (optional).
+	 * @param {string} text - The comment text.
+	 * @param {string} [author] - The author's name.
+	 * @param {string} [userId] - The user ID of the comment author.
 	 * @returns {?ApiComment} - Returns null if the comment was not added.
 	 * @see office-js-api/Examples/{Editor}/ApiBlockLvlSdt/Methods/AddComment.js
 	 */
@@ -21743,6 +21780,19 @@
 	 */
 	ApiFormBase.prototype.GetClassType = function()
 	{
+		if (this instanceof ApiTextForm)
+			return "textForm";
+		else if (this instanceof ApiComboBoxForm)
+			return "comboBoxForm";
+		else if (this instanceof ApiDateForm)
+			return "dateForm";
+		else if (this instanceof ApiCheckBoxForm)
+			return "checkBoxForm";
+		else if (this instanceof ApiPictureForm)
+			return "pictureForm";
+		else if (this instanceof ApiComplexForm)
+			return "complexForm";
+		
 		return "form";
 	};
 	/**
@@ -21768,6 +21818,8 @@
 			return "pictureForm";
 		if (this.Sdt.IsDatePicker())
 			return "dateForm";
+		if (this.Sdt.IsComplexForm())
+			return "complexForm";
 	};
 	/**
 	 * Returns the current form key.
@@ -22087,19 +22139,17 @@
 	 *Used if possible for this type of form*
 	 * @memberof ApiFormBase
 	 * @typeofeditors ["CDE", "CFE"]
-	 * @param {ApiTextPr} oTextPr - The text properties that will be set to the current form.
+	 * @param {ApiTextPr} textPr - The text properties that will be set to the current form.
 	 * @return {boolean}  
 	 * @see office-js-api/Examples/{Editor}/ApiFormBase/Methods/SetTextPr.js
 	 */
-	ApiFormBase.prototype.SetTextPr = function(oTextPr)
+	ApiFormBase.prototype.SetTextPr = function(textPr)
 	{
-		if (oTextPr && oTextPr.GetClassType && oTextPr.GetClassType() === "textPr")
-		{
-			this.Sdt.Apply_TextPr(oTextPr.TextPr);
-			return true;
-		}
-
-		return false;
+		if (!textPr || !(textPr instanceof ApiTextPr))
+			throwException("The textPr parameter must be an instance of ApiTextPr");
+		
+		this.Sdt.Apply_TextPr(textPr.TextPr, undefined, true);
+		return true;
 	};
 	/**
 	 * Returns the text properties from the current form.
@@ -23119,6 +23169,103 @@
 	{
 		let fullDate = this.Sdt.GetDatePickerPr().GetFullDate();
 		return new Date(fullDate);
+	};
+
+	//------------------------------------------------------------------------------------------------------------------
+	//
+	// ApiComplexForm
+	//
+	//------------------------------------------------------------------------------------------------------------------
+
+	/**
+	 * Append the text content of the given form to the end of the current complex form.
+	 * @memberof ApiComplexForm
+	 * @param value {string|ApiDateForm|ApiPictureForm|ApiCheckBoxForm|ApiComboBoxForm|ApiTextForm} - Text or the form to add.
+	 * @typeofeditors ["CDE", "CFE"]
+	 * @returns {boolean}
+	 * @since 9.0.0
+	 * @see office-js-api/Examples/{Editor}/ApiComplexForm/Methods/Add.js
+	 */
+	ApiComplexForm.prototype.Add = function(value)
+	{
+		if (!value)
+			return false;
+		
+		return executeNoFormLockCheck(function(){
+			if (value instanceof ApiDateForm
+				|| value instanceof ApiPictureForm
+				|| value instanceof ApiCheckBoxForm
+				|| value instanceof ApiComboBoxForm
+				|| value instanceof ApiTextForm)
+			{
+				if (value.Sdt.IsUseInDocument())
+					return false;
+				
+				if (this.Sdt.IsPlaceHolder())
+					this.Sdt.private_ReplacePlaceHolderWithContent();
+				
+				this.Sdt.Add_ToContent(this.Sdt.Content.length, value.Sdt);
+			}
+			else if (typeof(value) === "string")
+			{
+				if (this.Sdt.IsPlaceHolder())
+					this.Sdt.private_ReplacePlaceHolderWithContent();
+				
+				let lastElement = this.Sdt.Content[this.Sdt.Content.length - 1];
+				if (lastElement instanceof AscWord.Run)
+				{
+					lastElement.AddText(value);
+				}
+				else
+				{
+					let run = new AscWord.Run();
+					run.AddText(value);
+					this.Sdt.Add_ToContent(this.Sdt.Content.length, run);
+				}
+			}
+
+			this.OnChangeValue();
+			return true;
+		}, this);
+	};
+	/**
+	 * Get an ordered list of subforms.
+	 * @memberof ApiComplexForm
+	 * @typeofeditors ["CDE", "CFE"]
+	 * @returns {ApiForm[]}
+	 * @since 9.0.0
+	 * @see office-js-api/Examples/{Editor}/ApiComplexForm/Methods/GetSubForms.js
+	 */
+	ApiComplexForm.prototype.GetSubForms = function()
+	{
+		let forms = this.Sdt.GetAllSubForms();
+		let result = [];
+		for (let i = 0; i < forms.length; ++i)
+		{
+			let apiForm = ToApiForm(forms[i]);
+			if (apiForm)
+				result.push(apiForm);
+		}
+		return result;
+	};
+	/**
+	 * Clears all content from the current complex form, resetting it to its placeholder state.
+	 * @memberof ApiComplexForm
+	 * @typeofeditors ["CDE", "CFE"]
+	 * @returns {boolean}
+	 * @since 9.0.0
+	 * @see office-js-api/Examples/{Editor}/ApiComplexForm/Methods/ClearContent.js
+	 */
+	ApiComplexForm.prototype.ClearContent = function()
+	{
+		return executeNoFormLockCheck(function(){
+			if (this.Sdt.IsPlaceHolder())
+				return false;
+			this.Sdt.ClearContentControl();
+			this.Sdt.ReplaceContentWithPlaceHolder();
+			this.OnChangeValue();
+			return true;
+		}, this);
 	};
 	
 	/**
@@ -25827,7 +25974,9 @@
 	ApiInlineLvlSdt.prototype["RemoveListItem"]         = ApiInlineLvlSdt.prototype.RemoveListItem;
 	ApiInlineLvlSdt.prototype["Select"]                 = ApiInlineLvlSdt.prototype.Select;
 	ApiInlineLvlSdt.prototype["SetCheckBoxChecked"]     = ApiInlineLvlSdt.prototype.SetCheckBoxChecked;
+	ApiInlineLvlSdt.prototype["IsCheckBoxChecked"]      = ApiInlineLvlSdt.prototype.IsCheckBoxChecked;
 	ApiInlineLvlSdt.prototype["SetDate"]                = ApiInlineLvlSdt.prototype.SetDate;
+	ApiInlineLvlSdt.prototype["GetDate"]                = ApiInlineLvlSdt.prototype.GetDate;
 	ApiInlineLvlSdt.prototype["SetDateFormat"]          = ApiInlineLvlSdt.prototype.SetDateFormat;
 	ApiInlineLvlSdt.prototype["SetPicture"]             = ApiInlineLvlSdt.prototype.SetPicture;
 	ApiInlineLvlSdt.prototype["SetPictureSize"]         = ApiInlineLvlSdt.prototype.SetPictureSize;
@@ -25964,6 +26113,11 @@
 	ApiDateForm.prototype["SetDate"]     = ApiDateForm.prototype.SetDate;
 	ApiDateForm.prototype["GetDate"]     = ApiDateForm.prototype.GetDate;
 	ApiDateForm.prototype["Copy"]        = ApiDateForm.prototype.Copy;
+	
+	ApiComplexForm.prototype["Add"]          = ApiComplexForm.prototype.Add;
+	ApiComplexForm.prototype["GetSubForms"]  = ApiComplexForm.prototype.GetSubForms;
+	ApiComplexForm.prototype["ClearContent"] = ApiComplexForm.prototype.ClearContent;
+	ApiComplexForm.prototype["Copy"]         = ApiComplexForm.prototype.Copy;
 
 	ApiComboBoxForm.prototype["GetListValues"]       = ApiComboBoxForm.prototype.GetListValues;
 	ApiComboBoxForm.prototype["SetListValues"]       = ApiComboBoxForm.prototype.SetListValues;
@@ -26122,43 +26276,43 @@
 	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	// Export for internal usage
 	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-	window['AscBuilder'] = window['AscBuilder'] || {};
-	window['AscBuilder'].Api                = Api;
-	window['AscBuilder'].ApiDocumentContent = ApiDocumentContent;
-	window['AscBuilder'].ApiRange           = ApiRange;
-	window['AscBuilder'].ApiDocument        = ApiDocument;
-	window['AscBuilder'].ApiParagraph       = ApiParagraph;
-	window['AscBuilder'].ApiRun             = ApiRun;
-	window['AscBuilder'].ApiHyperlink       = ApiHyperlink;
-	window['AscBuilder'].ApiSection         = ApiSection;
-	window['AscBuilder'].ApiTable           = ApiTable;
-	window['AscBuilder'].ApiTableRow        = ApiTableRow;
-	window['AscBuilder'].ApiTableCell       = ApiTableCell;
-	window['AscBuilder'].ApiStyle           = ApiStyle;
-	window['AscBuilder'].ApiNumbering       = ApiNumbering;
-	window['AscBuilder'].ApiNumberingLevel  = ApiNumberingLevel;
-	window['AscBuilder'].ApiTextPr          = ApiTextPr;
-	window['AscBuilder'].ApiParaPr          = ApiParaPr;
-	window['AscBuilder'].ApiTablePr         = ApiTablePr;
-	window['AscBuilder'].ApiTableRowPr      = ApiTableRowPr;
-	window['AscBuilder'].ApiTableCellPr     = ApiTableCellPr;
-	window['AscBuilder'].ApiTableStylePr    = ApiTableStylePr;
-	window['AscBuilder'].ApiDrawing         = ApiDrawing;
-	window['AscBuilder'].ApiImage           = ApiImage;
-	window['AscBuilder'].ApiShape           = ApiShape;
-	window['AscBuilder'].ApiChart           = ApiChart;
-	window['AscBuilder'].ApiGroup           = ApiGroup;
-	window['AscBuilder'].ApiOleObject       = ApiOleObject;
-	window['AscBuilder'].ApiInlineLvlSdt    = ApiInlineLvlSdt;
-	window['AscBuilder'].ApiBlockLvlSdt     = ApiBlockLvlSdt;
-	window['AscBuilder'].ApiFormBase        = ApiFormBase;
-	window['AscBuilder'].ApiTextForm        = ApiTextForm;
-	window['AscBuilder'].ApiPictureForm     = ApiPictureForm;
-	window['AscBuilder'].ApiDateForm        = ApiDateForm;
-	window['AscBuilder'].ApiComboBoxForm    = ApiComboBoxForm;
-	window['AscBuilder'].ApiCheckBoxForm    = ApiCheckBoxForm;
-	window['AscBuilder'].ApiComplexForm     = ApiComplexForm;
-	window['AscBuilder'].ApiCore            = ApiCore;
+	window['AscBuilder']                     = window['AscBuilder'] || {};
+	window['AscBuilder'].Api                 = Api;
+	window['AscBuilder'].ApiDocumentContent  = ApiDocumentContent;
+	window['AscBuilder'].ApiRange            = ApiRange;
+	window['AscBuilder'].ApiDocument         = ApiDocument;
+	window['AscBuilder'].ApiParagraph        = ApiParagraph;
+	window['AscBuilder'].ApiRun              = ApiRun;
+	window['AscBuilder'].ApiHyperlink        = ApiHyperlink;
+	window['AscBuilder'].ApiSection          = ApiSection;
+	window['AscBuilder'].ApiTable            = ApiTable;
+	window['AscBuilder'].ApiTableRow         = ApiTableRow;
+	window['AscBuilder'].ApiTableCell        = ApiTableCell;
+	window['AscBuilder'].ApiStyle            = ApiStyle;
+	window['AscBuilder'].ApiNumbering        = ApiNumbering;
+	window['AscBuilder'].ApiNumberingLevel   = ApiNumberingLevel;
+	window['AscBuilder'].ApiTextPr           = ApiTextPr;
+	window['AscBuilder'].ApiParaPr           = ApiParaPr;
+	window['AscBuilder'].ApiTablePr          = ApiTablePr;
+	window['AscBuilder'].ApiTableRowPr       = ApiTableRowPr;
+	window['AscBuilder'].ApiTableCellPr      = ApiTableCellPr;
+	window['AscBuilder'].ApiTableStylePr     = ApiTableStylePr;
+	window['AscBuilder'].ApiDrawing          = ApiDrawing;
+	window['AscBuilder'].ApiImage            = ApiImage;
+	window['AscBuilder'].ApiShape            = ApiShape;
+	window['AscBuilder'].ApiChart            = ApiChart;
+	window['AscBuilder'].ApiGroup            = ApiGroup;
+	window['AscBuilder'].ApiOleObject        = ApiOleObject;
+	window['AscBuilder'].ApiInlineLvlSdt     = ApiInlineLvlSdt;
+	window['AscBuilder'].ApiBlockLvlSdt      = ApiBlockLvlSdt;
+	window['AscBuilder'].ApiFormBase         = ApiFormBase;
+	window['AscBuilder'].ApiTextForm         = ApiTextForm;
+	window['AscBuilder'].ApiPictureForm      = ApiPictureForm;
+	window['AscBuilder'].ApiDateForm         = ApiDateForm;
+	window['AscBuilder'].ApiComboBoxForm     = ApiComboBoxForm;
+	window['AscBuilder'].ApiCheckBoxForm     = ApiCheckBoxForm;
+	window['AscBuilder'].ApiComplexForm      = ApiComplexForm;
+	window['AscBuilder'].ApiCore             = ApiCore;
 	window['AscBuilder'].ApiCustomProperties = ApiCustomProperties;
 	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	// Area for internal usage
@@ -27409,7 +27563,7 @@
 	};
 	ApiFormBase.prototype.OnChangeTextPr  = function(oApiTextPr)
 	{
-		this.Sdt.Apply_TextPr(oApiTextPr.TextPr);
+		this.Sdt.Apply_TextPr(oApiTextPr.TextPr, undefined, true);
 		oApiTextPr.TextPr = this.Sdt.Pr.TextPr;
 	};
 	ApiFormBase.prototype.OnChangeValue = function()

@@ -2635,16 +2635,15 @@
   };
 
   WorkbookView.prototype._canResize = function() {
-	  let showVerticalScroll = this.Api.isMobileVersion || this.getShowVerticalScroll();
-	  let showHorizontalScroll = this.Api.isMobileVersion || this.getShowHorizontalScroll();
+    let showVerticalScroll = this.getShowVerticalScroll();
+    let showHorizontalScroll = this.getShowHorizontalScroll();
 
-	  let styleWidth, styleHeight;
-	  styleWidth = this.element.offsetWidth - (this.Api.isMobileVersion || !showVerticalScroll ? 0 : this.defaults.scroll.widthPx);
-	  styleHeight = this.element.offsetHeight - (this.Api.isMobileVersion || !showHorizontalScroll ? 0 : this.defaults.scroll.heightPx);
-	  
-	  this.canvasOverlay.parentNode.style.right = !showVerticalScroll ? 0 : 14 + 'px';
-	  this.canvasOverlay.parentNode.style.bottom = !showHorizontalScroll ? 0 : 14 + 'px';
+    let styleWidth, styleHeight;
+    styleWidth = this.element.offsetWidth - (this.Api.isMobileVersion || !showVerticalScroll ? 0 : this.defaults.scroll.widthPx);
+    styleHeight = this.element.offsetHeight - (this.Api.isMobileVersion || !showHorizontalScroll ? 0 : this.defaults.scroll.heightPx);
 
+    this.canvasOverlay.parentNode.style.right = (this.Api.isMobileVersion || !showVerticalScroll) ? 0 : this.defaults.scroll.widthPx + 'px';
+    this.canvasOverlay.parentNode.style.bottom = (this.Api.isMobileVersion || !showHorizontalScroll) ? 0 : this.defaults.scroll.heightPx + 'px';
 
 
     this.isInit = true;
@@ -4340,6 +4339,9 @@
   WorkbookView.prototype._calcMaxDigitWidth = function () {
 	  var t = this;
 	  this.executeDefaultDpi(function () {
+		  if (t.fmgrGraphics && t.fmgrGraphics[3] && !t.fmgrGraphics[3].m_oFont) {
+			  AscCommonExcel.resetDrawingContextFonts();
+		  }
 		  // set default worksheet header font for calculations
 		  t.buffers.main.setFont(AscCommonExcel.g_oDefaultFormat.Font);
 		  // Измеряем в pt

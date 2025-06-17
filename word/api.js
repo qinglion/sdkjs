@@ -14467,6 +14467,44 @@ background-repeat: no-repeat;\
 			}
 		}
 	};
+	/**
+	 * @param type {Asc.c_oNumeralType}
+	 */
+	asc_docs_api.prototype.asc_setNumeralType = function(type)
+	{
+		let logicDocument = this.private_GetLogicDocument();
+		if (!logicDocument)
+			return;
+		
+		function redraw() {
+			logicDocument.SetNumeralType(type);
+			logicDocument.GetAllParagraphs().forEach(function(paragraph) {
+				paragraph.RecalcInfo.NeedShapeText();
+			});
+			logicDocument.RecalculateFromStart();
+		}
+		
+		let symbols = "";
+		if (Asc.c_oNumeralType.hindi === type)
+			symbols = String.fromCodePoint(0x0660, 0x0661, 0x0662, 0x0663, 0x0664, 0x0665, 0x0666, 0x0667, 0x0668, 0x0669);
+		else if (Asc.c_oNumeralType.arabic === type)
+			symbols = String.fromCodePoint(0x0030, 0x0031, 0x0032, 0x0033, 0x0034, 0x0035, 0x0036, 0x0037, 0x0038, 0x0039);
+		else
+			return;
+		
+		if (!symbols)
+			redraw();
+		else
+			AscFonts.FontPickerByCharacter.checkText(symbols, this, redraw);
+	};
+	/**
+	 * @returns {Asc.c_oNumeralType}
+	 */
+	asc_docs_api.prototype.asc_getNumeralType = function()
+	{
+		let logicDocument = this.private_GetLogicDocument();
+		return logicDocument ? logicDocument.GetNumeralType() : Asc.c_oNumeralType.arabic;
+	};
 	
 	//-------------------------------------------------------------export---------------------------------------------------
 	window['Asc']                                                       = window['Asc'] || {};
@@ -15294,6 +15332,9 @@ background-repeat: no-repeat;\
 	asc_docs_api.prototype["asc_hideDeletedTextInVersionHistory"]     = asc_docs_api.prototype.asc_hideDeletedTextInVersionHistory;
 
 	asc_docs_api.prototype["asc_getCoHistory"] = asc_docs_api.prototype.asc_getCoHistory;
+	
+	asc_docs_api.prototype["asc_setNumeralType"] = asc_docs_api.prototype.asc_setNumeralType;
+	asc_docs_api.prototype["asc_getNumeralType"] = asc_docs_api.prototype.asc_getNumeralType;
 
 	CDocInfoProp.prototype['get_PageCount']             = CDocInfoProp.prototype.get_PageCount;
 	CDocInfoProp.prototype['put_PageCount']             = CDocInfoProp.prototype.put_PageCount;

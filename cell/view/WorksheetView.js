@@ -6315,7 +6315,7 @@
 		if (this.getRightToLeft()) {
 			rect._x = this.getCtxWidth(ctx) - rect._x - rect._width;
 		}
-		rect._x = this._calcTextHorizPos(rect._x, rect._x + rect._width, tm, cellHA);
+		rect._x = this._calcTextHorizPos(rect._x, rect._x + rect._width, tm, cellHA, true);
 		rect._y = this._calcTextVertPos(rect._y, rect._height, bl, tm, align.getAlignVertical());
 		var dScale = asc_getcvt(0, 3, this._getPPIX());
 		rect._x *= dScale;
@@ -10353,8 +10353,8 @@
         return tm;
     };
 
-    WorksheetView.prototype._calcTextHorizPos = function (x1, x2, tm, align) {
-        if (this.getRightToLeft()) {
+    WorksheetView.prototype._calcTextHorizPos = function (x1, x2, tm, align, skipRtl) {
+        if (this.getRightToLeft() && !skipRtl) {
 			if (align === AscCommon.align_Right) {
 				align = AscCommon.align_Left;
 			} else if (align === AscCommon.align_Left) {
@@ -10523,13 +10523,14 @@
         return this.drawingCtx.getHeight() - visibleHeight;
     };
 
-    WorksheetView.prototype._updateVisibleRowsCount = function (skipScrollReinit) {
+    WorksheetView.prototype._updateVisibleRowsCount = function (skipScrollReinit, fChangeRowsCount) {
         this._calcVisibleRows();
         if (gc_nMaxRow !== this.nRowsCount && !this.model.isDefaultHeightHidden()) {
 			var missingHeight = this._getMissingHeight();
 			if (0 < missingHeight) {
 				var rowHeight = Asc.round(this.defaultRowHeightPx * this.getZoom());
 				this.nRowsCount = Math.min(this.nRowsCount + Asc.ceil(missingHeight / rowHeight), gc_nMaxRow);
+				fChangeRowsCount && fChangeRowsCount();
 				this._calcVisibleRows();
 				if (!skipScrollReinit) {
 					this.handlers.trigger("reinitializeScroll", AscCommonExcel.c_oAscScrollType.ScrollVertical);
@@ -10539,13 +10540,14 @@
         this._updateDrawingArea();
     };
 
-    WorksheetView.prototype._updateVisibleColsCount = function (skipScrollReinit) {
+    WorksheetView.prototype._updateVisibleColsCount = function (skipScrollReinit, fChangeRowsCount) {
         this._calcVisibleColumns();
 		if (gc_nMaxCol !== this.nColsCount && !this.model.isDefaultWidthHidden()) {
 			var missingWidth = this._getMissingWidth();
 			if (0 < missingWidth) {
 				var colWidth = Asc.round(this.defaultColWidthPx * this.getZoom(true) * this.getRetinaPixelRatio());
 				this.setColsCount(Math.min(this.nColsCount + Asc.ceil(missingWidth / colWidth), gc_nMaxCol));
+				fChangeRowsCount && fChangeRowsCount();
 				this._calcVisibleColumns();
 				if (!skipScrollReinit) {
 					this.handlers.trigger("reinitializeScroll", AscCommonExcel.c_oAscScrollType.ScrollHorizontal);
@@ -10692,7 +10694,21 @@
 
         // ToDo стоит тут переделать весь scroll
         vr.r1 = start;
-        this._updateVisibleRowsCount();
+		let _beforeRowsCount = this.nRowsCount;
+        this._updateVisibleRowsCount(undefined, function () {
+			if (!t.workbook.getSmoothScrolling()) {
+				return;
+			}
+			let _expandRowsHeight = 30 * t.defaultRowHeightPx;
+			let nRowsHeightDiff = t._getRowTop(t.nRowsCount) - t._getRowTop(_beforeRowsCount);
+
+			if (nRowsHeightDiff > 0 && nRowsHeightDiff < _expandRowsHeight) {
+				while (nRowsHeightDiff < _expandRowsHeight) {
+					nRowsHeightDiff += t._getRowHeight(t.nRowsCount);
+					t.nRowsCount++;
+				}
+			}
+		});
         // Это необходимо для того, чтобы строки, у которых высота по тексту, рассчитались
         if (!oldVR.intersectionSimple(vr)) {
             // Полностью обновилась область
@@ -10954,6 +10970,7 @@
         var vr = this.visibleRange;
         var fixStartCol = new asc_Range(vr.c1, vr.r1, vr.c1, vr.r2);
 
+		let t = this;
 		let isReverse = delta < 0;
 		let unitDeltaStep = Asc.round(this.getHScrollStep());
 
@@ -11093,7 +11110,21 @@
 
         // ToDo стоит тут переделать весь scroll
         vr.c1 = start;
-        this._updateVisibleColsCount();
+		let _beforeColsCount = this.nColsCount;
+		this._updateVisibleColsCount(undefined, function () {
+			if (!t.workbook.getSmoothScrolling()) {
+				return;
+			}
+			let _expandColsWidth = 30 * t.defaultColWidthPx;
+			let nColsWidthDiff = t._getColLeft(t.nColsCount) - t._getColLeft(_beforeColsCount);
+
+			if (nColsWidthDiff > 0 && nColsWidthDiff < _expandColsWidth) {
+				while (nColsWidthDiff < _expandColsWidth) {
+					nColsWidthDiff += t._getColumnWidth(t.nColsCount);
+					t.nColsCount++;
+				}
+			}
+		});
         // Это необходимо для того, чтобы строки, у которых высота по тексту, рассчитались
         if (!oldVR.intersectionSimple(vr)) {
             // Полностью обновилась область
@@ -22140,10 +22171,10 @@
 			//если тело колоки заполнено УФ, тогда расширяем его диапазон на ячейки ниже
 			//ms ещё изменяет УФ при уменьшении ф/т, что мне кажется может мешать работе, пока не реализую
 			if (tablePart && newRange.containsRange(oldRange)) {
-				var aRules = t.model.aConditionalFormattingRules;
-				if (aRules && aRules.length) {
+				var aRules = t.model.getConditionalFormattingRules();
+				if (aRules) {
 
-					for (var j = 0; j < aRules.length; j++) {
+					for (var j in aRules) {
 						var oRule = aRules[j];
 						var ranges = oRule && oRule.ranges;
 						if (ranges) {
@@ -25502,13 +25533,6 @@
 		var selection = t.model.selectionRange.getLast();
 		var activeCell = t.model.selectionRange.activeCell.clone();
 
-		/*var temp = this.model.aConditionalFormattingRules[0].clone();
-		temp.id = this.model.aConditionalFormattingRules[0].id;
-		//temp.ranges.push(Asc.Range(1,1,1,1));
-
-		this.deleteCF([temp]);
-		return;*/
-
 		var revertSelection = function() {
 			t.cleanSelection();
 			t.model.selectionRange.getLast().assign2(props.selection.clone());
@@ -26270,8 +26294,8 @@
 				for (j = 0; j < deleteIdArr.length; j++) {
 					var _oRule = t.model.getCFRuleById(deleteIdArr[j]);
 					var _ranges;
-					if (_oRule && _oRule.val) {
-						_ranges = _oRule.val.ranges;
+					if (_oRule) {
+						_ranges = _oRule.ranges;
 					}
 					t.model.deleteCFRule(deleteIdArr[j], true);
 
@@ -26313,14 +26337,14 @@
 				if (_rule.priority === null) {
 					_rule.priority = 1;
 					//двигаем приоритет у всех остальных и добавляем их в список измененных
-					if (t.model.aConditionalFormattingRules) {
-						for (i = 0; i < t.model.aConditionalFormattingRules.length; i++) {
-							var _id = t.model.aConditionalFormattingRules[i].id;
-							var oRule = t.model.aConditionalFormattingRules[i].clone();
+					if (t.model.isConditionalFormattingRules()) {
+						t.model.forEachConditionalFormattingRules(function (val) {
+							var _id = val.id;
+							var oRule = val.clone();
 							oRule.id = _id;
 							oRule.priority++;
 							arr[nActive].push(oRule);
-						}
+						})
 					}
 				}
 				if (_rule.ranges === null) {

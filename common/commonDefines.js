@@ -3859,6 +3859,16 @@ window.AscCommon.g_cIsBeta = "false";
 	ST_DisplacedByCustomXml['next'] = ST_DisplacedByCustomXml.next;
 	ST_DisplacedByCustomXml['prev'] = ST_DisplacedByCustomXml.prev;
 	
+	const c_oNumeralType = {
+		arabic  : 0,
+		hindi   : 1,
+		context : 2
+	};
+	window['Asc']['c_oNumeralType'] = window['Asc'].c_oNumeralType = c_oNumeralType;
+	c_oNumeralType["arabic"]  = c_oNumeralType.arabic;
+	c_oNumeralType["hindi"]   = c_oNumeralType.hindi;
+	c_oNumeralType["context"] = c_oNumeralType.context;
+	
 	
 	var c_oAscDateTimeFormat = {};
 	c_oAscDateTimeFormat[lcid_arSA] = [

@@ -13997,6 +13997,15 @@
     CTitle.prototype.convertPixToMM = CDLbl.prototype.convertPixToMM;
     CTitle.prototype.isEmptyPlaceholder = CDLbl.prototype.isEmptyPlaceholder;
     CTitle.prototype.checkShapeChildTransform = CDLbl.prototype.checkShapeChildTransform;
+
+    CTitle.prototype.checkBlipFillRasterImage = function(images) {
+        if(this.spPr) {
+            this.spPr.checkBlipFillRasterImage(images);
+        }
+        if (this.tx && this.tx.rich && this.tx.rich.content) {
+            AscFormat.fCheckContentImages(images, this.tx.rich.content, false);
+        }
+    };
     CTitle.prototype.Refresh_RecalcData = function() {
         this.Refresh_RecalcData2();
     };
