@@ -13383,8 +13383,20 @@
 				let exPath = "";
 				if (addBook) {
 					let api = this.getApi();
-					let titleName = api.DocInfo.Title;
-					exPath = "[" + titleName + "]"
+					let isLocalDesktop = window["AscDesktopEditor"] && window["AscDesktopEditor"]["IsLocalFile"]() && window["AscDesktopEditor"]["LocalFileGetSaved"]();
+					let externalSelectionController = this.workbook.externalSelectionController;
+					let fromPath = isLocalDesktop && externalSelectionController && externalSelectionController.activeTabFormula && externalSelectionController.activeTabFormula.path;
+					let thisPath = isLocalDesktop && window["AscDesktopEditor"]["LocalFileGetSourcePath"]();
+					let titleName;
+					if (fromPath && thisPath) {
+						titleName = buildRelativePath(thisPath, fromPath);
+						exPath = "[" + titleName + "]"
+						name = "'" + exPath + this.model.getName() + "'!" + name;
+						addSheet = false;
+					} else {
+						titleName = api.DocInfo.Title;
+						exPath = "[" + titleName + "]";
+					}
 				}
 				if (addSheet) {
 					name = parserHelp.get3DRef(exPath + this.model.getName(), name);
