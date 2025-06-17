@@ -8032,11 +8032,11 @@
 
 	/**
 	 * Returns the core properties interface for the workbook.
-	 * Use this to view or modify standard metadata such as title, author, and keywords.
-	 *
+	 * This method is used to view or modify standard metadata such as title, author, and keywords.
 	 * @memberof Api
 	 * @returns {ApiCore}
 	 * @typeofeditors ["CSE"]
+	 * @since 9.0.0
 	 * @see office-js-api/Examples/{Editor}/Api/Methods/GetCore.js
 	 */
 	Api.prototype.GetCore = function () {
@@ -8044,11 +8044,11 @@
 	};
 
 	/**
-	 * Returns the custom properties of the workbook.
-	 *
+	 * Returns the workbook custom properties.
 	 * @memberof Api
 	 * @returns {ApiCustomProperties}
 	 * @typeofeditors ["CSE"]
+	 * @since 9.0.0
 	 * @see office-js-api/Examples/{Editor}/Api/Methods/GetCustomProperties.js
 	 */
 	Api.prototype.GetCustomProperties = function () {
@@ -11867,11 +11867,12 @@
 	};
 
 	/**
-	 * Sets the array formula of a range
+	 * Sets an array formula to the current range.
 	 * @memberof ApiRange
 	 * @typeofeditors ["CSE"]
 	 * @param {string | boolean | number} data - The general value for the cell or cell range.
-	 * @returns {boolean} - returns false if such a range does not exist.
+	 * @returns {boolean} - Returns false if such a range does not exist.
+	 * @since 9.0.0
 	 * @see office-js-api/Examples/{Editor}/ApiRange/Methods/SetFormulaArray.js
 	 */
 	ApiRange.prototype.SetFormulaArray = function (data) {
@@ -11904,10 +11905,11 @@
 	};
 
 	/**
-	 * Returns the array formula of a range
+	 * Returns an array formula from the current range.
 	 * @memberof ApiRange
 	 * @typeofeditors ["CSE"]
 	 * @returns {string | null}
+	 * @since 9.0.0
 	 * @see office-js-api/Examples/{Editor}/ApiRange/Methods/GetFormulaArray.js
 	 */
 	ApiRange.prototype.GetFormulaArray = function () {
@@ -12122,9 +12124,10 @@
 	/**
      * Sets the rotation angle to the current drawing object.
      * @memberof ApiDrawing
-     * @param {number} nRotAngle - new drawing rot angle
+     * @param {number} nRotAngle - New drawing rotation angle.
      * @typeofeditors ["CSE"]
      * @returns {boolean}
+	 * @since 9.0.0
      * @see office-js-api/Examples/{Editor}/ApiDrawing/Methods/SetRotation.js
 	 */
 	ApiDrawing.prototype.SetRotation = function(nRotAngle)
@@ -12138,10 +12141,11 @@
 		return true;
 	};
 	/**
-     * Gets the rotation angle of the current drawing object.
+     * Returns the rotation angle of the current drawing object.
      * @memberof ApiDrawing
      * @typeofeditors ["CSE"]
      * @returns {number}
+	 * @since 9.0.0
      * @see office-js-api/Examples/{Editor}/ApiDrawing/Methods/GetRotation.js
 	 */
 	ApiDrawing.prototype.GetRotation = function()

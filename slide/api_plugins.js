@@ -249,11 +249,11 @@
 	};
 
 	/**
-	 * Sets the active slide in the editor by index.
+	 * Sets the active slide in the editor by its index.
 	 * @memberof Api
 	 * @typeofeditors ["CPE"]
 	 * @alias GoToSlide
-	 * @param {number} slideNumber
+	 * @param {number} slideNumber - The slide index.
 	 * @since 9.0.0
 	 * @see office-js-api/Examples/Plugins/{Editor}/Api/Methods/GoToSlide.js
 	 */
