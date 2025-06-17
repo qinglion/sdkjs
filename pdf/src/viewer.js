@@ -4299,7 +4299,7 @@
 		this._drawDrawingsOnCtx(nPage, ctx);
 		this._drawMarkupAnnotsOnCtx(nPage, ctx);
 		this._drawAnnotsOnCtx(nPage, ctx);
-		this._drawFieldsOnCtx(nPage, ctx);
+		this._drawFieldsOnCtx(nPage, ctx, false, true);
 
 		return ctx.canvas;
 	};
