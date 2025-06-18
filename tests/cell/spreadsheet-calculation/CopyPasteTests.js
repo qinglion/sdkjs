@@ -78,8 +78,7 @@ $(function () {
 	AscCommon.g_oTableId.init();
 	api._onEndLoadSdk();
 	api.isOpenOOXInBrowser = false;
-	api._openDocument(AscCommon.getEmpty());
-	api._openOnClient();
+	api.OpenDocumentFromBin(null, AscCommon.getEmpty());
 	api.initCollaborativeEditing({});
 	api.wb = new AscCommonExcel.WorkbookView(api.wbModel, api.controller, api.handlers, api.HtmlElement,
 		api.topLineEditorElement, api, api.collaborativeEditing, api.fontRenderingMode);
@@ -145,7 +144,6 @@ $(function () {
 		var val = "=SIN(1)";
 
 		ws.getRange2("A1").setValue(val);
-
 		ws.selectionRange.ranges = [getRange(0, 0, 0, 0)];
 		var base64 = AscCommonExcel.g_clipboardExcel.copyProcessor.getBinaryForCopy(ws, wsView.objectRender);
 
@@ -257,6 +255,71 @@ $(function () {
 
 		assert.strictEqual(ws.TableParts[ws.TableParts.length - 1].Ref.r1, 10);
 		assert.strictEqual(ws.TableParts[ws.TableParts.length - 1].Ref.c1, 6)
+	});
+
+	QUnit.test("Test: \"formulas with unar operators\"", function (assert) {
+		let originalFormula = "+++1", receivedFormula;
+
+		ws.getRange2("A1").setValue(originalFormula);
+		ws.selectionRange.ranges = [getRange(0, 0, 0, 0)];
+		let base64 = AscCommonExcel.g_clipboardExcel.copyProcessor.getBinaryForCopy(ws, wsView.objectRender);
+
+		ws.selectionRange.ranges = [getRange(0, 1, 0, 1)];
+		AscCommonExcel.g_clipboardExcel.pasteData(wsView, AscCommon.c_oAscClipboardDataFormat.Internal, base64);
+		receivedFormula = ws.getRange2("A2").getValueForEdit();
+
+		assert.strictEqual(originalFormula, receivedFormula, "Copy without formula changing");
+
+
+		originalFormula = '++++"STR"';
+		ws.getRange2("A1").setValue(originalFormula);
+		ws.selectionRange.ranges = [getRange(0, 0, 0, 0)];
+		base64 = AscCommonExcel.g_clipboardExcel.copyProcessor.getBinaryForCopy(ws, wsView.objectRender);
+
+		ws.selectionRange.ranges = [getRange(0, 1, 0, 1)];
+		AscCommonExcel.g_clipboardExcel.pasteData(wsView, AscCommon.c_oAscClipboardDataFormat.Internal, base64);
+		receivedFormula = ws.getRange2("A2").getValueForEdit();
+
+		assert.strictEqual(originalFormula, receivedFormula, "Copy without formula changing");
+
+
+		originalFormula = '++++FALSE';
+		ws.getRange2("A1").setValue(originalFormula);
+		ws.selectionRange.ranges = [getRange(0, 0, 0, 0)];
+		base64 = AscCommonExcel.g_clipboardExcel.copyProcessor.getBinaryForCopy(ws, wsView.objectRender);
+
+		ws.selectionRange.ranges = [getRange(0, 1, 0, 1)];
+		AscCommonExcel.g_clipboardExcel.pasteData(wsView, AscCommon.c_oAscClipboardDataFormat.Internal, base64);
+		receivedFormula = ws.getRange2("A2").getValueForEdit();
+		
+		assert.strictEqual(originalFormula, receivedFormula, "Copy without formula changing");
+
+
+		originalFormula = "+SUM(+++1)+++1";
+		ws.getRange2("A1").setValue(originalFormula);
+		ws.selectionRange.ranges = [getRange(0, 0, 0, 0)];
+		base64 = AscCommonExcel.g_clipboardExcel.copyProcessor.getBinaryForCopy(ws, wsView.objectRender);
+
+		ws.selectionRange.ranges = [getRange(0, 1, 0, 1)];
+		AscCommonExcel.g_clipboardExcel.pasteData(wsView, AscCommon.c_oAscClipboardDataFormat.Internal, base64);
+		receivedFormula = ws.getRange2("A2").getValueForEdit();
+
+		assert.strictEqual(originalFormula, receivedFormula, "Copy without formula changing");
+
+
+		originalFormula = "+++-SIN(+-+1-+-+1)+-+1+-+1";
+		ws.getRange2("A1").setValue(originalFormula);
+		ws.selectionRange.ranges = [getRange(0, 0, 0, 0)];
+		base64 = AscCommonExcel.g_clipboardExcel.copyProcessor.getBinaryForCopy(ws, wsView.objectRender);
+
+		ws.selectionRange.ranges = [getRange(0, 1, 0, 1)];
+		AscCommonExcel.g_clipboardExcel.pasteData(wsView, AscCommon.c_oAscClipboardDataFormat.Internal, base64);
+		receivedFormula = ws.getRange2("A2").getValueForEdit();
+
+		assert.strictEqual(originalFormula, receivedFormula, "Copy without formula changing");
+
+		// wsView.cellPasteHelper.loadDataBeforePaste(false, val, true, 0, ws.selectionRange.ranges);
+
 	});
 
 	QUnit.module("CopyPaste");

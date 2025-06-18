@@ -49,7 +49,7 @@ AscFormat.CShape.prototype.getParentObjects = function ()
 {
 	let oTheme = null;
 	if (this.parent) {
-		oTheme = this.parent.theme;
+		oTheme = this.parent.themes[0];
 	} else {
 		AscCommon.consoleLog("Parent was not set for shape/group. GenerateDefaultTheme is used. shape/group:", this);
 		oTheme = AscFormat.GenerateDefaultTheme(null, null);
@@ -63,6 +63,11 @@ AscFormat.CShape.prototype.getParentObjects = function ()
  */
 AscFormat.CGroupShape.prototype.getParentObjects = CShape.prototype.getParentObjects;
 
+/**
+ * @memberOf AscFormat.CImageShape
+ * @type {function(): {layout: null, slide: null, theme: CTheme, master: null}}
+ */
+AscFormat.CImageShape.prototype.getParentObjects = CShape.prototype.getParentObjects;
 
 /**
  * Draw editor.
@@ -259,11 +264,12 @@ AscCommon.CShapeDrawer.prototype.ds = function()
 
 	var rgba = this.StrokeUniColor;
 	let nAlpha = 0xFF;
-	if(!isArrowsPresent && !this.IsArrowsDrawing || Asc.editor.isPdfEditor())
-	{
+	// OVERRIDE 1
+	// if(!isArrowsPresent && !this.IsArrowsDrawing || Asc.editor.isPdfEditor())
+	// {
 		if (this.Ln && this.Ln.Fill != null && this.Ln.Fill.transparent != null)
 			nAlpha = this.Ln.Fill.transparent;
-	}
+	// }
 
 	this.Graphics.p_color(rgba.R, rgba.G, rgba.B, nAlpha);
 
@@ -401,8 +407,9 @@ AscCommon.CShapeDrawer.prototype.ds = function()
 }
 
 function parseFieldPictureFormat(vsdxFieldValue, vsdxFieldFormat) {
+	// See 2.5.9.4	vFieldPicture
 	let res = "@";
-	if (vsdxFieldFormat.f) {
+	if (vsdxFieldFormat.f && vsdxFieldFormat.f !== "Inh") {
 		let formatFunction = vsdxFieldFormat.f.toUpperCase();
 		let vFieldPicture = parseInt(formatFunction.substring('FIELDPICTURE('.length));
 
@@ -670,6 +677,9 @@ AscCommonWord.CPresentationField.prototype.private_GetString = function()
 {
 	//todo add num formats with units in editor
 
+	// now it works like if field function is not CREATOR or PAGECOUNT or it's now simple override value
+	// take values from text tag despite it is inherited or not
+
 	// return; returns direct tag value
 	// if (!this.isTextInherited) {
 	// 	return;
@@ -692,6 +702,8 @@ AscCommonWord.CPresentationField.prototype.private_GetString = function()
 			valueInProperUnits = Number(valueV) * g_dKoef_in_to_mm / 10;
 		} else if (valueUnits === "MM") {
 			valueInProperUnits = Number(valueV) * g_dKoef_in_to_mm;
+		} else if (valueUnits === "M") {
+			valueInProperUnits = Number(valueV) * g_dKoef_in_to_mm / 1000;
 		} else {
 			valueInProperUnits = valueV;
 		}
@@ -712,10 +724,10 @@ AscCommonWord.CPresentationField.prototype.private_GetString = function()
 	var oDateTime;
 	if(typeof this.FieldType === 'string')
 	{
-		// let format;
-		// if (this.vsdxFieldFormat) {
-		// 	format = parseFieldPictureFormat(this.vsdxFieldValue, this.vsdxFieldFormat);
-		// }
+		let format;
+		if (this.vsdxFieldFormat) {
+			format = parseFieldPictureFormat(this.vsdxFieldValue, this.vsdxFieldFormat);
+		}
 		let logicDocument = this.Paragraph && this.Paragraph.GetLogicDocument();
 		const sFieldType = this.FieldType.toUpperCase();
 
@@ -735,11 +747,12 @@ AscCommonWord.CPresentationField.prototype.private_GetString = function()
 				val = logicDocument.getCountPages();
 			}
 		}
-		else if("PAGENUMBER()" === sFieldType) {
-			if (logicDocument) {
-				val = logicDocument.getCurrentPage();
-			}
-		}
+		// else if("PAGENUMBER()" === sFieldType) {
+			// todo add recalculate on page load
+		// 	if (logicDocument) {
+		// 		val = logicDocument.getCurrentPage();
+		// 	}
+		// }
  		// else if("NOW()" === sFieldType)
 		// {
 		// 	let oDateTime = new Asc.cDate();
@@ -761,13 +774,17 @@ AscCommonWord.CPresentationField.prototype.private_GetString = function()
 				val = logicDocument.core.creator;
 			}
 		}
-		else if("WIDTH" === sFieldType)
-		{
-			//todo display units
-			val = this.vsdxFieldValue.getValueInMM();
-		}
-		else if ((this.vsdxFieldValue.u === "STR" || !this.vsdxFieldValue.u) && (sFieldType === "INH" || !sFieldType)) {
+		// else if("WIDTH" === sFieldType)
+		// {
+		// 	//todo display units
+		// 	//leave value
+		// }
+		else if ((this.vsdxFieldValue.u === "STR" || !this.vsdxFieldValue.u) && (sFieldType === "INH" || !sFieldType)
+			&& (!this.vsdxFieldFormat || "General" === format || "@" === format)) {
+		// else if (this.vsdxFieldValue.u === "STR" && (sFieldType === "INH" || !sFieldType)) {
 			// handle simple values. consider is function is INH value is calculated correctly already
+			// like
+			// <Cell N='Value' V='1' F='Inh'/>
 			val = this.vsdxFieldValue.v;
 		}
 		else
@@ -790,10 +807,6 @@ AscCommonWord.CPresentationField.prototype.private_GetString = function()
 		// 	// const oFormat = AscCommon.oNumFormatCache.get(format, AscCommon.NumFormatType.Excel);
 		// 	// sStr =  format._formatToText(val, AscCommon.CellValueType.String, 15, oCultureInfo);
 		// } else {
-		let format;
-		if (this.vsdxFieldFormat) {
-			format = parseFieldPictureFormat(this.vsdxFieldValue, this.vsdxFieldFormat);
-		}
 		const oFormat = AscCommon.oNumFormatCache.get(format, AscCommon.NumFormatType.Excel);
 		sStr =  oFormat._formatToText(val, AscCommon.CellValueType.String, 15, oCultureInfo);
 		// sStr = val + "";

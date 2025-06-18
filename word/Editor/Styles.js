@@ -733,11 +733,50 @@ CStyle.prototype =
 //-----------------------------------------------------------------------------------
 //
 //-----------------------------------------------------------------------------------
-    Document_Get_AllFontNames : function(AllFonts)
-    {
-        if ( undefined != this.TextPr )
-            this.TextPr.Document_Get_AllFontNames(AllFonts);
-    },
+	Document_Get_AllFontNames : function(allFonts)
+	{
+		if (this.TextPr)
+			this.TextPr.Document_Get_AllFontNames(allFonts);
+		
+		if (this.TableBand1Horz && this.TableBand1Horz.TextPr)
+			this.TableBand1Horz.TextPr.Document_Get_AllFontNames(allFonts);
+		
+		if (this.TableBand1Vert && this.TableBand1Vert.TextPr)
+			this.TableBand1Vert.TextPr.Document_Get_AllFontNames(allFonts);
+		
+		if (this.TableBand2Horz && this.TableBand2Horz.TextPr)
+			this.TableBand2Horz.TextPr.Document_Get_AllFontNames(allFonts);
+		
+		if (this.TableBand2Vert && this.TableBand2Vert.TextPr)
+			this.TableBand2Vert.TextPr.Document_Get_AllFontNames(allFonts);
+		
+		if (this.TableFirstCol && this.TableFirstCol.TextPr)
+			this.TableFirstCol.TextPr.Document_Get_AllFontNames(allFonts);
+		
+		if (this.TableFirstRow && this.TableFirstRow.TextPr)
+			this.TableFirstRow.TextPr.Document_Get_AllFontNames(allFonts);
+		
+		if (this.TableLastCol && this.TableLastCol.TextPr)
+			this.TableLastCol.TextPr.Document_Get_AllFontNames(allFonts);
+		
+		if (this.TableLastRow && this.TableLastRow.TextPr)
+			this.TableLastRow.TextPr.Document_Get_AllFontNames(allFonts);
+		
+		if (this.TableTLCell && this.TableTLCell.TextPr)
+			this.TableTLCell.TextPr.Document_Get_AllFontNames(allFonts);
+		
+		if (this.TableTRCell && this.TableTRCell.TextPr)
+			this.TableTRCell.TextPr.Document_Get_AllFontNames(allFonts);
+		
+		if (this.TableBLCell && this.TableBLCell.TextPr)
+			this.TableBLCell.TextPr.Document_Get_AllFontNames(allFonts);
+		
+		if (this.TableBRCell && this.TableBRCell.TextPr)
+			this.TableBRCell.TextPr.Document_Get_AllFontNames(allFonts);
+		
+		if (this.TableWholeTable && this.TableWholeTable.TextPr)
+			this.TableWholeTable.TextPr.Document_Get_AllFontNames(allFonts);
+	},
 
 	private_CreateDefaultUnifillColor : function()
 	{
@@ -7248,7 +7287,8 @@ function CStyles(bCreateDefault)
 			Caption           : null,
 			EndnoteText       : null,
 			EndnoteTextChar   : null,
-			EndnoteReference  : null
+			EndnoteReference  : null,
+			PlaceholderText   : null
 		};
 
         // Заполняем значения по умолчанию
@@ -8148,7 +8188,10 @@ CStyles.prototype =
 		PassedStyles.push(StyleId);
 
 		var Style = this.Style[StyleId];
-		if (undefined == StyleId || undefined === Style)
+		if (Style && Style.Type !== Type)
+			Style = undefined;
+		
+		if (!StyleId || !Style)
 		{
 			if (true === bUseDefault)
 			{
@@ -9033,6 +9076,9 @@ CStyles.prototype.UpdateDefaultStyleLinks = function()
 			case "tableoffigures":
 				this.Default.TOF = styleId;
 				break;
+			case "placeholdertext":
+				this.Default.PlaceholderText = styleId;
+				break;
 		}
 	}
 };
@@ -9100,6 +9146,10 @@ CStyles.prototype.GetDefaultFollowedHyperlink = function()
 CStyles.prototype.GetDefaultHeading = function(nLvl)
 {
 	return this.Default.Headings[Math.max(Math.min(nLvl, 8), 0)];
+};
+CStyles.prototype.GetDefaultPlaceholderText = function()
+{
+	return this.Default.PlaceholderText;
 };
 CStyles.prototype.HaveHeadingsNum = function()
 {
@@ -12627,6 +12677,22 @@ CRFonts.prototype.IsEqual = function(oRFonts)
 		&& this.HAnsiTheme === oRFonts.HAnsiTheme
 		&& this.CSTheme === oRFonts.CSTheme);
 };
+CRFonts.prototype.IsEqualSlot = function(rFonts, fontSlot)
+{
+	switch (fontSlot)
+	{
+		case AscWord.fontslot_ASCII:
+			return (this.private_IsEqual(this.Ascii, rFonts.Ascii) && this.AsciiTheme === rFonts.AsciiTheme);
+		case AscWord.fontslot_EastAsia:
+			return (this.private_IsEqual(this.EastAsia, rFonts.EastAsia) && this.EastAsiaTheme === rFonts.EastAsiaTheme);
+		case AscWord.fontslot_HAnsi:
+			return (this.private_IsEqual(this.HAnsi, rFonts.HAnsi) && this.HAnsiTheme === rFonts.HAnsiTheme);
+		case AscWord.fontslot_CS:
+			return (this.private_IsEqual(this.CS, rFonts.CS) && this.CSTheme === rFonts.CSTheme);
+	}
+	
+	return this.IsEqual(rFonts);
+};
 CRFonts.prototype.private_IsEqual = function(oFont1, oFont2)
 {
 	return ((undefined === oFont1 && undefined === oFont2)
@@ -14814,12 +14880,21 @@ CTextPr.prototype.SetPosition = function(nPosition)
 {
 	this.Position = nPosition;
 };
-CTextPr.prototype.GetFontFamily = function()
+CTextPr.prototype.GetFontFamily = function(fontSlot)
 {
-    if (this.RFonts && this.RFonts.Ascii && this.RFonts.Ascii.Name)
-        return this.RFonts.Ascii.Name;
-
-    return undefined;
+	if (!this.RFonts)
+		return undefined;
+	
+	if (AscWord.fontslot_CS === fontSlot && this.RFonts.CS)
+		return this.RFonts.CS.Name;
+	else if (AscWord.fontslot_HAnsi === fontSlot && this.RFonts.HAnsi)
+		return this.RFonts.HAnsi.Name;
+	else if (AscWord.fontslot_EastAsia === fontSlot && this.RFonts.EastAsia)
+		return this.RFonts.EastAsia.Name;
+	else if (this.RFonts.Ascii)
+		return this.RFonts.Ascii.Name;
+	
+	return undefined;
 };
 CTextPr.prototype.SetFontFamily = function(sFontName)
 {

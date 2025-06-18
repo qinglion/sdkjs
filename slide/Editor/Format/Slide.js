@@ -779,6 +779,9 @@ AscFormat.InitClass(Slide, AscFormat.CBaseFormatObject, AscDFH.historyitem_type_
                     if (matching_shape == null && layout.cSld.spTree[j]) {
                         var sp = layout.cSld.spTree[j].copy(undefined);
                         sp.setParent(this);
+											if (sp.txBody) {
+												sp.txBody.setBodyPr(new AscFormat.CBodyPr());
+											}
                         !bIsSpecialPh && sp.clearContent && sp.clearContent();
                         this.addToSpTreeToPos(this.cSld.spTree.length, sp)
                     }
@@ -1102,6 +1105,20 @@ AscFormat.InitClass(Slide, AscFormat.CBaseFormatObject, AscDFH.historyitem_type_
 			oSp.getAllRasterImages(images);
 		});
     };
+
+	Slide.prototype.getAllRasterImagesOnSlide = function (aImages) {
+		aImages = aImages || [];
+		this.getAllRasterImages(aImages);
+		const oLayout = this.Layout;
+		if (oLayout) {
+			oLayout.getAllRasterImages(aImages);
+			const oMaster = oLayout.Master;
+			if (oMaster) {
+				oMaster.getAllRasterImages(aImages);
+			}
+		}
+		return aImages;
+	};
 
 
     Slide.prototype.getAllRasterImagesForDraw = function(images) {
@@ -2127,6 +2144,9 @@ AscFormat.InitClass(Slide, AscFormat.CBaseFormatObject, AscDFH.historyitem_type_
         }
         return false;
     };
+Slide.prototype.IsUseInSlides = function() {
+	return this.IsUseInDocument();
+};
 Slide.prototype.removeAllInks = function () {
 	this.cSld.removeAllInks();
 };
@@ -2134,6 +2154,9 @@ Slide.prototype.getAllInks = function (arrInks) {
 	arrInks = arrInks || [];
 	this.cSld.getAllInks(arrInks);
 	return arrInks;
+};
+Slide.prototype.isPreserve = function() {
+	return false;
 };
 
 function fLoadComments(oObject, authors)

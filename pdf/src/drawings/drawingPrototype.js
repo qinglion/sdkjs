@@ -66,6 +66,9 @@
     CPdfDrawingPrototype.prototype.IsPdfObject = function() {
         return true;
     };
+    CPdfDrawingPrototype.prototype.IsEditFieldShape = function() {
+        return false;
+    };
     CPdfDrawingPrototype.prototype.OnContentChange = function() {
         return this.SetNeedRecalc(true);
     };
@@ -79,16 +82,28 @@
         return false;
     };
 	CPdfDrawingPrototype.prototype.IsUseInDocument = function() {
+		let oDoc = this.GetDocument();
+		if (!oDoc) {
+			return false;
+		}
+
 		if (this.group && this.group.IsUseInDocument)
 			return this.group.IsUseInDocument();
 		
         let oPage = this.GetParentPage();
-        if (oPage && oPage.drawings.includes(this)) {
+        if (oPage && oPage.drawings.includes(this) && oPage.GetIndex() !== -1) {
             return true;
         }
 
-		return false;
-	};
+        if (this.IsShape() && oDoc.IsEditFieldsMode()) {
+            let oEditFiled = this.GetEditField();
+            if (oEditFiled) {
+                return oEditFiled.IsUseInDocument();
+            }
+        }
+        
+        return false;
+    };
     CPdfDrawingPrototype.prototype.OnBlur = function() {
         AscCommon.History.ForbidUnionPoint();
     };
@@ -113,7 +128,6 @@
     CPdfDrawingPrototype.prototype.GetSelectionQuads = function() {
         let oDoc        = this.GetDocument();
         let oViewer     = oDoc.Viewer;
-        let oFile       = oViewer.file;
         let oDrDoc      = oDoc.GetDrawingDocument();
         let oContent    = this.GetDocContent();
         let aInfo       = [];
@@ -125,7 +139,11 @@
 
         let nStart = oContent.Selection.StartPos;
         let nEnd   = oContent.Selection.EndPos;
-        if (nStart > nEnd) [nStart, nEnd] = [nEnd, nStart];
+        if (nStart > nEnd) {
+            let temp = nStart;
+            nStart = nEnd;
+            nEnd = temp;
+        }
 
         let oInfo = {
             page: nPage,
@@ -137,7 +155,11 @@
 
             let nStartInPara = oPara.Selection.StartPos;
             let nEndInPara   = oPara.Selection.EndPos;
-            if (nStartInPara > nEndInPara) [nStartInPara, nEndInPara] = [nEndInPara, nStartInPara];
+            if (nStartInPara > nEndInPara) {
+                let temp = nStartInPara;
+                nStartInPara = nEndInPara;
+                nEndInPara = temp;
+            }
 
             let nStartLine = oPara.Pages[0].StartLine;
 			let nEndLine   = oPara.Pages[0].EndLine;
@@ -237,7 +259,7 @@
             return;
         }
 
-        AscCommon.History.Add(new CChangesPDFDocumentSetDocument(this, this._doc, oDoc));
+        AscCommon.History.Add(new CChangesPDFObjectSetDocument(this, this._doc, oDoc));
         this._doc = oDoc;
     };
     CPdfDrawingPrototype.prototype.OnContentChange = function() {
@@ -399,16 +421,6 @@
         this.checkExtentsByDocContent && this.checkExtentsByDocContent();
 		return result;
 	};
-	CPdfDrawingPrototype.prototype.CorrectEnterText = function(oldValue, newValue) {
-		let doc = this.GetDocument();
-		let content = this.GetDocContent();
-		if (!doc || !content)
-			return false;
-		
-		let result = content.CorrectEnterText(oldValue, newValue, function(run, inRunPos, codePoint){return true;});
-		content.RecalculateCurPos();
-		return result;
-	};
 	CPdfDrawingPrototype.prototype.canBeginCompositeInput = function() {
 		return true;
 	};
@@ -442,9 +454,16 @@
     ////////////////////////////
 
     CPdfDrawingPrototype.prototype.WriteToBinary = function(memory) {
-        this.toXml(memory, '');
+        if (Asc.editor.getShapeSerializeType() === "xml") {
+            this.toXml(memory, '');
+        } else {
+            // Write base64 binaryData
+            let writer = new AscCommon.CBinaryFileWriter();
+            writer.WriteSpTreeElem(this);
+            memory.WriteXmlString(writer.GetBase64Memory());
+        }
     };
 
-    window["AscPDF"].PdfDrawingPrototype = CPdfDrawingPrototype;
+    window["AscPDF"].CPdfDrawingPrototype = CPdfDrawingPrototype;
 })();
 

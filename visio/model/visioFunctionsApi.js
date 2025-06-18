@@ -76,6 +76,7 @@
 		let isFillIdx = false;
 		let isLineIdx = false;
 		let isFontIdx = false;
+		let isEffectIdx = false;
 
 		if (themeValue === "LineColor") {
 			cellName = "LineColor";
@@ -185,6 +186,29 @@
 			isFillIdx = true;
 
 			initialDefaultValue = 1; // number is return type in calculateValue. Solid fill.
+		} else if (cellName === "Font") {
+			// // uses other mechanism
+			// quickStyleCellName = null;
+			// quickStyleModifiersCellName = "QuickStyleFillMatrix";
+			// getModifiersMethod = themes[0].getFillProp;
+			// isFillIdx = true;
+
+			initialDefaultValue = "Calibri";
+		} else if (cellName === "ShdwPattern") {
+			// calculate color. what if there will be placeholder color in effects
+			quickStyleCellName = "QuickStyleShadowColor";
+			quickStyleModifiersCellName = "QuickStyleEffectsMatrix";
+			getModifiersMethod = themes[0].getOuterShdw;
+			isEffectIdx = true;
+
+			initialDefaultValue = 0;
+		} else if (cellName === "ShdwForegnd") {
+			quickStyleCellName = "QuickStyleShadowColor";
+			quickStyleModifiersCellName = "QuickStyleEffectsMatrix";
+			getModifiersMethod = themes[0].getOuterShdw;
+			isEffectIdx = true;
+
+			initialDefaultValue = AscFormat.CreateUniColorRGB(255,255,255);
 		} else {
 			AscCommon.consoleLog("themeval argument error. cell name: " + cellName + " is unknown. return undefined.");
 			return undefined;
@@ -227,31 +251,32 @@
 		// if THEMEVAL was called with themeValue (argument like "FillColor") even if themeIndex is 0 we should
 		// use any theme otherwise if no themeValue argument was passed and 0 themeIndex is used we should return
 		// default value
-		// see colored rectangle in that file https://disk.yandex.ru/d/IzxVtx0a7GqbQA
 		let theme = themes[0];
 		if (themeIndex === 0) {
 			return initialDefaultValue;
 		} else {
 			// find theme by themeIndex
-
-			// if search by theme index - theme.themeElements.themeExt.themeSchemeSchemeEnum
-			let findThemeByElement;
-			if (isConnectorShape && theme.themeElements.themeExt) {
-				findThemeByElement = theme.themeElements.themeExt.themeSchemeSchemeEnum;
-			} else if (!isConnectorShape && theme.themeElements.clrScheme.clrSchemeExtLst) {
-				findThemeByElement = theme.themeElements.clrScheme.clrSchemeExtLst.schemeEnum;
-			}
-			if (findThemeByElement) {
-				theme = themes.find(function (theme) {
-					let themeEnum = Number(findThemeByElement);
-					return themeEnum === themeIndex;
-				});
-
-				// themes.find didn't find anything
-				if (theme === undefined) {
-					AscCommon.consoleLog("Theme was not found by theme enum in themes. using themes[0]");
-					theme = themes[0];
+			theme = themes.find(function (theme) {
+				// if search by theme index - theme.themeElements.themeExt.themeSchemeSchemeEnum
+				let findThemeByElement;
+				if (isConnectorShape && theme.themeElements.themeExt) {
+					findThemeByElement = theme.themeElements.themeExt.themeSchemeSchemeEnum;
+				} else if (!isConnectorShape && theme.themeElements.clrScheme.clrSchemeExtLst) {
+					findThemeByElement = theme.themeElements.clrScheme.clrSchemeExtLst.schemeEnum;
 				}
+
+				if (!findThemeByElement) {
+					return false;
+				}
+
+				let themeEnum = Number(findThemeByElement);
+				return themeEnum === themeIndex;
+			});
+
+			// themes.find didn't find anything
+			if (theme === undefined) {
+				AscCommon.consoleLog("Theme was not found by theme enum in themes. using themes[0]");
+				theme = themes[0];
 			}
 		}
 
@@ -373,6 +398,8 @@
 							styleId = varStyle.lineIdx;
 						} else if (isFontIdx) {
 							styleId = varStyle.fontIdx;
+						} else if (isEffectIdx) {
+							styleId = varStyle.effectIdx;
 						}
 					}
 					if (null !== styleId) {
@@ -469,8 +496,21 @@
 			} else if (cellName === "FillPattern") {
 				let fillPattern = getMedifiersResult && getMedifiersResult.pattern;
 				result = Number(fillPattern);
+			} else if (cellName === "ShdwPattern") {
+				let shdwPattern = Boolean(getMedifiersResult);
+				result = Number(shdwPattern);
+			} else if (cellName === "ShdwForegnd") {
+				let shadowColor = getMedifiersResult && getMedifiersResult.color;
+				result = shadowColor;
 			} else {
 				AscCommon.consoleLog("Error in themeval. result is not changed to appropriate type or quickStyleCellName is not set.");
+			}
+		}
+
+		if (isNaN(quickStyleColor) && isNaN(quickStyleMatrix)) {
+			// other mechanism for theme value calculate is used
+			if (cellName === "Font") {
+				result = theme.getFontScheme().majorFont.latin;
 			}
 		}
 
@@ -505,29 +545,6 @@
 			AscCommon.consoleLog("Unknown themeval error. Return initialDefaultValue");
 			return initialDefaultValue;
 		}
-		// code below never calls. result is always calculated. Default values are set above are returned if
-		// default theme is used
-		// if (calculatedColor !== null) {
-		// 	let fromColorResult = null;
-		// 	if (cellName === "LineColor" || cellName === "FillForegnd" || cellName === "FillBkgnd") {
-		// 		fromColorResult = AscFormat.CreateUniFillByUniColor(calculatedColor);
-		// 	} else if (cellName === "Color") {
-		// 		fromColorResult = calculatedColor;
-		// 	}
-		//
-		// 	return calculateOnTheme(result, theme);
-		// } else {
-		// 	if (cellName === "LineColor" || cellName === "FillForegnd" || cellName === "FillBkgnd") {
-		// 		AscCommon.consoleLog("no color found. so painting lt1.");
-		// 		calculatedColor = AscFormat.CreateUniFillByUniColor(AscFormat.builder_CreateSchemeColor("lt1"));
-		// 	} else if (cellName === "Color") {
-		// 		// for text color
-		// 		AscCommon.consoleLog("no text color found. so painting dk1.");
-		// 		calculatedColor = AscFormat.builder_CreateSchemeColor("dk1");
-		// 	}
-		//
-		// 	return calculateOnTheme(result, theme);
-		// }
 	}
 
 	//-------------------------------------------------------------export---------------------------------------------------

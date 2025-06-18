@@ -54,6 +54,7 @@
 	 * Class for working with rich text
 	 * @param parent - parent class in PDF structure
 	 * @param {AscPDF.CPDFDoc} pdfDocument - reference to the main class
+	 * @param isFormatContent
 	 * @constructor
 	 * @extends {AscWord.CDocumentContent}
 	 */
@@ -130,7 +131,7 @@
 		this.AddToParagraph(new AscWord.ParaTextPr({Italic : bItalic}));
 		this.SetApplyToAll(false);
 	};
-	CTextBoxContent.prototype.replaceAllText = function(value) {
+	CTextBoxContent.prototype.replaceAllText = function(value, bIgnoreCount) {
 		let codePoints = typeof(value) === "string" ? value.codePointsArray() : value;
 		
 		let paragraph = this.GetElement(0);
@@ -150,7 +151,7 @@
 				let isOnOpen    = oDoc.Viewer.IsOpenFormsInProgress;
 				let nCharLimit	= this.ParentPDF.GetCharLimit();
 				
-				if (false == isOnOpen) {
+				if (false == isOnOpen && bIgnoreCount !== true) {
 					let nCharsCount = AscWord.GraphemesCounter.GetCount(codePoints, this.GetCalculatedTextPr());
 					
 					if (nCharsCount > nCharLimit)
@@ -215,7 +216,7 @@
 			return "";
 		
 		paragraph.SetApplyToAll(true);
-		let text = paragraph.GetSelectedText(true);
+		let text = paragraph.GetSelectedText(true, {ParaSeparator: ""});
 		paragraph.SetApplyToAll(false);
 		return text;
 	};
@@ -223,13 +224,33 @@
 		if (this.ParentPDF && this.ParentPDF.OnContentChange && this.isFormatContent == false)
 			this.ParentPDF.OnContentChange();
 	};
-	CTextBoxContent.prototype.Get_ParentTextTransform = function() {
-		return this.transform;
-	};
 	CTextBoxContent.prototype.Get_AbsolutePage = function() {
 		return this.ParentPDF.GetPage();
 	};
-	CTextBoxContent.prototype.Get_ParentTextTransform = function() {};
+	CTextBoxContent.prototype.Get_ParentTextTransform = function() {
+		let parentTransform = this.ParentPDF ? this.ParentPDF.GetTextTransform() : null;
+		if (this.transform && parentTransform)
+		{
+			let transform = new AscCommon.CMatrix();
+			global_MatrixTransformer.MultiplyAppend(transform, this.transform);
+			global_MatrixTransformer.MultiplyAppend(transform, parentTransform);
+			return transform;
+		}
+		return this.transform || parentTransform;
+	};
+	CTextBoxContent.prototype.SetTransform = function(transform) {
+		if (!transform || transform.IsIdentity())
+			this.transform = null;
+		else
+			this.transform = transform;
+	};
+	CTextBoxContent.prototype.GetCalculatedTextPr = function(skipFontCalculator) {
+		if (this.Content.length == 0) {
+			return null;
+		}
+
+		return AscWord.CDocumentContent.prototype.GetCalculatedTextPr.call(this, skipFontCalculator);
+	}
 	
 	function getInternalAlignByPdfType(nPdfType) {
 		let nInternalType = AscCommon.align_Left;

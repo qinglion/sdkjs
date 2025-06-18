@@ -363,7 +363,7 @@
 	{
 		if (Context.m_bIsTextDrawer === true)
 		{
-			Context.CheckAddNewPath(X, Y, this.Value);
+			Context.CheckAddNewPath(X, Y, this);
 		}
 		if (this.Flags & FLAGS_GAPS)
 		{
@@ -468,6 +468,10 @@
 	CRunText.prototype.IsSpaceAfter = function()
 	{
 		return !!(this.Flags & FLAGS_SPACEAFTER);
+	};
+	CRunText.prototype.IsSpaceBefore = function()
+	{
+		return AscCommon.isEastAsianScript(this.Value);
 	};
 	CRunText.prototype.isHyphenAfter = function()
 	{
