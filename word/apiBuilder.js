@@ -6087,7 +6087,7 @@
 	 * Returns the ID of the custom XML part.
 	 * @memberof ApiCustomXmlPart
 	 * @typeofeditors ["CDE"]
-	 * @returns string
+	 * @returns {string}
 	 * @see office-js-api/Examples/{Editor}/ApiCustomXmlPart/Methods/GetId.js
 	 */
 	ApiCustomXmlPart.prototype.GetId = function()
