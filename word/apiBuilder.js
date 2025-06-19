@@ -19924,8 +19924,9 @@
 
 	/**
 	 * Selects the current content control.
-	 * @memberof ApiBlockLvlSdt
+	 * @memberof ApiInlineLvlSdt
 	 * @typeofeditors ["CDE"]
+	 * @since 9.0.0
 	 * @returns {boolean}
 	 * @see office-js-api/Examples/{Editor}/ApiInlineLvlSdt/Methods/Select.js
 	 */
