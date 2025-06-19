@@ -21758,7 +21758,7 @@
 	 * Sets the visualization of the content control.
 	 *
 	 * @method
-	 * @memberof ApiInlineLvlSdt
+	 * @memberof ApiBlockLvlSdt
 	 * @typeofeditors ["CDE"]
 	 * @since 9.0.0
 	 * @param {"boundingBox"|"hidden"} type - The desired type of visualization.
@@ -21770,7 +21770,7 @@
 	 * Gets the visualization of the content control.
 	 *
 	 * @method
-	 * @memberof ApiInlineLvlSdt
+	 * @memberof ApiBlockLvlSdt
 	 * @typeofeditors ["CDE"]
 	 * @since 9.0.0
 	 * @returns {"boundingBox"|"hidden"} type - The type of visualization.
