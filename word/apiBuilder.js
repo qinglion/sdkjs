@@ -9020,6 +9020,7 @@
 	/**
 	 * Adds a new checkbox content control to the document.
 	 * @memberof ApiDocument
+	 * @typeofeditors ["CDE"]
 	 * @since 9.0.0
 	 * @param {ContentControlCheckBoxPr} checkBoxPr The configuration object for the checkbox.
 	 * @returns {ApiInlineLvlSdt} An instance of the ApiInlineLvlSdt object representing the checkbox content control.
@@ -9035,6 +9036,7 @@
 	/**
 	 * Adds a new picture content control to the document.
 	 * @memberof ApiDocument
+	 * @typeofeditors ["CDE"]
 	 * @since 9.0.0
 	 * @param {EMU} [width] - The optional width of the image.
 	 * @param {EMU} [height] - The optional height of the image.
@@ -9112,6 +9114,7 @@
 	 * Retrieves the custom XML manager associated with the document.
 	 * This manager allows manipulation and access to custom XML parts within the document.
 	 * @memberof ApiDocument
+	 * @typeofeditors ["CDE"]
 	 * @since 9.0.0
 	 * @returns {ApiCustomXmlParts|null} Returns an instance of ApiCustomXmlParts if the custom XML manager exists, otherwise returns null.
 	 * @see office-js-api/Examples/{Editor}/ApiDocument/Methods/GetCustomXmlParts.js
@@ -20441,7 +20444,7 @@
 	 * @memberof ApiContentControlList
 	 * @param {string} sText - The display text for the list item.
 	 * @param {string} sValue - The list item value. By default is equal to sText parameter
-	 * @param {number} [nIndex=this.GetElementsCount()] - A position where a new value will be added.
+	 * @param {number} [nIndex=-1] - A position where a new value will be added. If nIndex=-1 add to the end.
 	 * @typeofeditors ["CDE"]
 	 * @returns {boolean}
 	 * @see office-js-api/Examples/{Editor}/ApiContentControlList/Methods/Add.js
@@ -20767,6 +20770,7 @@
 	
 	/**
 	 * Specifies a unique ID for the current content control.
+	 * @method
 	 * @memberof ApiBlockLvlSdt
 	 * @typeofeditors ["CDE"]
 	 * @since 8.3.2
@@ -21004,6 +21008,7 @@
 	
 	/**
 	 * Updates the content control using the value from the XML mapping.
+	 * @method
 	 * @memberof ApiBlockLvlSdt
 	 * @typeofeditors ["CDE"]
 	 * @since 9.0.0
@@ -21014,6 +21019,7 @@
 	
 	/**
 	 * Returns the content control data for the XML mapping.
+	 * @method
 	 * @memberof ApiBlockLvlSdt
 	 * @typeofeditors ["CDE"]
 	 * @since 9.0.0
@@ -21699,6 +21705,7 @@
 	
 	/**
 	 * Sets the border color to the current content control.
+	 * @method
 	 * @memberof ApiBlockLvlSdt
 	 * @param {byte} r - Red color component value.
 	 * @param {byte} g - Green color component value.
@@ -21713,6 +21720,7 @@
 	
 	/**
 	 * Returns the border color of the current content control.
+	 * @method
 	 * @memberof ApiBlockLvlSdt
 	 * @typeofeditors ["CDE"]
 	 * @since 8.3.2
@@ -21724,6 +21732,7 @@
 	/**
 	 * Sets the background color to the current content control.
 	 * @memberof ApiBlockLvlSdt
+	 * @method
 	 * @param {byte} r - Red color component value.
 	 * @param {byte} g - Green color component value.
 	 * @param {byte} b - Blue color component value.
@@ -21737,6 +21746,7 @@
 	/**
 	 * Returns the background color of the current content control.
 	 * @memberof ApiBlockLvlSdt
+	 * @method
 	 * @typeofeditors ["CDE"]
 	 * @since 8.3.2
 	 * @returns {null | {r:byte, g:byte, b:byte, a:byte}}
@@ -21747,6 +21757,7 @@
 	/**
 	 * Sets the visualization of the content control.
 	 *
+	 * @method
 	 * @memberof ApiInlineLvlSdt
 	 * @typeofeditors ["CDE"]
 	 * @since 9.0.0
@@ -21758,6 +21769,7 @@
 	/**
 	 * Gets the visualization of the content control.
 	 *
+	 * @method
 	 * @memberof ApiInlineLvlSdt
 	 * @typeofeditors ["CDE"]
 	 * @since 9.0.0
@@ -24096,7 +24108,7 @@
 	 * @param {String} sText - The comment reply text (required).
 	 * @param {String} sAuthorName - The name of the comment reply author (optional).
 	 * @param {String} sUserId - The user ID of the comment reply author (optional).
-	 * @param {Number} [nPos=this.GetRepliesCount()] - The comment reply position.
+	 * @param {Number} [nPos=-1] - The comment reply position. If nPos=-1 add to the end.
 	 * @returns {ApiComment?} - this
 	 * @see office-js-api/Examples/{Editor}/ApiComment/Methods/AddReply.js
 	 */
