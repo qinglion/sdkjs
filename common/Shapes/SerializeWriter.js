@@ -301,6 +301,64 @@ function CBinaryFileWriter()
             this.data[this.pos++] = (c >>> 8)&0xFF;
         }
     };
+    this.WriteString2Utf8 = function(text)
+    {
+        if ("string" != typeof text)
+            text = text + "";
+        let count = text.length & 0x7FFFFFFF;
+        let seekOld = this.pos;
+        this.WriteULong(0);
+        for (let i = 0; i < count; i++)
+        {
+            let code = text.charCodeAt(i);
+            if (code >= 0xD800 && code <= 0xDFFF)
+            {
+                code = 0x10000 + (((code & 0x3FF) << 10) | (0x03FF & text.charCodeAt(i++)));
+            }
+            this.WriteUtf8Char(code);
+        }
+        let seek = this.pos;
+        this.pos = seekOld;
+        this.WriteULong(seek - seekOld - 4);
+        this.pos = seek;
+    };
+    this.WriteUtf8Char = function(code)
+    {
+        this.CheckSize(6);
+        if (code < 0x80) {
+            this.data[this.pos++] = code;
+        }
+        else if (code < 0x0800) {
+            this.data[this.pos++] = (0xC0 | (code >> 6));
+            this.data[this.pos++] = (0x80 | (code & 0x3F));
+        }
+        else if (code < 0x10000) {
+            this.data[this.pos++] = (0xE0 | (code >> 12));
+            this.data[this.pos++] = (0x80 | ((code >> 6) & 0x3F));
+            this.data[this.pos++] = (0x80 | (code & 0x3F));
+        }
+        else if (code < 0x1FFFFF) {
+            this.data[this.pos++] = (0xF0 | (code >> 18));
+            this.data[this.pos++] = (0x80 | ((code >> 12) & 0x3F));
+            this.data[this.pos++] = (0x80 | ((code >> 6) & 0x3F));
+            this.data[this.pos++] = (0x80 | (code & 0x3F));
+        }
+        else if (code < 0x3FFFFFF) {
+            this.data[this.pos++] = (0xF8 | (code >> 24));
+            this.data[this.pos++] = (0x80 | ((code >> 18) & 0x3F));
+            this.data[this.pos++] = (0x80 | ((code >> 12) & 0x3F));
+            this.data[this.pos++] = (0x80 | ((code >> 6) & 0x3F));
+            this.data[this.pos++] = (0x80 | (code & 0x3F));
+        }
+        else if (code < 0x7FFFFFFF) {
+            this.data[this.pos++] = (0xFC | (code >> 30));
+            this.data[this.pos++] = (0x80 | ((code >> 24) & 0x3F));
+            this.data[this.pos++] = (0x80 | ((code >> 18) & 0x3F));
+            this.data[this.pos++] = (0x80 | ((code >> 12) & 0x3F));
+            this.data[this.pos++] = (0x80 | ((code >> 6) & 0x3F));
+            this.data[this.pos++] = (0x80 | (code & 0x3F));
+        }
+    };
     this.WriteBuffer = function(data, _pos, count)
     {
         this.CheckSize(count);
@@ -374,10 +432,20 @@ function CBinaryFileWriter()
         this.WriteUChar(type);
         this.WriteString2(val);
     };
+    this._WriteString1Utf8 = function(type, val)
+    {
+        this.WriteUChar(type);
+        this.WriteString2Utf8(val);
+    };
     this._WriteString2 = function(type, val)
     {
         if (val != null)
             this._WriteString1(type, val);
+    };
+    this._WriteString2Utf8 = function(type, val)
+    {
+        if (val != null)
+            this._WriteString1Utf8(type, val);
     };
 
     this._WriteUChar1 = function(type, val)
@@ -515,6 +583,16 @@ function CBinaryFileWriter()
         {
             this.StartRecord(type);
             val.toStream(this);
+            this.EndRecord();
+        }
+    };
+
+    this.WriteRecordPPTY = function(type, val)
+    {
+        if (null != val)
+        {
+            this.StartRecord(type);
+            val.toPPTY(this);
             this.EndRecord();
         }
     };
@@ -970,19 +1048,26 @@ function CBinaryFileWriter()
         return ret + this.GetBase64Memory();
     };
 
-	this.WriteDocument3 = function(presentation, base64) {
-		var _memory = new AscCommon.CMemory(true);
+	this.WriteDocument3 = function(presentation, base64, opt_prefix, opt_callback) {
+        if (!opt_prefix) {
+            opt_prefix = "PPTY;v" + Asc.c_nVersionNoBase64 + ";";
+        }
+        var _memory = new AscCommon.CMemory(true);
 		_memory.data = this.data;
 		_memory.len = this.len;
 		_memory.pos = this.pos;
 
-		_memory.WriteXmlString("PPTY;v" + Asc.c_nVersionNoBase64 + ";0;");
+		_memory.WriteXmlString(opt_prefix + "0;");
 
 		this.data = _memory.data;
 		this.len = _memory.len;
 		this.pos = _memory.pos;
 
-		this.WriteDocument2(presentation);
+        if (opt_callback) {
+            opt_callback(this);
+        } else {
+            this.WriteDocument2(presentation);
+        }
 
 		_memory.data = this.data;
 		_memory.len = this.len;
@@ -1414,7 +1499,7 @@ function CBinaryFileWriter()
         this._WriteBool2(1, _note.showMasterSp);
         this.WriteUChar(g_nodeAttributeEnd);
         this.WriteRecord1(0, _note.cSld, this.WriteCSld);
-        this.WriteRecord2(1, _note.clrMap, this.WriteClrMapOvr);
+        this.WriteRecord1(1, _note.clrMap, this.WriteClrMapOvr);
         this.EndRecord();
     };
 
@@ -1434,6 +1519,99 @@ function CBinaryFileWriter()
         oThis.WriteRecord1(0, themeElements.clrScheme, oThis.WriteClrScheme);
         oThis.WriteRecord1(1, themeElements.fontScheme, oThis.WriteFontScheme);
         oThis.WriteRecord1(2, themeElements.fmtScheme, oThis.WriteFmtScheme);
+        if(themeElements.themeExt)
+        {
+            const themeExt = themeElements.themeExt;
+            oThis.WriteRecord1(3, themeExt.fmtConnectorScheme, oThis.WriteFmtScheme);
+            if (themeExt.fillStyles.length) {
+                oThis.StartRecord(4);
+                for (let i = 0; i < themeExt.fillStyles.length; ++i)
+                {
+                    oThis.StartRecord(0);
+                    oThis.WriteUChar(AscCommon.g_nodeAttributeStart);
+                    oThis._WriteUInt2(0, themeExt.fillStyles[i].pattern);
+                    oThis.WriteUChar(AscCommon.g_nodeAttributeEnd);
+                    oThis.EndRecord();
+                }
+                oThis.EndRecord();
+            }
+            const lineStyles = themeExt.lineStyles
+            if (lineStyles.fmtConnectorSchemeLineStyles.length > 0 || lineStyles.fmtSchemeLineStyles.length > 0)
+            {
+                oThis.StartRecord(5);
+                if(lineStyles.fmtConnectorSchemeLineStyles.length > 0)
+                {
+                    oThis.StartRecord(0);
+                    for (let i = 0; i < lineStyles.fmtConnectorSchemeLineStyles.length; ++i)
+                    {
+                        oThis.WriteRecordPPTY(0, lineStyles.fmtConnectorSchemeLineStyles[i]);   
+                    }
+                    oThis.EndRecord();
+                }
+                if(lineStyles.fmtSchemeLineStyles.length > 0)
+                {
+                    oThis.StartRecord(1);
+                    for (let i = 0; i < lineStyles.fmtSchemeLineStyles.length; ++i)
+                    {
+                        oThis.WriteRecordPPTY(0, lineStyles.fmtSchemeLineStyles[i]);
+                    }
+                    oThis.EndRecord();
+                }
+                oThis.EndRecord();
+            }
+            const fontStylesGroup = themeExt.fontStylesGroup;
+            if (fontStylesGroup.connectorFontStyles.length > 0 || fontStylesGroup.fontStyles.length > 0)
+            {
+                oThis.StartRecord(6);
+                if(fontStylesGroup.connectorFontStyles.length > 0)
+                {
+                    oThis.StartRecord(0);
+                    for (let i = 0; i < fontStylesGroup.connectorFontStyles.length; ++i)
+                    {
+                        oThis.WriteRecordPPTY(0, fontStylesGroup.connectorFontStyles[i]);
+                    }
+                    oThis.EndRecord();
+                }
+                if(fontStylesGroup.fontStyles.length > 0)
+                {
+                    oThis.StartRecord(1);
+                    for (let i = 0; i < fontStylesGroup.fontStyles.length; ++i)
+                    {
+                        oThis.WriteRecordPPTY(0, fontStylesGroup.fontStyles[i]);
+                    }
+                    oThis.EndRecord();
+                }
+                oThis.EndRecord();
+            }
+            const variationStyleSchemeLst = themeExt.variationStyleSchemeLst
+            if (variationStyleSchemeLst.length > 0)
+            {
+                oThis.StartRecord(7);
+                for (let i = 0; i < variationStyleSchemeLst.length; ++i)
+                {
+                    oThis.WriteRecordPPTY(0, variationStyleSchemeLst[i]);
+                }
+                oThis.EndRecord();
+            }
+            if (themeExt.themeSchemeSchemeEnum)
+            {
+                oThis.StartRecord(8);
+                oThis.WriteExtScheme(themeExt.themeSchemeSchemeEnum);
+                oThis.EndRecord();
+            }
+            if (themeExt.fmtSchemeExSchemeEnum)
+            {
+                oThis.StartRecord(9);
+                oThis.WriteExtScheme(themeExt.fmtSchemeExSchemeEnum);
+                oThis.EndRecord();
+            }
+            if (themeExt.fmtConnectorSchemeExSchemeEnum)
+            {
+                oThis.StartRecord(10);
+                oThis.WriteExtScheme(themeExt.fmtConnectorSchemeExSchemeEnum);
+                oThis.EndRecord();
+            }
+        }
     };
     this.WriteFontScheme = function(fontScheme)
     {
@@ -1458,6 +1636,7 @@ function CBinaryFileWriter()
 
         oThis.WriteRecordArray(0, 0, fmt.fillStyleLst, oThis.WriteUniFill);
         oThis.WriteRecordArray(1, 0, fmt.lnStyleLst, oThis.WriteLn);
+        oThis.WriteRecordArray(2, 0, fmt.effectStyleLst, function(oChild) {oChild.toPPTY(oThis)});
         oThis.WriteRecordArray(3, 0, fmt.bgFillStyleLst, oThis.WriteUniFill);
     };
 
@@ -1591,6 +1770,42 @@ function CBinaryFileWriter()
                 oThis.WriteRecord1(i, scheme.colors[i], oThis.WriteUniColor);
             }
         }
+        if (scheme.clrSchemeExtLst)
+        {
+            if (scheme.clrSchemeExtLst.background && scheme.clrSchemeExtLst.background.unicolor)
+            {
+                oThis.StartRecord(20);
+                oThis.WriteRecord1(0, scheme.clrSchemeExtLst.background.unicolor, oThis.WriteUniColor);
+                oThis.EndRecord();
+            }
+            if (scheme.clrSchemeExtLst.variationClrSchemeLst.length > 0)
+            {
+                oThis.StartRecord(21);
+                for (let i = 0; i < scheme.clrSchemeExtLst.variationClrSchemeLst.length; i++)
+                {
+                    oThis.WriteRecordPPTY(0, scheme.clrSchemeExtLst.variationClrSchemeLst[i]);
+                }
+                oThis.EndRecord();
+            }
+            if (null !==scheme.clrSchemeExtLst.schemeEnum)
+            {
+                oThis.StartRecord(22);
+                oThis.WriteExtSchemeId(scheme.clrSchemeExtLst.schemeEnum);
+                oThis.EndRecord();
+            }
+        }
+    };
+    this.WriteExtSchemeId = function(schemeEnum)
+    {
+        oThis.WriteUChar(g_nodeAttributeStart);
+        oThis._WriteUInt2(0, schemeEnum);
+        oThis.WriteUChar(g_nodeAttributeEnd);
+    };
+    this.WriteExtScheme = function(schemeEnum)
+    {
+        oThis.StartRecord(0);
+        oThis.WriteExtSchemeId(schemeEnum);
+        oThis.EndRecord();
     };
     this.WriteClrMapOvr = function(clrmapovr)
     {
@@ -1684,6 +1899,7 @@ function CBinaryFileWriter()
         }
 
         oThis._WriteInt2(7, tPr.lvl);
+        oThis._WriteBool2(10, pPr.Bidi);
 
         oThis.WriteUChar(g_nodeAttributeEnd);
 
@@ -2010,6 +2226,12 @@ function CBinaryFileWriter()
             action = url;
             url = "";
         }
+		else if (url.indexOf("ppaction://hlinkfile") == 0) {
+			// "ppaction://hlinkfile?file=name.ext";
+			const parts = url.split('?file=');
+			action = parts[0];
+			url = parts[1];
+		}
         else
         {
             var mask = "ppaction://hlinksldjumpslide";
@@ -3068,7 +3290,7 @@ function CBinaryFileWriter()
                 }
                 case para_Hyperlink:
                 {
-                    var _hObj = { Value : _elem.GetValue(), tooltip: _elem.GetToolTip()};
+                    var _hObj = { Value : _elem.GetValue(), tooltip: _elem.ToolTip};
                     var _content_len_h = _elem.Content.length;
 
                     for (var hi = 0; hi < _content_len_h; hi++)
@@ -4265,6 +4487,12 @@ function CBinaryFileWriter()
             action = id;
             id = "";
         }
+		else if (id.indexOf("ppaction://hlinkfile") == 0) {
+			// "ppaction://hlinkfile?file=name.ext";
+			const parts = id.split('?file=');
+			action = parts[0];
+			id = parts[1];
+		}
         else
         {
             if(typeof id === "string")

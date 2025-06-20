@@ -2204,6 +2204,13 @@
 			AscCommonExcel.g_R1C1Mode = oldMode;
 		}
 
+		function lockCustomFunctionRecalculate(mode, runFunction) {
+			var oldMode = AscCommonExcel.g_LockCustomFunctionRecalculate;
+			AscCommonExcel.g_LockCustomFunctionRecalculate = mode;
+			runFunction();
+			AscCommonExcel.g_LockCustomFunctionRecalculate = oldMode;
+		}
+
 		function checkFilteringMode(f, oThis, args) {
 			if (!window['AscCommonExcel'].filteringMode) {
 				AscCommon.History.LocalChange = true;
@@ -2385,31 +2392,32 @@
 			format.setSize(nSize);
 
 			var tm;
-			if (!opt_cf_preview) {
-				tm = sr.measureString(sStyleName);
-			} else {
-				var cellFlags = new AscCommonExcel.CellFlags();
-				cellFlags.textAlign = oStyle.xfs.align && oStyle.xfs.align.hor;
+			var cellFlags = new AscCommonExcel.CellFlags();
+			cellFlags.textAlign = oStyle.xfs.align && oStyle.xfs.align.hor;
 
-				var fragments = [];
-				var tempFragment = new AscCommonExcel.Fragment();
-				tempFragment.setFragmentText(sStyleName);
-				tempFragment.format = format;
-				fragments.push(tempFragment);
-				tm = sr.measureString(fragments, cellFlags, width);
-			}
+			var fragments = [];
+			var tempFragment = new AscCommonExcel.Fragment();
+			tempFragment.setFragmentText(sStyleName);
+			tempFragment.format = format;
+			fragments.push(tempFragment);
+			tm = sr.measureString(fragments, cellFlags, width);
 
-			var width_padding = 4;
-			if (oStyle.xfs && oStyle.xfs.align && oStyle.xfs.align.hor === AscCommon.align_Center) {
+			let textAlign = sr.getEffectiveAlign();
+			let width_padding = 4;
+			if (textAlign === AscCommon.align_Center) {
 				width_padding = Asc.round(0.5 * (width - tm.width));
+			}
+			else if(textAlign === AscCommon.align_Right) {
+				width_padding = Asc.round(width - tm.width - width_padding);
 			}
 
 			// Текст будем рисовать по центру (в Excel чуть по другому реализовано, у них постоянный отступ снизу)
 			var textY = Asc.round(0.5 * (height - tm.height));
 			if (!opt_cf_preview) {
-				ctx.setFont(format);
-				ctx.setFillStyle(oStyle.getFontColor() || new AscCommon.CColor(0, 0, 0));
-				ctx.fillText(sStyleName, width_padding, textY + tm.baseline);
+				let oldCtx = sr.drawingCtx;
+				sr.drawingCtx = ctx;
+				sr.render(ctx, width_padding, textY, tm.width, oStyle.getFontColor() || new AscCommon.CColor(0, 0, 0));
+				sr.drawingCtx = oldCtx;
 			} else {
 				sr.render(ctx, width_padding, textY, tm.width, oStyle.getFontColor() || new AscCommon.CColor(0, 0, 0));
 			}
@@ -4030,6 +4038,7 @@
 		window['AscCommonExcel'] = window['AscCommonExcel'] || {};
 		window['AscCommonExcel'].g_ActiveCell = null; // Active Cell for calculate (in R1C1 mode for relative cell)
 		window['AscCommonExcel'].g_R1C1Mode = false; // No calculate in R1C1 mode
+		window['AscCommonExcel'].g_LockCustomFunctionRecalculate = false;
 		window["AscCommonExcel"].recalcType = recalcType;
 		window["AscCommonExcel"].sizePxinPt = sizePxinPt;
 		window['AscCommonExcel'].c_sPerDay = c_sPerDay;
@@ -4074,6 +4083,7 @@
 		window["AscCommonExcel"].convertUnicodeToSimpleString = convertUnicodeToSimpleString;
 		window['AscCommonExcel'].executeInR1C1Mode = executeInR1C1Mode;
 		window['AscCommonExcel'].checkFilteringMode = checkFilteringMode;
+		window['AscCommonExcel'].lockCustomFunctionRecalculate = lockCustomFunctionRecalculate;
 		window["Asc"].getEndValueRange = getEndValueRange;
 		window["AscCommonExcel"].checkStylesNames = checkStylesNames;
 		window["AscCommonExcel"].generateCellStyles = generateCellStyles;

@@ -1255,7 +1255,9 @@ CDocumentContentBase.prototype.private_AddContentControl = function(nContentCont
 				oSdt.SetPlaceholder(c_oAscDefaultPlaceholderName.Text);
 
 				var oLogicDocument = this instanceof CDocument ? this : this.LogicDocument;
+				let preventPreDelete = oLogicDocument.PreventPreDelete;
 				oLogicDocument.RemoveCommentsOnPreDelete = false;
+				oLogicDocument.PreventPreDelete = true;
 
 				var nStartPos = this.Selection.StartPos;
 				var nEndPos   = this.Selection.EndPos;
@@ -1264,10 +1266,10 @@ CDocumentContentBase.prototype.private_AddContentControl = function(nContentCont
 					nEndPos   = this.Selection.StartPos;
 					nStartPos = this.Selection.EndPos;
 				}
-
-				for (var nIndex = nEndPos; nIndex >= nStartPos; --nIndex)
+				
+				for (let nIndex = nEndPos; nIndex >= nStartPos; --nIndex)
 				{
-					var oElement = this.Content[nIndex];
+					let oElement = this.Content[nIndex];
 					oSdt.Content.Add_ToContent(0, oElement);
 					this.Remove_FromContent(nIndex, 1);
 					oElement.SelectAll(1);
@@ -1284,6 +1286,7 @@ CDocumentContentBase.prototype.private_AddContentControl = function(nContentCont
 				this.CurPos.ContentPos  = nStartPos;
 
 				oLogicDocument.RemoveCommentsOnPreDelete = true;
+				oLogicDocument.PreventPreDelete = preventPreDelete;
 				return oSdt;
 			}
 		}
@@ -2966,4 +2969,15 @@ CDocumentContentBase.prototype.GetText = function(pr)
 	}
 	
 	return text;
+};
+CDocumentContentBase.prototype.GetCurrentContentControl = function()
+{
+	let selectedInfo = this.GetSelectedElementsInfo({SkipTOC : true});
+	
+	let inlineSdt = selectedInfo.GetInlineLevelSdt();
+	if (inlineSdt)
+		return inlineSdt;
+	
+	let blockSdt = selectedInfo.GetBlockLevelSdt();
+	return blockSdt ? blockSdt : null;
 };

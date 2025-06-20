@@ -47,34 +47,7 @@
 	var c_oAscAlignV         = Asc.c_oAscAlignV;
 
 	var arrApiRanges		 = [];
-	function private_RemoveEmptyRanges()
-	{
-		function ckeck_equal(firstDocPos, secondDocPos)
-		{
-			if (firstDocPos.length === secondDocPos.length)
-			{
-				for (var nPos = 0; nPos < firstDocPos.length; nPos++)
-				{
-					if (firstDocPos[nPos].Class !== secondDocPos[nPos].Class || firstDocPos[nPos].Position !== secondDocPos[nPos].Position)
-						return false;
-				}
-				return true;
-			}
-			return false;
-		}
-
-		var Range = null;
-		for (var nRange = 0; nRange < arrApiRanges.length; nRange++)
-		{
-			Range = arrApiRanges[nRange];
-			if (ckeck_equal(Range.StartPos, Range.EndPos))
-			{
-				Range.isEmpty = true;
-				arrApiRanges.splice(nRange, 1);
-				nRange--;
-			}
-		}
-	}
+	
 	function private_TrackRangesPositions(bClearTrackedPosition)
 	{
 		var Document  = private_GetLogicDocument();
@@ -209,7 +182,22 @@
 			}
 		}
 	}
-
+	
+	/**
+	 * This element specifies the information which shall be used to establish a mapping to an XML element stored within a Custom XML.
+	 * @typedef {Object} XmlMapping
+	 * @property {string} prefixMapping The set of prefix mappings which shall be used to interpret the XPath expression specified in xpath.
+	 * @property {string} xpath The XPath expression.
+	 * @property {string} storeItemID The custom XML data identifier.
+	 * @example
+	 * {
+	 *   "prefixMapping": "xmlns:ns0='http://example.com/example'",
+	 *   "xpath": "//ns0:book",
+	 *   "storeItemID": "testXmlPart"
+	 * }
+	 */
+	
+	
 	/**
 	 * Class representing a bookmark in the document.
 	 * @constructor
@@ -1276,11 +1264,9 @@
 			if (nStartPos === undefined)
 				nStartPos = 0;
 
-			if (nEndPos === undefined)
-			{
-				oElement.CheckRunContent(calcSumPos);
+			oElement.CheckRunContent(calcSumPos);
+			if (nEndPos === undefined || nEndPos > nPosCount)
 				nEndPos = nPosCount;
-			}
 		}
 		correctPositions(oElement);
 
@@ -1402,21 +1388,55 @@
 	ApiRange.prototype.private_GetTextPr = function()
 	{
 		private_RefreshRangesPosition();
-		private_RemoveEmptyRanges();
 		
 		let logicDocument = private_GetLogicDocument();
 		let docState = logicDocument.SaveDocumentState();
 		
 		this.Select(false);
-		if (this.isEmpty || this.isEmpty === undefined)
-		{
-			logicDocument.LoadDocumentState(docState);
-			return;
-		}
 		
 		let textPr = logicDocument.GetCalculatedTextPr();
 		logicDocument.LoadDocumentState(docState);
 		return textPr;
+	};
+	ApiRange.prototype.private_GetLogicDocument = function()
+	{
+		return private_GetLogicDocument();
+	};
+	ApiRange.prototype._trackPositions = function()
+	{
+		let logicDocument = this.private_GetLogicDocument();
+		if (!logicDocument || !logicDocument.IsDocumentEditor())
+			return;
+		
+		if (this.StartPos)
+			logicDocument.CollaborativeEditing.Add_DocumentPosition(this.StartPos);
+		
+		if (this.EndPos)
+			logicDocument.CollaborativeEditing.Add_DocumentPosition(this.EndPos);
+	};
+	ApiRange.prototype._updatePositions = function()
+	{
+		let logicDocument = this.private_GetLogicDocument();
+		if (!logicDocument || !logicDocument.IsDocumentEditor())
+			return;
+		
+		if (this.StartPos)
+			logicDocument.CollaborativeEditing.Update_DocumentPosition(this.StartPos);
+		
+		if (this.EndPos)
+			logicDocument.CollaborativeEditing.Update_DocumentPosition(this.EndPos);
+	};
+	ApiRange.prototype._untrackPositions = function()
+	{
+		let logicDocument = this.private_GetLogicDocument();
+		if (!logicDocument || !logicDocument.IsDocumentEditor())
+			return;
+		
+		if (this.StartPos)
+			logicDocument.CollaborativeEditing.Remove_DocumentPosition(this.StartPos);
+		
+		if (this.EndPos)
+			logicDocument.CollaborativeEditing.Remove_DocumentPosition(this.EndPos);
 	};
 	
 	/**
@@ -1429,6 +1449,39 @@
 	ApiRange.prototype.GetClassType = function()
 	{
 		return "range";
+	};
+
+	ApiRange.prototype.private_GetRunInfoByPos = function(nPos) {
+		if (typeof nPos !== "number") {
+			return null;
+		}
+	
+		let result = null;
+		let offsetPos = 0;
+		let isFirstRun = true;
+	
+		this.Element.CheckRunContent(function(oRun) {
+			if (result !== null) return;
+	
+			if (!isFirstRun) {
+				offsetPos++;
+			}
+			isFirstRun = false;
+	
+			if (offsetPos === nPos && result === null) {
+				result = { run: oRun, pos: 0 };
+			}
+	
+			for (let i = 0; i < oRun.Content.length; i++) {
+				offsetPos++;
+				if (offsetPos === nPos && result === null) {
+					result = { run: oRun, pos: i + 1 };
+					break;
+				}
+			}
+		});
+	
+		return result;
 	};
 
 	/**
@@ -1455,89 +1508,75 @@
 	 * Adds a text to the specified position.
 	 * @memberof ApiRange
 	 * @typeofeditors ["CDE"]
-	 * @param {String} sText - The text that will be added.
-	 * @param {string} [sPosition = "after"] - The position where the text will be added ("before" or "after" the range specified).
-	 * @return {boolean} - returns false if range is empty or sText isn't string value.
+	 * @param {String} text - The text that will be added.
+	 * @param {"after" | "before"} [position = "after"] - The position where the text will be added ("before" or "after" the range specified).
+	 * @return {boolean} - returns true if the text was successfully added.
 	 * @see office-js-api/Examples/{Editor}/ApiRange/Methods/AddText.js
 	 */	
-	ApiRange.prototype.AddText = function(sText, sPosition)
+	ApiRange.prototype.AddText = function(text, position)
 	{
-		private_RefreshRangesPosition();
-		private_RemoveEmptyRanges();
+		this._updatePositions();
 
-		let oDocument = private_GetLogicDocument();
-		oDocument.RemoveSelection();
+		let logicDocument = private_GetLogicDocument();
+		logicDocument.RemoveSelection();
 
-		if (this.isEmpty || this.isEmpty === undefined || typeof(sText) !== "string")
+		text = GetStringParameter(text, "");
+		if ("" === text)
 			return false;
-
-		if (sPosition !== "after" && sPosition !== "before")
-			sPosition = "after";
 		
-		if (sPosition === "after")
+		position = GetStringParameter(position, "after");
+		
+		if ("after" === position)
 		{
-			let oTargetRun	= this.EndPos[this.EndPos.length - 1].Class;
-			let oPrevApiRun	= null;
+			let run      = this.EndPos[this.EndPos.length - 1].Class;
+			let inRunPos = this.EndPos[this.EndPos.length - 1].Position;
+			
+			if (!run || !(run instanceof AscWord.Run) || -1 === inRunPos)
+				return false;
 
-			if (oTargetRun.IsParaEndRun())
+			run.SetCursorPosition(inRunPos);
+			let newRun = run.CheckRunBeforeAdd();
+			if (newRun)
 			{
-				oPrevApiRun = new ApiRun(oTargetRun).private_GetPreviousInParent();
-				
-				if (oPrevApiRun)
-				{
-					oTargetRun = oPrevApiRun.Run;
-				}
-				else
-				{
-					oTargetRun = null;
-				}
-			}
-
-			if (!oTargetRun)
-			{
-				return false; 	
-			}
-
-			let nPosInRun		= this.EndPos[this.EndPos.length - 1].Position;
-			let nRunPosInParent	= this.EndPos[this.EndPos.length - 2].Position;
-			let oRunParent		= oTargetRun.GetParent();
-			let nNewPosInRun	= nPosInRun;
-
-			if (nPosInRun === 0)
-			{
-				if (nRunPosInParent - 1 >= 0)
-				{
-					nRunPosInParent--;
-					oTargetRun		= oRunParent.GetElement(nRunPosInParent);
-					nPosInRun	= oTargetRun.Content.length;
-				}
-			}
-			else {
-				for (let oIterator = sText.getUnicodeIterator(); oIterator.check(); oIterator.next())
-					nNewPosInRun++;
-			}
-
-			// если ран окончания параграфа, позиция в нём не изменится
-			if (null == oPrevApiRun) {
-				oTargetRun.AddText(sText, nPosInRun);
-				this.EndPos[this.EndPos.length - 1].Class = oTargetRun;
-				this.EndPos[this.EndPos.length - 1].Position = nNewPosInRun;
-				this.EndPos[this.EndPos.length - 2].Position = nRunPosInParent;
-			}
-			else {
-				nPosInRun = oTargetRun.Content.length;
-				oTargetRun.AddText(sText, nPosInRun);
+				run = newRun;
+				inRunPos = 0;
 			}
 			
-			private_TrackRangesPositions(true);
+			let newInRunPos = run.AddText(text, inRunPos);
+			run.SetCursorPosition(newInRunPos);
+			
+			this._untrackPositions();
+			this.EndPos = run.GetDocumentPositionForCurrentPosition();
+			this._trackPositions();
 		}
-		else if (sPosition === "before")
+		else
 		{
-			let oTargetRun	= this.StartPos[this.StartPos.length - 1].Class;
-			let nPosInRun	= this.StartPos[this.StartPos.length - 1].Position;
-			oTargetRun.AddText(sText, nPosInRun);
+			let run      = this.StartPos[this.StartPos.length - 1].Class;
+			let inRunPos = this.StartPos[this.StartPos.length - 1].Position;
+			
+			if (!run || !(run instanceof AscWord.Run) || -1 === inRunPos)
+				return false;
+			
+			run.SetCursorPosition(inRunPos);
+			let newRun = run.CheckRunBeforeAdd();
+			if (newRun)
+			{
+				run = newRun;
+				inRunPos = 0;
+			}
+			
+			let newInRunPos = run.AddText(text, inRunPos);
+			run.SetCursorPosition(newInRunPos);
+			
+			if (newRun)
+			{
+				this._untrackPositions();
+				run.SetCursorPosition(0);
+				this.StartPos = run.GetDocumentPositionForCurrentPosition();
+				this._trackPositions();
+			}
 		}
-
+		
 		return true;
 	};
 
@@ -1552,13 +1591,12 @@
 	ApiRange.prototype.AddBookmark = function(sName)
 	{
 		private_RefreshRangesPosition();
-		private_RemoveEmptyRanges();
 
 		var Document			= private_GetLogicDocument();
 		var oldSelectionInfo	= Document.SaveDocumentState();
 
 		this.Select(false);
-		if (this.isEmpty || this.isEmpty === undefined || typeof(sName) !== "string")
+		if (typeof(sName) !== "string")
 		{
 			Document.LoadDocumentState(oldSelectionInfo);
 			return false;
@@ -1644,17 +1682,11 @@
 		}
 
 		private_RefreshRangesPosition();
-		private_RemoveEmptyRanges();
 
 		var Document			= private_GetLogicDocument();
 		var oldSelectionInfo	= Document.SaveDocumentState();
 
 		this.Select(false);
-		if (this.isEmpty || this.isEmpty === undefined)
-		{
-			Document.LoadDocumentState(oldSelectionInfo);
-			return "";
-		}
 		private_TrackRangesPositions();
 
 		var Text = this.Controller.GetSelectedText(false, oProp); 
@@ -1674,19 +1706,11 @@
 	ApiRange.prototype.GetAllParagraphs = function()
 	{
 		private_RefreshRangesPosition();
-		private_RemoveEmptyRanges();
 
 		let oDoc			= private_GetLogicDocument();
 		let oldSelectionInfo	= oDoc.SaveDocumentState();
 
 		this.Select(false);
-		if (this.isEmpty || this.isEmpty === undefined)
-		{
-			oDoc.LoadDocumentState(oldSelectionInfo);
-			this.Paragraphs = [];
-			return null;
-		}
-
 		private_TrackRangesPositions();
 
 		let SelectedContent = oDoc.GetSelectedElementsInfo({CheckAllSelection : true});
@@ -1712,18 +1736,15 @@
 	 * Sets the selection to the specified range.
 	 * @memberof ApiRange
 	 * @typeofeditors ["CDE"]
+	 * @returns {boolean}
 	 * @see office-js-api/Examples/{Editor}/ApiRange/Methods/Select.js
 	 */	
 	ApiRange.prototype.Select = function(bUpdate)
 	{
 		private_RefreshRangesPosition();
-		private_RemoveEmptyRanges();
 
 		var Document = private_GetLogicDocument();
 		
-		if (this.isEmpty || this.isEmpty === undefined)
-			return false;
-
 		if (bUpdate === undefined)
 			bUpdate = true;
 
@@ -1753,6 +1774,8 @@
 			Document.SetDocPosType(controllerType);
 			Document.UpdateSelection();
 		}
+
+		return true;
 	};
 
 	/**
@@ -1766,16 +1789,20 @@
 	ApiRange.prototype.ExpandTo = function(oRange)
 	{
 		private_RefreshRangesPosition();
-		private_RemoveEmptyRanges();
 
-		if (!(oRange instanceof ApiRange) || this.isEmpty || this.isEmpty === undefined || oRange.isEmpty || oRange.isEmpty === undefined)
+		if (!(oRange instanceof ApiRange))
 			return null;
 
 		if (this.StartPos[0].Class !== oRange.StartPos[0].Class) {
 			return null;
 		}
 
-		return new ApiRange(this.StartPos[0].Class, Math.min(this.GetStartPos(), oRange.GetStartPos()), Math.max(this.GetEndPos(), oRange.GetEndPos()));
+		let oNewRange = new ApiRange(this.StartPos[0].Class, Math.min(this.GetStartPos(), oRange.GetStartPos()), Math.max(this.GetEndPos(), oRange.GetEndPos()));
+		if (oNewRange.isEmpty) {
+			return null;
+		}
+
+		return oNewRange;
 	};
 
 	/**
@@ -1789,9 +1816,8 @@
 	ApiRange.prototype.IntersectWith = function(oRange)
 	{
 		private_RefreshRangesPosition();
-		private_RemoveEmptyRanges();
 
-		if (!(oRange instanceof ApiRange) || this.isEmpty || this.isEmpty === undefined || oRange.isEmpty || oRange.isEmpty === undefined)
+		if (!(oRange instanceof ApiRange))
 			return null;
 
 		if (this.StartPos[0].Class !== oRange.StartPos[0].Class)
@@ -1905,7 +1931,12 @@
 
 		restoreDocState();
 
-		return new ApiRange(this.StartPos[0].Class, nIntersectStartPos, nIntersectEndPos);
+		let oNewRange = new ApiRange(this.StartPos[0].Class, nIntersectStartPos, nIntersectEndPos);
+		if (oNewRange.isEmpty) {
+			return null;
+		}
+
+		return oNewRange;
 	};
 
 	/**
@@ -1919,18 +1950,11 @@
 	ApiRange.prototype.SetBold = function(isBold)
 	{
 		private_RefreshRangesPosition();
-		private_RemoveEmptyRanges();
 
 		var Document			= private_GetLogicDocument();
 		var oldSelectionInfo	= Document.SaveDocumentState();
 
 		this.Select(false);
-		if (this.isEmpty || this.isEmpty === undefined)
-		{
-			Document.LoadDocumentState(oldSelectionInfo);
-			return null;
-		}
-
 		private_TrackRangesPositions();
 
 		var SelectedContent = Document.GetSelectedElementsInfo({CheckAllSelection : true});
@@ -1962,18 +1986,11 @@
 	ApiRange.prototype.SetCaps = function(isCaps)
 	{
 		private_RefreshRangesPosition();
-		private_RemoveEmptyRanges();
 
 		var Document			= private_GetLogicDocument();
 		var oldSelectionInfo	= Document.SaveDocumentState();
 
 		this.Select(false);
-		if (this.isEmpty || this.isEmpty === undefined)
-		{
-			Document.LoadDocumentState(oldSelectionInfo);
-			return null;
-		}
-
 		private_TrackRangesPositions();
 
 		var SelectedContent = Document.GetSelectedElementsInfo({CheckAllSelection : true});
@@ -2008,18 +2025,11 @@
 	ApiRange.prototype.SetColor = function(r, g, b, isAuto)
 	{
 		private_RefreshRangesPosition();
-		private_RemoveEmptyRanges();
 
 		var Document			= private_GetLogicDocument();
 		var oldSelectionInfo	= Document.SaveDocumentState();
 
 		this.Select(false);
-		if (this.isEmpty || this.isEmpty === undefined)
-		{
-			Document.LoadDocumentState(oldSelectionInfo);
-			return null;
-		}
-
 		private_TrackRangesPositions();
 
 		var color = new Asc.asc_CColor();
@@ -2052,10 +2062,14 @@
 		}
 		else
 		{
-			var Unifill        = new AscFormat.CUniFill();
-			Unifill.fill       = new AscFormat.CSolidFill();
-			Unifill.fill.color = AscFormat.CorrectUniColor(color, Unifill.fill.color, 1);
-			ParaTextPr = new AscCommonWord.ParaTextPr({Unifill : Unifill});
+			ParaTextPr = new AscCommonWord.ParaTextPr({
+				Color      : {
+					Auto : false,
+					r    : r,
+					g    : g,
+					b    : b
+				}, Unifill : undefined
+			});
 			Document.AddToParagraph(ParaTextPr);
 		}
 
@@ -2076,18 +2090,11 @@
 	ApiRange.prototype.SetDoubleStrikeout = function(isDoubleStrikeout)
 	{
 		private_RefreshRangesPosition();
-		private_RemoveEmptyRanges();
 
 		var Document			= private_GetLogicDocument();
 		var oldSelectionInfo	= Document.SaveDocumentState();
 
 		this.Select(false);
-		if (this.isEmpty || this.isEmpty === undefined)
-		{
-			Document.LoadDocumentState(oldSelectionInfo);
-			return null;
-		}
-
 		private_TrackRangesPositions();
 		
 		var SelectedContent = Document.GetSelectedElementsInfo({CheckAllSelection : true});
@@ -2123,18 +2130,11 @@
 			return null;
 
 		private_RefreshRangesPosition();
-		private_RemoveEmptyRanges();
 
 		var Document			= private_GetLogicDocument();
 		var oldSelectionInfo	= Document.SaveDocumentState();
 
 		this.Select(false);
-		if (this.isEmpty || this.isEmpty === undefined)
-		{
-			Document.LoadDocumentState(oldSelectionInfo);
-			return null;
-		}
-
 		private_TrackRangesPositions();
 
 		var SelectedContent = Document.GetSelectedElementsInfo({CheckAllSelection : true});
@@ -2179,18 +2179,11 @@
 	ApiRange.prototype.SetShd = function(sType, r, g, b)
 	{
 		private_RefreshRangesPosition();
-		private_RemoveEmptyRanges();
 
 		var Document			= private_GetLogicDocument();
 		var oldSelectionInfo	= Document.SaveDocumentState();
 
 		this.Select(false);
-		if (this.isEmpty || this.isEmpty === undefined)
-		{
-			Document.LoadDocumentState(oldSelectionInfo);
-			return null;
-		}
-
 		private_TrackRangesPositions();
 
 		let oShd = private_GetShd(sType, r, g, b, false);
@@ -2224,18 +2217,11 @@
 	ApiRange.prototype.SetItalic = function(isItalic)
 	{
 		private_RefreshRangesPosition();
-		private_RemoveEmptyRanges();
 
 		var Document			= private_GetLogicDocument();
 		var oldSelectionInfo	= Document.SaveDocumentState();
 
 		this.Select(false);
-		if (this.isEmpty || this.isEmpty === undefined)
-		{
-			Document.LoadDocumentState(oldSelectionInfo);
-			return null;
-		}
-
 		private_TrackRangesPositions();
 
 		var SelectedContent = Document.GetSelectedElementsInfo({CheckAllSelection : true});
@@ -2267,18 +2253,11 @@
 	ApiRange.prototype.SetStrikeout = function(isStrikeout)
 	{
 		private_RefreshRangesPosition();
-		private_RemoveEmptyRanges();
 
 		var Document			= private_GetLogicDocument();
 		var oldSelectionInfo	= Document.SaveDocumentState();
 
 		this.Select(false);
-		if (this.isEmpty || this.isEmpty === undefined)
-		{
-			Document.LoadDocumentState(oldSelectionInfo);
-			return null;
-		}
-
 		private_TrackRangesPositions();
 		
 		var SelectedContent = Document.GetSelectedElementsInfo({CheckAllSelection : true});
@@ -2314,18 +2293,11 @@
 	ApiRange.prototype.SetSmallCaps = function(isSmallCaps)
 	{
 		private_RefreshRangesPosition();
-		private_RemoveEmptyRanges();
 
 		var Document			= private_GetLogicDocument();
 		var oldSelectionInfo	= Document.SaveDocumentState();
 
 		this.Select(false);
-		if (this.isEmpty || this.isEmpty === undefined)
-		{
-			Document.LoadDocumentState(oldSelectionInfo);
-			return null;
-		}
-
 		private_TrackRangesPositions();
 
 		var SelectedContent = Document.GetSelectedElementsInfo({CheckAllSelection : true});
@@ -2360,18 +2332,11 @@
 	ApiRange.prototype.SetSpacing = function(nSpacing)
 	{
 		private_RefreshRangesPosition();
-		private_RemoveEmptyRanges();
 
 		var Document			= private_GetLogicDocument();
 		var oldSelectionInfo	= Document.SaveDocumentState();
 
 		this.Select(false);
-		if (this.isEmpty || this.isEmpty === undefined)
-		{
-			Document.LoadDocumentState(oldSelectionInfo);
-			return null;
-		}
-
 		private_TrackRangesPositions();
 
 		var SelectedContent = Document.GetSelectedElementsInfo({CheckAllSelection : true});
@@ -2383,7 +2348,7 @@
 			return null;
 		}
 
-		var ParaTextPr = new AscCommonWord.ParaTextPr({Spacing : nSpacing});
+		var ParaTextPr = new AscCommonWord.ParaTextPr({Spacing : private_Twips2MM(nSpacing)});
 		Document.AddToParagraph(ParaTextPr);
 		
 		Document.LoadDocumentState(oldSelectionInfo);
@@ -2404,18 +2369,11 @@
 	ApiRange.prototype.SetUnderline = function(isUnderline)
 	{
 		private_RefreshRangesPosition();
-		private_RemoveEmptyRanges();
 		
 		var Document			= private_GetLogicDocument();
 		var oldSelectionInfo	= Document.SaveDocumentState();
 
 		this.Select(false);
-		if (this.isEmpty || this.isEmpty === undefined)
-		{
-			Document.LoadDocumentState(oldSelectionInfo);
-			return null;
-		}
-
 		private_TrackRangesPositions();
 
 		var SelectedContent = Document.GetSelectedElementsInfo({CheckAllSelection : true});
@@ -2451,18 +2409,11 @@
 	ApiRange.prototype.SetVertAlign = function(sType)
 	{
 		private_RefreshRangesPosition();
-		private_RemoveEmptyRanges();
 
 		var Document			= private_GetLogicDocument();
 		var oldSelectionInfo	= Document.SaveDocumentState();
 
 		this.Select(false);
-		if (this.isEmpty || this.isEmpty === undefined)
-		{
-			Document.LoadDocumentState(oldSelectionInfo);
-			return null;
-		}
-
 		private_TrackRangesPositions();
 
 		var value = undefined;
@@ -2507,18 +2458,11 @@
 	ApiRange.prototype.SetPosition = function(nPosition)
 	{
 		private_RefreshRangesPosition();
-		private_RemoveEmptyRanges();
 
 		var Document			= private_GetLogicDocument();
 		var oldSelectionInfo	= Document.SaveDocumentState();
 
 		this.Select(false);
-		if (this.isEmpty || this.isEmpty === undefined)
-		{
-			Document.LoadDocumentState(oldSelectionInfo);
-			return null;
-		}
-
 		private_TrackRangesPositions();
 
 		if (typeof nPosition !== "number")
@@ -2533,7 +2477,7 @@
 			return null;
 		}
 
-		var ParaTextPr = new AscCommonWord.ParaTextPr({Position : nPosition});
+		var ParaTextPr = new AscCommonWord.ParaTextPr({Position : private_PtToMM(private_GetHps(nPosition))});
 		Document.AddToParagraph(ParaTextPr);
 		
 		Document.LoadDocumentState(oldSelectionInfo);
@@ -2553,18 +2497,11 @@
 	ApiRange.prototype.SetFontSize = function(FontSize)
 	{
 		private_RefreshRangesPosition();
-		private_RemoveEmptyRanges();
 
 		var Document			= private_GetLogicDocument();
 		var oldSelectionInfo	= Document.SaveDocumentState();
 
 		this.Select(false);
-		if (this.isEmpty || this.isEmpty === undefined)
-		{
-			Document.LoadDocumentState(oldSelectionInfo);
-			return null;
-		}
-
 		private_TrackRangesPositions();
 
 		var SelectedContent = Document.GetSelectedElementsInfo({CheckAllSelection : true});
@@ -2596,7 +2533,6 @@
 	ApiRange.prototype.SetFontFamily = function(sFontFamily)
 	{
 		private_RefreshRangesPosition();
-		private_RemoveEmptyRanges();
 
 		if (typeof sFontFamily !== "string")
 			return null;
@@ -2607,12 +2543,6 @@
 		let oldSelectionInfo = Document.SaveDocumentState();
 
 		this.Select(false);
-		if (this.isEmpty || this.isEmpty === undefined)
-		{
-			Document.LoadDocumentState(oldSelectionInfo);
-			return null;
-		}
-
 		private_TrackRangesPositions();
 
 		var FontFamily = {
@@ -2648,13 +2578,12 @@
 	ApiRange.prototype.SetStyle = function(oStyle)
 	{
 		private_RefreshRangesPosition();
-		private_RemoveEmptyRanges();
 
 		var Document			= private_GetLogicDocument();
 		var oldSelectionInfo	= Document.SaveDocumentState();
 
 		this.Select(false);
-		if (this.isEmpty || this.isEmpty === undefined || !(oStyle instanceof ApiStyle))
+		if (!(oStyle instanceof ApiStyle))
 		{
 			Document.LoadDocumentState(oldSelectionInfo);
 			return null;
@@ -2690,13 +2619,12 @@
 	ApiRange.prototype.SetTextPr = function(oTextPr)
 	{
 		private_RefreshRangesPosition();
-		private_RemoveEmptyRanges();
 
 		var Document			= private_GetLogicDocument();
 		var oldSelectionInfo	= Document.SaveDocumentState();
 
 		this.Select(false);
-		if (this.isEmpty || this.isEmpty === undefined || !(oTextPr instanceof ApiTextPr))
+		if (!(oTextPr instanceof ApiTextPr))
 		{
 			Document.LoadDocumentState(oldSelectionInfo);
 			return null;
@@ -2747,24 +2675,15 @@
 	ApiRange.prototype.Delete = function()
 	{
 		private_RefreshRangesPosition();
-		private_RemoveEmptyRanges();
 		
 		var Document			= private_GetLogicDocument();
 		var oldSelectionInfo	= Document.SaveDocumentState();
 
 		this.Select(false);
-		if (this.isEmpty || this.isEmpty === undefined)
-		{
-			Document.LoadDocumentState(oldSelectionInfo);
-			return false;
-		}
-
 		private_TrackRangesPositions();
 
 		this.Controller.Remove(1, true, false, false, false);
 
-		this.isEmpty = true;
-		
 		Document.LoadDocumentState(oldSelectionInfo);
 		Document.UpdateSelection();
 		
@@ -2789,18 +2708,11 @@
 		}
 
 		private_RefreshRangesPosition();
-		private_RemoveEmptyRanges();
 
 		var oldSelectionInfo = oDocument.SaveDocumentState();
 		this.Select(false);
 
 		var oSelectedContent = oDocument.GetSelectedContent();
-
-		if (this.isEmpty || this.isEmpty === undefined)
-		{
-			oDocument.LoadDocumentState(oldSelectionInfo);
-			return "";
-		}
 		private_TrackRangesPositions();
 
 		oDocument.LoadDocumentState(oldSelectionInfo);
@@ -2830,9 +2742,9 @@
 	 * Adds a comment to the current range.
 	 * @memberof ApiRange
 	 * @typeofeditors ["CDE"]
-	 * @param {string} sText - The comment text (required).
-	 * @param {string} sAuthor - The author's name (optional).
-	 * @param {string} sUserId - The user ID of the comment author (optional).
+	 * @param {string} sText - The comment text.
+	 * @param {string} [sAuthor] - The author's name.
+	 * @param {string} [sUserId] - The user ID of the comment author.
 	 * @returns {?ApiComment} - Returns null if the comment was not added.
 	 * @see office-js-api/Examples/{Editor}/ApiRange/Methods/AddComment.js
 	 */
@@ -2846,7 +2758,6 @@
 			sAuthor = "";
 		
 		private_RefreshRangesPosition();
-		private_RemoveEmptyRanges();
 
 		let CommentData = private_CreateCommentData({
 			text: sText,
@@ -2857,12 +2768,6 @@
 		let oldDocumentState = oDocument.SaveDocumentState();
 		
 		this.Select(false);
-		if (this.isEmpty || this.isEmpty === undefined)
-		{
-			oDocument.LoadDocumentState(oldDocumentState);
-			return null;
-		}
-
 		private_TrackRangesPositions();
 
 		let SelectedContent = oDocument.GetSelectedElementsInfo({CheckAllSelection : true});
@@ -2987,7 +2892,6 @@
 	 */
 	ApiRange.prototype.GetStartPos = function() {
 		private_RefreshRangesPosition();
-		private_RemoveEmptyRanges();
 
 		let isFirstRun		= true;
 		let oRunStart		= this.StartPos[this.StartPos.length - 1].Class;
@@ -3043,7 +2947,6 @@
 	 */
 	ApiRange.prototype.GetEndPos = function() {
 		private_RefreshRangesPosition();
-		private_RemoveEmptyRanges();
 		
 		let isFirstRun	= true;
 		let oRunEnd		= this.EndPos[this.EndPos.length - 1].Class;
@@ -3088,6 +2991,47 @@
 			return this.SetEndPos(nPos);
 		}
 	});
+
+	/**
+	 * Moves a cursor to a specified position of the current range object.
+	 * If there is any selection in the document, it will be removed.
+	 * @memberof ApiRange
+	 * @param {number} [nPos=0] - The desired cursor position.
+	 * @typeofeditors ["CDE"]
+	 * @returns {boolean}
+	 * @since 9.0.0
+	 * @see office-js-api/Examples/{Editor}/ApiRange/Methods/MoveCursorToPos.js
+	 */
+	ApiRange.prototype.MoveCursorToPos = function(nPos)
+	{
+		let oPosInfo = this.private_GetRunInfoByPos(nPos);
+		if (!oPosInfo)
+			return false;
+
+		let oApiRun = new ApiRun(oPosInfo.run);
+		oApiRun.MoveCursorToPos(oPosInfo.pos);
+		return true;
+	};
+
+	/**
+	 * Adds a field to the specified range by the field instruction code.
+	 * <note> This method removes text within a range. </note>
+	 * @memberof ApiRange
+	 * @typeofeditors ["CDE"]
+	 * @param {string} sCode - The field instruction code.
+	 * @returns {boolean}
+	 * @since 9.0.0
+	 * @see office-js-api/Examples/{Editor}/ApiRange/Methods/AddField.js
+	 */
+	ApiRange.prototype.AddField = function(sCode) {
+		private_RefreshRangesPosition();
+		
+		let oDoc = private_GetLogicDocument();
+		this.Select(false);
+
+		oDoc.Remove(1, false, false, true);
+		return !!oDoc.AddComplexField(sCode);
+	};
 
 	/**
 	 * Class representing a document.
@@ -3250,7 +3194,7 @@
 	ApiTextForm.prototype.constructor = ApiTextForm;
 
 	/**
-	 * Class representing a document combo box / dropdown list.
+	 * Class representing a document combo box / drop-down list.
 	 * @constructor
 	 * @typeofeditors ["CDE", "CFE"]
 	 * @extends {ApiFormBase}
@@ -3516,7 +3460,12 @@
 	 */
 	ApiHyperlink.prototype.GetRange = function(Start, End)
 	{
-		return new ApiRange(this.ParaHyperlink, Start, End);
+		let oRange = new ApiRange(this.ParaHyperlink, Start, End);
+		if (oRange.isEmpty) {
+			return null;
+		}
+
+		return oRange;
 	};
 	/**
 	 * Converts the ApiHyperlink object into the JSON object.
@@ -3822,7 +3771,7 @@
 	}
 
 	/**
-	 * Class representing a list of values of the combo box / dropdown list content control.
+	 * Class representing a list of values of the combo box / drop-down list content control.
 	 * @constructor
 	 */
 	function ApiContentControlList(Parent)
@@ -3832,7 +3781,7 @@
 	}
 
 	/**
-	 * Class representing an entry of the combo box / dropdown list content control.
+	 * Class representing an entry of the combo box / drop-down list content control.
 	 * @constructor
 	 */
 	function ApiContentControlListEntry(Sdt, Parent, Text, Value)
@@ -3860,6 +3809,22 @@
 	{
 		this.Settings = oSettings;
 	}
+
+	/**
+	 * Class representing document properties (similar to BuiltInDocumentProperties in VBA).
+	 * @constructor
+	 */
+	function ApiCore(oCore) {
+		this.Core = oCore;
+	}
+
+	/**
+	 * Class representing custom properties of the document.
+	 * @constructor
+	 */
+	function ApiCustomProperties(oCustomProperties) {
+		this.CustomProperties = oCustomProperties;
+	};
 
 
 	/**
@@ -4116,7 +4081,7 @@
 	/**
 	 * Form type.
 	 * The available form types.
-	 * @typedef {"textForm" | "comboBoxForm" | "dropDownForm" | "checkBoxForm" | "radioButtonForm" | "pictureForm"} FormType
+	 * @typedef {"textForm" | "comboBoxForm" | "dropDownForm" | "checkBoxForm" | "radioButtonForm" | "pictureForm" | "complexForm"} FormType
 	 * @see office-js-api/Examples/Enumerations/FormType.js
 	 */
 
@@ -4375,7 +4340,8 @@
 	 */
 
 	/**
-	 * @typedef {string} Base64Img Base64 image string
+	 * The Base64 image string.
+	 * @typedef {string} Base64Img
 	 * @example "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgA..."
 	 */
 
@@ -4895,6 +4861,136 @@
 	};
 
 	/**
+	 * The checkbox content control properties
+	 * @typedef {Object} ContentControlCheckBoxPr
+	 * @property {boolean} [checked] Indicates whether the checkbox is checked by default.
+	 * @property {string} [checkedSymbol] A custom symbol to display when the checkbox is checked (e.g., "☒").
+	 * @property {string} [uncheckedSymbol] A custom symbol to display when the checkbox is unchecked (e.g., "☐").
+	 */
+
+	/**
+	 * Creates a checkbox content control.
+	 * @memberof Api
+	 * @typeofeditors ["CDE"]
+	 * @since 9.0.0
+	 * @param {ContentControlCheckBoxPr} checkBoxPr The configuration object with the checkbox properties.
+	 * @returns {ApiInlineLvlSdt} An inline-level content control that represents a checkbox.
+	 * @see office-js-api/Examples/{Editor}/Api/Methods/CreateCheckBoxContentControl.js
+	 */
+	Api.prototype.CreateCheckBoxContentControl = function(checkBoxPr)
+	{
+		let pr = getSdtCheckBoxPr(checkBoxPr);
+		let sdt = new CInlineLevelSdt();
+		sdt.ApplyCheckBoxPr(pr);
+		return new ApiInlineLvlSdt(sdt);
+	};
+
+	/**
+	 * Creates a new picture container.
+	 * @memberof Api
+	 * @typeofeditors ["CDE"]
+	 * @since 9.0.0
+	 * @param {EMU} [width] - The optional image width.
+	 * @param {EMU} [height] - The optional image height.
+	 * @return {ApiInlineLvlSdt} An inline-level content control that represents a picture container.
+	 * @see office-js-api/Examples/{Editor}/Api/Methods/CreatePictureContentControl.js
+	 */
+	Api.prototype.CreatePictureContentControl = function(width, height)
+	{
+		var oSdt = new CInlineLevelSdt();
+		
+		width  = GetIntParameter(width, 0);
+		height = GetIntParameter(height, 0);
+
+		var nW = width ? private_EMU2MM(width) : -1;
+		var nH = height ? private_EMU2MM(height) : -1;
+
+		oSdt.ApplyPicturePr(true, nW, nH);
+		return new ApiInlineLvlSdt(oSdt);
+	};
+
+	/**
+	 * The object representing the items in the combo box or drop-down list.
+	 * @typedef {Object} ContentControlListItem
+	 * @property {string} display - The text to be displayed in the combo box or drop-down list.
+	 * @property {string} value - The value associated with the item.
+	 */
+
+	/**
+	 * Creates a new combo box container with the given list of options.
+	 * @memberof Api
+	 * @typeofeditors ["CDE"]
+	 * @since 9.0.0
+	 * @param {ContentControlListItem[]} [list] - An array of objects representing the items in the combo box.
+	 * @param {number} [selected=-1] - The selected item index.
+	 * @return {ApiInlineLvlSdt} An inline-level content control that represents a combo box.
+	 * @see office-js-api/Examples/{Editor}/Api/Methods/CreateComboBoxContentControl.js
+	 */
+	Api.prototype.CreateComboBoxContentControl = function(list, selected)
+	{
+		let comboBoxPr = getSdtComboBoxPr(list);
+		
+		selected = GetIntParameter(selected, -1);
+		
+		let sdt = new CInlineLevelSdt();
+		sdt.ApplyComboBoxPr(comboBoxPr);
+		if (-1 !== selected && list && list[selected])
+			sdt.SelectListItem(list[selected]["value"]);
+		
+		return new ApiInlineLvlSdt(sdt);
+	};
+
+	/**
+	 * Creates a new drop-down list container with the given list of options.
+	 * @memberof Api
+	 * @typeofeditors ["CDE"]
+	 * @since 9.0.0
+	 * @param {ContentControlListItem[]} [list] - An array of objects representing the items in the drop-down list.
+	 * @param {number} [selected=-1] - The selected item index.
+	 * @return {ApiInlineLvlSdt} An inline-level content control that represents a drop-down list.
+	 * @see office-js-api/Examples/{Editor}/Api/Methods/CreateDropDownListContentControl.js
+	 */
+	Api.prototype.CreateDropDownListContentControl = function(list, selected)
+	{
+		let comboBoxPr = getSdtComboBoxPr(list);
+		
+		selected = GetIntParameter(selected, -1);
+		
+		let sdt = new CInlineLevelSdt();
+		sdt.ApplyDropDownListPr(comboBoxPr);
+		if (-1 !== selected && list && list[selected])
+			sdt.SelectListItem(list[selected]["value"]);
+		
+		return new ApiInlineLvlSdt(sdt);
+	};
+	
+	/**
+	 * The date picker content control properties.
+	 * @typedef {Object} ContentControlDatePr
+	 * @property {string} format - The date format. Example: "mm.dd.yyyy".
+	 * @property {string} lang   - The date language. Possible value for this parameter is a language identifier as defined by
+	 * RFC 4646/BCP 47. Example: "en-CA".
+	 */
+
+	/**
+	 * Creates a new date picker content control.
+	 * @memberof Api
+	 * @typeofeditors ["CDE"]
+	 * @since 9.0.0
+	 * @param {ContentControlDatePr} [datePickerPr] - The optional date picker properties.
+	 * @return {ApiInlineLvlSdt} An inline-level content control that represents a date-time picker.
+	 * @see office-js-api/Examples/{Editor}/Api/Methods/CreateDatePickerContentControl.js
+	 */
+	Api.prototype.CreateDatePickerContentControl = function(datePickerPr)
+	{
+		let pr = getSdtDatePickerPr(datePickerPr);
+		
+		let sdt = new CInlineLevelSdt();
+		sdt.ApplyDatePickerPr(pr, true);
+		return new ApiInlineLvlSdt(sdt);
+	};
+
+	/**
 	 * Creates a new block level container.
 	 * @memberof Api
 	 * @typeofeditors ["CDE"]
@@ -4910,11 +5006,13 @@
 	 * Saves changes to the specified document.
 	 * @typeofeditors ["CDE"]
 	 * @memberof Api
+	 * @returns {boolean}
 	 * @see office-js-api/Examples/{Editor}/Api/Methods/Save.js
 	 */
 	Api.prototype.Save = function()
 	{
 		this.SaveAfterMacros = true;
+		return true;
 	};
 
 	/**
@@ -5040,6 +5138,7 @@
 	 * @memberof Api
 	 * @typeofeditors ["CDE"]
 	 * @param {ApiDocumentContent} documentContent - The document content which the main document content will be replaced with.
+	 * @returns {boolean}
 	 * @see office-js-api/Examples/{Editor}/Api/Methods/ReplaceDocumentContent.js
 	 */
 	Api.prototype.ReplaceDocumentContent = function(documentContent)
@@ -5052,6 +5151,8 @@
 			oDocument.Add_ToContent(oDocument.Content.length, mailMergeContent[nElement].Copy(oDocument, oDocument.DrawingDocument), false);
 
 		oDocument.Remove_FromContent(0, 1);
+
+		return true;
 	};
 
 	/**
@@ -5085,6 +5186,7 @@
 	 * @memberof Api
 	 * @param {JSON} message - The JSON object to convert.
 	 * @typeofeditors ["CDE"]
+	 * @returns {object} - readed api class element
 	 * @see office-js-api/Examples/{Editor}/Api/Methods/FromJSON.js
 	 */
 	Api.prototype.FromJSON = function(message)
@@ -5095,10 +5197,11 @@
 		var oDocument = this.GetDocument();
 		var oParsedObj  = JSON.parse(message);
 		var oResult = null;
-		if (oParsedObj["styles"])
-			oReader.StylesFromJSON(oParsedObj["styles"]);
+		
 		if (oParsedObj["numbering"])
 			oReader.parsedNumbering = oParsedObj["numbering"];
+		if (oParsedObj["styles"])
+			oReader.StylesFromJSON(oParsedObj["styles"]);
 
 		switch (oParsedObj["type"])
 		{
@@ -5334,9 +5437,9 @@
 	 * @memberof Api
 	 * @typeofeditors ["CDE"]
 	 * @param {ApiRun[] | DocumentElement} element - The element where the comment will be added. It may be applied to any element which has the *AddComment* method.
-	 * @param {string} text - The comment text (required).
-	 * @param {string} author - The author's name (optional).
-	 * @param {string} userId - The user ID of the comment author (optional).
+	 * @param {string} text - The comment text.
+	 * @param {string} [author] - The author's name.
+	 * @param {string} [userId] - The user ID of the comment author.
 	 * @returns {ApiComment?} - Returns null if the comment was not added.
 	 * @see office-js-api/Examples/{Editor}/Api/Methods/AddComment.js
 	 */
@@ -5435,6 +5538,7 @@
 	 * @typeofeditors ["CDE"]
 	 * @param {string} eventName - The event name.
 	 * @param {function} callback - Function to be called when the event fires.
+	 * @returns {boolean}
 	 * @see office-js-api/Examples/{Editor}/Api/Methods/attachEvent.js
 	 */
 	Api.prototype["attachEvent"] = Api.prototype.attachEvent;
@@ -5445,6 +5549,7 @@
 	 * @memberof Api
 	 * @typeofeditors ["CDE"]
 	 * @param {string} eventName - The event name.
+	 * @returns {boolean}
 	 * @see office-js-api/Examples/{Editor}/Api/Methods/detachEvent.js
 	 */
 	Api.prototype["detachEvent"] = Api.prototype.detachEvent;
@@ -5506,6 +5611,7 @@
 	 * @typeofeditors ["CDE", "CSE", "CPE"]
 	 * @param {number} nPos - The position where the current element will be added.
 	 * @param {DocumentElement} oElement - The document element which will be added at the current position.
+	 * @returns {boolean}
 	 * @see office-js-api/Examples/{Editor}/ApiDocumentContent/Methods/AddElement.js
 	 */
 	ApiDocumentContent.prototype.AddElement = function(nPos, oElement)
@@ -5516,7 +5622,11 @@
 			if (oElm.IsUseInDocument())
 				return false;
 			this.Document.Internal_Content_Add(nPos, oElm);
+
+			return true;
 		}
+
+		return false;
 	};
 	/**
 	 * Pushes a paragraph or a table to actually add it to the document.
@@ -5546,25 +5656,29 @@
 	 * content to this paragraph, use the {@link ApiDocumentContent#GetElement} method.</note>
 	 * @memberof ApiDocumentContent
 	 * @typeofeditors ["CDE", "CSE", "CPE"]
+	 * @returns {boolean}
 	 * @see office-js-api/Examples/{Editor}/ApiDocumentContent/Methods/RemoveAllElements.js
 	 */
 	ApiDocumentContent.prototype.RemoveAllElements = function()
 	{
 		this.Document.Internal_Content_Remove(0, this.Document.Content.length, true);
+		return true;
 	};
 	/**
 	 * Removes an element using the position specified.
 	 * @memberof ApiDocumentContent
 	 * @typeofeditors ["CDE", "CSE", "CPE"]
 	 * @param {number} nPos - The element number (position) in the document or inside other element.
+	 * @returns {boolean}
 	 * @see office-js-api/Examples/{Editor}/ApiDocumentContent/Methods/RemoveElement.js
 	 */
 	ApiDocumentContent.prototype.RemoveElement = function(nPos)
 	{
 		if (nPos < 0 || nPos >= this.GetElementsCount())
-			return;
+			return false;
 
 		this.Document.Internal_Content_Remove(nPos, 1, true);
+		return true;
 	};
 	/**
 	 * Returns a Range object that represents the part of the document contained in the document content.
@@ -5577,7 +5691,12 @@
 	 */
 	ApiDocumentContent.prototype.GetRange = function(Start, End)
 	{
-		return new ApiRange(this.Document, Start, End);
+		let oRange = new ApiRange(this.Document, Start, End);
+		if (oRange.isEmpty) {
+			return null;
+		}
+
+		return oRange;
 	};
 	/**
 	 * Converts the ApiDocumentContent object into the JSON object.
@@ -5715,7 +5834,7 @@
 	 * Returns an array of all tables from the current document content.
 	 * @memberof ApiDocumentContent
 	 * @typeofeditors ["CDE"]
-	 * @return {ApiParagraph[]}
+	 * @return {ApiTable[]}
 	 * @see office-js-api/Examples/{Editor}/ApiDocumentContent/Methods/GetAllTables.js
 	 */
 	ApiDocumentContent.prototype.GetAllTables = function()
@@ -5769,6 +5888,689 @@
 
 		return this.Document.GetText(oInnerProps);
 	};
+
+	/**
+	 * Returns the current paragraph where the cursor is located.
+	 * @memberof ApiDocumentContent
+	 * @typeofeditors ["CDE"]
+	 * @return {?ApiParagraph}
+	 * @since 9.0.0
+	 * @see office-js-api/Examples/{Editor}/ApiDocumentContent/Methods/GetCurrentParagraph.js
+	 */
+	ApiDocumentContent.prototype.GetCurrentParagraph = function()
+	{
+		let oPara = this.Document.GetCurrentParagraph();
+		if (!oPara) {
+			return null;
+		}
+
+		return new ApiParagraph(oPara);
+	};
+
+	/**
+	 * Returns the current run where the cursor is located.
+	 * @memberof ApiDocumentContent
+	 * @typeofeditors ["CDE"]
+	 * @return {?ApiRun}
+	 * @since 9.0.0
+	 * @see office-js-api/Examples/{Editor}/ApiDocumentContent/Methods/GetCurrentRun.js
+	 */
+	ApiDocumentContent.prototype.GetCurrentRun = function()
+	{
+		let oRun = this.Document.GetCurrentRun();
+		if (!oRun) {
+			return null;
+		}
+
+		return new ApiRun(oRun);
+	};
+
+	/**
+	 * Returns the currently selected content control.
+	 * @memberof ApiDocumentContent
+	 * @typeofeditors ["CDE"]
+	 * @since 9.0.0
+	 * @returns {ApiBlockLvlSdt | ApiInlineLvlSdt | null}
+	 * @see office-js-api/Examples/{Editor}/ApiDocumentContent/Methods/GetCurrentContentControl.js
+	 */
+	ApiDocumentContent.prototype.GetCurrentContentControl = function()
+	{
+		let contentControl = this.Document.GetCurrentContentControl();
+		return contentControl ? ToApiContentControl(contentControl) : null;
+	};
+
+	/**
+	 * Class representing a custom XML manager, which provides methods to manage custom XML parts in the document.
+	 * @param doc - The current document.
+	 * @constructor
+	 * @typeofeditors ["CDE"]
+	 */
+	function ApiCustomXmlParts(doc)
+	{
+		this.customXMLManager = doc ? doc.getCustomXmlManager() : new AscWord.CustomXmlManager(null);
+	}
+	ApiCustomXmlParts.prototype = Object.create(ApiCustomXmlParts.prototype);
+	ApiCustomXmlParts.prototype.constructor = ApiCustomXmlParts;
+
+	/**
+	 * Adds a new custom XML part to the XML manager.
+	 * @memberof ApiCustomXmlParts
+	 * @typeofeditors ["CDE"]
+	 * @since 9.0.0
+	 * @param {string} xml - The XML string to be added.
+	 * @returns {ApiCustomXmlPart} The newly created ApiCustomXmlPart object.
+	 * @see office-js-api/Examples/{Editor}/ApiCustomXmlParts/Methods/Add.js
+	 */
+	ApiCustomXmlParts.prototype.Add = function(xml)
+	{
+		let customXml = this.customXMLManager.createCustomXml(xml);
+		return new ApiCustomXmlPart(customXml, this.customXMLManager);
+	};
+
+	/**
+	 * Returns a type of the ApiCustomXmlParts class.
+	 * @memberof ApiCustomXmlParts
+	 * @typeofeditors ["CDE"]
+	 * @returns {"customXmlParts"}
+	 * @see office-js-api/Examples/{Editor}/ApiCustomXmlParts/Methods/GetClassType.js
+	 */
+	ApiCustomXmlParts.prototype.GetClassType = function()
+	{
+		return "customXmlParts";
+	};
+
+	/**
+	 * Returns a custom XML part by its ID from the XML manager.
+	 * @memberof ApiCustomXmlParts
+	 * @typeofeditors ["CDE"]
+	 * @since 9.0.0
+	 * @param {string} xmlPartId - The XML part ID.
+	 * @returns {ApiCustomXmlPart|null} The corresponding ApiCustomXmlPart object if found, or null if no match is found.
+	 * @see office-js-api/Examples/{Editor}/ApiCustomXmlParts/Methods/GetById.js
+	 */
+	ApiCustomXmlParts.prototype.GetById = function(xmlPartId)
+	{
+		let oFindXml = this.customXMLManager.getExactXml(xmlPartId, null);
+		if (oFindXml)
+			return new ApiCustomXmlPart(oFindXml, this.customXMLManager);
+
+		return null;
+	};
+
+	/**
+	 * Returns custom XML parts by namespace from the XML manager.
+	 * @memberof ApiCustomXmlParts
+	 * @typeofeditors ["CDE"]
+	 * @since 9.0.0
+	 * @param {string} namespace - The namespace of the XML parts.
+	 * @returns {ApiCustomXmlPart[]} An array of ApiCustomXmlPart objects or null if no matching XML parts are found.
+	 * @see office-js-api/Examples/{Editor}/ApiCustomXmlParts/Methods/GetByNamespace.js
+	 */
+	ApiCustomXmlParts.prototype.GetByNamespace = function(namespace)
+	{
+		let arrXml = this.customXMLManager.getXmlByNamespace(namespace);
+		let xmlParts = [];
+
+		for (let i = 0; i < arrXml.length; i++)
+		{
+			xmlParts.push(new ApiCustomXmlPart(arrXml[i], this.customXMLManager));
+		}
+
+		return xmlParts;
+	};
+
+	/**
+	 * Returns a number of custom XML parts in the XML manager.
+	 * @memberof ApiCustomXmlParts
+	 * @typeofeditors ["CDE"]
+	 * @since 9.0.0
+	 * @returns {number} The number of custom XML parts.
+	 * @see office-js-api/Examples/{Editor}/ApiCustomXmlParts/Methods/GetCount.js
+	 */
+	ApiCustomXmlParts.prototype.GetCount = function()
+	{
+		return this.customXMLManager.getCount();
+	};
+
+	/**
+	 * Returns all custom XML parts from the XML manager.
+	 * @memberof ApiCustomXmlParts
+	 * @typeofeditors ["CDE"]
+	 * @since 9.0.0
+	 * @returns {ApiCustomXmlPart[]} An array of all custom XML parts.
+	 * @see office-js-api/Examples/{Editor}/ApiCustomXmlParts/Methods/GetAll.js
+	 */
+	ApiCustomXmlParts.prototype.GetAll = function()
+	{
+		let xmlParts = [];
+		
+		for (let i = 0; i < this.customXMLManager.xml.length; i++)
+		{
+			let currentXml = this.customXMLManager.xml[i];
+			if (currentXml)
+				xmlParts.push(new ApiCustomXmlPart(currentXml, this.customXMLManager))
+		}
+
+		return xmlParts;
+	};
+	
+	/**
+	 * Class representing a custom XML part.
+	 * @constructor
+	 * @typeofeditors ["CDE"]
+	 * @since 9.0.0
+	 * @param {Object} customXMl - The custom XML object.
+	 * @param {Object} customXmlManager - The custom XML manager instance.
+	 * @memberof ApiCustomXmlPart
+	 */
+	function ApiCustomXmlPart(customXMl, customXmlManager)
+	{
+		this.customXml        = customXMl;
+		this.customXmlManager = customXmlManager;
+	}
+	ApiCustomXmlPart.prototype = Object.create(ApiCustomXmlPart.prototype);
+	ApiCustomXmlPart.prototype.constructor = ApiCustomXmlPart;
+
+	/**
+	 * Returns a type of the ApiCustomXmlPart class.
+	 * @memberof ApiCustomXmlPart
+	 * @typeofeditors ["CDE"]
+	 * @returns {"customXmlPart"}
+	 * @see office-js-api/Examples/{Editor}/ApiCustomXmlPart/Methods/GetClassType.js
+	 */
+	ApiCustomXmlPart.prototype.GetClassType = function()
+	{
+		return "customXmlPart";
+	};
+
+	/**
+	 * Returns the ID of the custom XML part.
+	 * @memberof ApiCustomXmlPart
+	 * @typeofeditors ["CDE"]
+	 * @returns {string}
+	 * @see office-js-api/Examples/{Editor}/ApiCustomXmlPart/Methods/GetId.js
+	 */
+	ApiCustomXmlPart.prototype.GetId = function()
+	{
+		return this.customXml.itemId;
+	};
+
+	/**
+	 * Retrieves nodes from custom XML based on the provided XPath.
+	 * @memberof ApiCustomXmlPart
+	 * @typeofeditors ["CDE"]
+	 * @since 9.0.0
+	 * @param {string} xPath - The XPath expression to search for nodes.
+	 * @returns {ApiCustomXmlNode[]} An array of ApiCustomXmlNode objects corresponding to the found nodes.
+	 * @see office-js-api/Examples/{Editor}/ApiCustomXmlPart/Methods/GetNodes.js
+	 */
+	ApiCustomXmlPart.prototype.GetNodes = function(xPath)
+	{
+		let arrApiCustomXmlNodes = [];
+		let nodes = this.customXml.findElementByXPath(xPath);
+
+		for (let i = 0; i < nodes.length; i++)
+		{
+			let oXmlNode = new ApiCustomXmlNode(nodes[i], this);
+			arrApiCustomXmlNodes.push(oXmlNode);
+		}
+
+		return arrApiCustomXmlNodes;
+	};
+
+	/**
+	 * Retrieves the XML string from the custom XML part.
+	 * @memberof ApiCustomXmlPart
+	 * @typeofeditors ["CDE"]
+	 * @since 9.0.0
+	 * @returns {string} The XML string.
+	 * @see office-js-api/Examples/{Editor}/ApiCustomXmlPart/Methods/GetXml.js
+	 */
+	ApiCustomXmlPart.prototype.GetXml = function()
+	{
+		return this.customXml.getText();
+	};
+
+	/**
+	 * Deletes the XML from the custom XML manager.
+	 * @memberof ApiCustomXmlPart
+	 * @typeofeditors ["CDE"]
+	 * @since 9.0.0
+	 * @returns {boolean} True if the XML was successfully deleted.
+	 * @see office-js-api/Examples/{Editor}/ApiCustomXmlPart/Methods/Delete.js
+	 */
+	ApiCustomXmlPart.prototype.Delete = function()
+	{
+		return this.customXmlManager.deleteExactXml(this.GetId());
+	};
+
+	/**
+	 * Deletes an attribute from the XML node at the specified XPath.
+	 * @memberof ApiCustomXmlPart
+	 * @typeofeditors ["CDE"]
+	 * @since 9.0.0
+	 * @param {string} xPath - The XPath of the node from which to delete the attribute.
+	 * @param {string} name - The name of the attribute to delete.
+	 * @returns {boolean} True if the attribute was successfully deleted.
+	 * @see office-js-api/Examples/{Editor}/ApiCustomXmlPart/Methods/DeleteAttribute.js
+	 */
+	ApiCustomXmlPart.prototype.DeleteAttribute = function(xPath, name)
+	{
+		return this.customXml.deleteAttribute(xPath, name);
+	};
+
+	/**
+	 * Inserts an attribute into the XML node at the specified XPath.
+	 * @memberof ApiCustomXmlPart
+	 * @typeofeditors ["CDE"]
+	 * @since 9.0.0
+	 * @param {string} xPath - The XPath of the node to insert the attribute into.
+	 * @param {string} name - The name of the attribute to insert.
+	 * @param {string} value - The value of the attribute to insert.
+	 * @returns {boolean} True if the attribute was successfully inserted.
+	 * @see office-js-api/Examples/{Editor}/ApiCustomXmlPart/Methods/InsertAttribute.js
+	 */
+	ApiCustomXmlPart.prototype.InsertAttribute = function(xPath, name, value)
+	{
+		return this.customXml.insertAttribute(xPath, name, value);
+	};
+
+	/**
+	 * Returns an attribute from the XML node at the specified XPath.
+	 * @memberof ApiCustomXmlPart
+	 * @typeofeditors ["CDE"]
+	 * @since 9.0.0
+	 * @param {string} xPath - The XPath of the node from which to get the attribute.
+	 * @param {string} name - The name of the attribute to find.
+	 * @returns {string | null} The attribute value or null if no matching attributes are found.
+	 * @see office-js-api/Examples/{Editor}/ApiCustomXmlPart/Methods/GetAttribute.js
+	 */
+	ApiCustomXmlPart.prototype.GetAttribute = function(xPath, name)
+	{
+		return this.customXml.getAttribute(xPath, name);
+	};
+
+	/**
+	 * Updates an attribute of the XML node at the specified XPath.
+	 * @memberof ApiCustomXmlPart
+	 * @typeofeditors ["CDE"]
+	 * @since 9.0.0
+	 * @param {string} xPath - The XPath of the node whose attribute should be updated.
+	 * @param {string} name - The name of the attribute to update.
+	 * @param {string} value - The new value for the attribute.
+	 * @returns {boolean} True if the attribute was successfully updated.
+	 * @see office-js-api/Examples/{Editor}/ApiCustomXmlPart/Methods/UpdateAttribute.js
+	 */
+	ApiCustomXmlPart.prototype.UpdateAttribute = function(xPath, name, value)
+	{
+		return this.customXml.updateAttribute(xPath, name, value);
+	};
+
+	/**
+	 * Deletes an XML element at the specified XPath.
+	 * @memberof ApiCustomXmlPart
+	 * @typeofeditors ["CDE"]
+	 * @since 9.0.0
+	 * @param {string} xPath - The XPath of the node to delete.
+	 * @returns {boolean} True if the element was successfully deleted.
+	 * @see office-js-api/Examples/{Editor}/ApiCustomXmlPart/Methods/DeleteElement.js
+	 */
+	ApiCustomXmlPart.prototype.DeleteElement = function(xPath)
+	{
+		return this.customXml.deleteElement(xPath);
+	};
+
+	/**
+	 * Inserts an XML element at the specified XPath.
+	 * @memberof ApiCustomXmlPart
+	 * @typeofeditors ["CDE"]
+	 * @since 9.0.0
+	 * @param {string} xPath - The XPath of the parent node where the new element will be inserted.
+	 * @param {string} xmlStr - The XML string to insert.
+	 * @param {number} [index] - The position at which to insert the new XML element. If omitted, the element will be appended as the last child.
+	 * @returns {boolean} True if the insertion was successful.
+	 * @see office-js-api/Examples/{Editor}/ApiCustomXmlPart/Methods/InsertElement.js
+	 */
+	ApiCustomXmlPart.prototype.InsertElement = function(xPath, xmlStr, index)
+	{
+		return this.customXml.insertElement(xPath, xmlStr, index);
+	};
+
+	/**
+	 * Updates an XML element at the specified XPath.
+	 * @memberof ApiCustomXmlPart
+	 * @typeofeditors ["CDE"]
+	 * @since 9.0.0
+	 * @param {string} xPath - The XPath of the node to update.
+	 * @param {string} xmlStr - The XML string to replace the node content with.
+	 * @returns {boolean} True if the update was successful.
+	 * @see office-js-api/Examples/{Editor}/ApiCustomXmlPart/Methods/UpdateElement.js
+	 */
+	ApiCustomXmlPart.prototype.UpdateElement = function(xPath, xmlStr)
+	{
+		return this.customXml.updateElement(xPath, xmlStr);
+	};
+
+	/**
+	 * Class representing a custom XML node.
+	 * @constructor
+	 * @since 9.0.0
+	 * @param xmlNode - The custom XML node.
+	 * @param xmlPart - The custom XML part.
+	 * @typeofeditors ["CDE"]
+	 */
+	function ApiCustomXmlNode(xmlNode, xmlPart)
+	{
+		this.CustomXmlPart    = xmlPart;
+		this.CustomXmlContent = xmlNode;
+	}
+	ApiCustomXmlNode.prototype = Object.create(ApiCustomXmlNode.prototype);
+	ApiCustomXmlNode.prototype.constructor = ApiCustomXmlNode;
+
+	/**
+	 * Returns a type of the ApiCustomXmlNode class.
+	 * @memberof ApiCustomXmlNode
+	 * @typeofeditors ["CDE"]
+	 * @returns {"customXmlNode"}
+	 * @see office-js-api/Examples/{Editor}/ApiCustomXmlNode/Methods/GetClassType.js
+	 */
+	ApiCustomXmlNode.prototype.GetClassType = function()
+	{
+		return "customXmlNode";
+	};
+
+	/**
+	 * Returns nodes from the custom XML node based on the given XPath.
+	 * @memberof ApiCustomXmlNode
+	 * @typeofeditors ["CDE"]
+	 * @since 9.0.0
+	 * @param {string} xPath - The XPath expression to match nodes.
+	 * @returns {ApiCustomXmlNode[]} An array of nodes that match the given XPath.
+	 * @see office-js-api/Examples/{Editor}/ApiCustomXmlNode/Methods/GetNodes.js
+	 */
+	ApiCustomXmlNode.prototype.GetNodes = function(xPath)
+	{
+		let xPathNode = this.GetXPath();
+		return this.CustomXmlPart.GetNodes(xPathNode + xPath);
+	};
+
+	/**
+	 * Returns the absolute XPath of the current XML node.
+	 * @memberof ApiCustomXmlNode
+	 * @typeofeditors ["CDE"]
+	 * @since 9.0.0
+	 * @returns {string} The absolute XPath of the current node.
+	 * @see office-js-api/Examples/{Editor}/ApiCustomXmlNode/Methods/GetXPath.js
+	 */
+	ApiCustomXmlNode.prototype.GetXPath = function()
+	{
+		return this.CustomXmlContent.getXPath();
+	};
+
+	/**
+	 * Returns the name of the current XML node.
+	 * @memberof ApiCustomXmlNode
+	 * @typeofeditors ["CDE"]
+	 * @since 9.0.0
+	 * @returns {string} The name of the current node.
+	 * @see office-js-api/Examples/{Editor}/ApiCustomXmlNode/Methods/GetNodeName.js
+	 */
+	ApiCustomXmlNode.prototype.GetNodeName = function()
+	{
+		return this.CustomXmlContent.getNodeName();
+	};
+
+	/**
+	 * Returns the XML string representation of the current node content.
+	 * @memberof ApiCustomXmlNode
+	 * @typeofeditors ["CDE"]
+	 * @since 9.0.0
+	 * @returns {string} The XML string representation of the current node content.
+	 * @see office-js-api/Examples/{Editor}/ApiCustomXmlNode/Methods/GetNodeValue.js
+	 */
+	ApiCustomXmlNode.prototype.GetNodeValue = function()
+	{
+		return this.CustomXmlContent.getStringFromBuffer();
+	};
+
+	/**
+	 * Returns the XML string of the current node.
+	 * @memberof ApiCustomXmlNode
+	 * @typeofeditors ["CDE"]
+	 * @since 9.0.0
+	 * @returns {string} The XML string representation of the current node.
+	 * @see office-js-api/Examples/{Editor}/ApiCustomXmlNode/Methods/GetXml.js
+	 */
+	ApiCustomXmlNode.prototype.GetXml = function()
+	{
+		return this.CustomXmlContent.getStringFromBuffer();
+	};
+
+	/**
+	 * Returns the inner text of the current node and its child nodes.
+	 * For example: `<text>123<one>4</one></text>` returns `"1234"`.
+	 * @memberof ApiCustomXmlNode
+	 * @typeofeditors ["CDE"]
+	 * @since 9.0.0
+	 * @returns {string} The combined text content of the node and its descendants.
+	 * @see office-js-api/Examples/{Editor}/ApiCustomXmlNode/Methods/GetText.js
+	 */
+	ApiCustomXmlNode.prototype.GetText = function()
+	{
+		return this.CustomXmlContent.getInnerText();
+	};
+
+	/**
+	 * Sets the XML content for the current node.
+	 * @memberof ApiCustomXmlNode
+	 * @typeofeditors ["CDE"]
+	 * @since 9.0.0
+	 * @param {string} xml - The XML string to set as the content of the current node.
+	 * @returns {boolean} Returns `true` if the XML was successfully set.
+	 * @see office-js-api/Examples/{Editor}/ApiCustomXmlNode/Methods/SetNodeValue.js
+	 */
+	ApiCustomXmlNode.prototype.SetNodeValue = function(xml)
+	{
+		return this.SetXml(xml);
+	};
+
+	/**
+	 * Sets the text content of the current XML node.
+	 * @memberof ApiCustomXmlNode
+	 * @typeofeditors ["CDE"]
+	 * @since 9.0.0
+	 * @param {string} str - The text content to set for the node.
+	 * @returns {boolean} Returns `true` if the text was successfully set.
+	 * @see office-js-api/Examples/{Editor}/ApiCustomXmlNode/Methods/SetText.js
+	 */
+	ApiCustomXmlNode.prototype.SetText = function(str)
+	{
+		return this.CustomXmlPart.customXml.Change(function () {
+			this.CustomXmlContent.childNodes = [];
+			return this.CustomXmlContent.setTextContent(str);
+		}, this);
+	};
+
+	/**
+	 * Sets the XML content of the current XML node.
+	 * @memberof ApiCustomXmlNode
+	 * @typeofeditors ["CDE"]
+	 * @since 9.0.0
+	 * @param {string} strXml - The XML string to set as the node content.
+	 * @returns {boolean} Returns `true` if the XML was successfully set.
+	 * @see office-js-api/Examples/{Editor}/ApiCustomXmlNode/Methods/SetXml.js
+	 */
+	ApiCustomXmlNode.prototype.SetXml = function(strXml)
+	{
+		return this.CustomXmlPart.customXml.Change(function () {
+			this.CustomXmlContent.setXml(strXml);
+			return true;
+		}, this);
+	};
+
+	/**
+	 * Deletes the current XML node.
+	 * @memberof ApiCustomXmlNode
+	 * @typeofeditors ["CDE"]
+	 * @since 9.0.0
+	 * @returns {boolean} Returns `true` if the node was successfully deleted.
+	 * @see office-js-api/Examples/{Editor}/ApiCustomXmlNode/Methods/Delete.js
+	 */
+	ApiCustomXmlNode.prototype.Delete = function()
+	{
+		return this.CustomXmlPart.customXml.Change(function ()
+		{
+			this.CustomXmlContent.delete();
+			return true;
+		}, this);
+	};
+
+	/**
+	 * Returns the parent of the current XML node.
+	 * @memberof ApiCustomXmlNode
+	 * @typeofeditors ["CDE"]
+	 * @since 9.0.0
+	 * @returns {ApiCustomXmlNode | null} The parent node, or `null` if the current node has no parent.
+	 * @see office-js-api/Examples/{Editor}/ApiCustomXmlNode/Methods/GetParent.js
+	 */
+	ApiCustomXmlNode.prototype.GetParent = function()
+	{
+		if (this.CustomXmlContent.parentNode && this.CustomXmlContent.parentNode.getNodeName() !== "")
+			return new ApiCustomXmlNode(this.CustomXmlContent.parentNode, this.CustomXmlPart);
+
+		return null;
+	};
+
+	/**
+	 * Creates a child node for the current XML node.
+	 * @memberof ApiCustomXmlNode
+	 * @typeofeditors ["CDE"]
+	 * @since 9.0.0
+	 * @param {string} nodeName - The name of the new child node.
+	 * @returns {ApiCustomXmlNode} The newly created child node.
+	 * @see office-js-api/Examples/{Editor}/ApiCustomXmlNode/Methods/Add.js
+	 */
+	ApiCustomXmlNode.prototype.Add = function(nodeName)
+	{
+		return this.CustomXmlPart.customXml.Change(function () {
+			let CustomXmlNode = this.CustomXmlContent.addContent(nodeName);
+			return new ApiCustomXmlNode(CustomXmlNode, this.CustomXmlPart);
+		}, this);
+	};
+
+	/**
+	 * Represents an attribute of an XML node.
+	 * @typedef {Object} CustomXmlNodeAttribute
+	 * @property {string} name - The attribute name.
+	 * @property {string} value - The attribute value.
+	 */
+
+	/**
+	 * Returns a list of attributes of the current XML node.
+	 * @memberof ApiCustomXmlNode
+	 * @typeofeditors ["CDE"]
+	 * @since 9.0.0
+	 * @returns {CustomXmlNodeAttribute[]} An array of attribute objects.
+	 * @see office-js-api/Examples/{Editor}/ApiCustomXmlNode/Methods/GetAttributes.js
+	 */
+	ApiCustomXmlNode.prototype.GetAttributes = function()
+	{
+		let attributes = [];
+
+		let keys = Object.keys(this.CustomXmlContent.attributes);
+		for (let i = 0; i < keys.length; i++)
+		{
+			let data = this.CustomXmlContent.attributes[keys[i]];
+
+			attributes.push({"name": keys[i], "value": data});
+		}
+		return attributes;
+	};
+
+	/**
+	 * Sets an attribute for the custom XML node.
+	 * If the attribute already exists, it will not be modified.
+	 * @memberof ApiCustomXmlNode
+	 * @typeofeditors ["CDE"]
+	 * @since 9.0.0
+	 * @param {string} name - The name of the attribute to set.
+	 * @param {string} value - The value to assign to the attribute.
+	 * @returns {boolean} Returns `true` if the attribute was successfully set, `false` if the attribute already exists.
+	 * @see office-js-api/Examples/{Editor}/ApiCustomXmlNode/Methods/SetAttribute.js
+	 */
+	ApiCustomXmlNode.prototype.SetAttribute = function(name, value)
+	{
+		return this.CustomXmlPart.customXml.Change(function () {
+			if (!this.CustomXmlContent.attributes[name])
+			{
+				this.CustomXmlContent.attributes[name] = value;
+				return true;
+			}
+
+			return false;
+		}, this);
+	};
+
+	/**
+	 * Updates the value of an existing attribute in the custom XML node.
+	 * If the attribute doesn't exist, the update will not occur.
+	 * @memberof ApiCustomXmlNode
+	 * @typeofeditors ["CDE"]
+	 * @since 9.0.0
+	 * @param {string} name - The name of the attribute to update.
+	 * @param {string} value - The new value to assign to the attribute.
+	 * @returns {boolean} Returns `true` if the attribute was successfully updated, `false` if the attribute doesn't exist.
+	 * @see office-js-api/Examples/{Editor}/ApiCustomXmlNode/Methods/UpdateAttribute.js
+	 */
+	ApiCustomXmlNode.prototype.UpdateAttribute = function(name, value)
+	{
+		return this.CustomXmlPart.customXml.Change(function () {
+			if (this.CustomXmlContent.attributes[name])
+			{
+				this.CustomXmlContent.attributes[name] = value;
+				return true;
+			}
+			return false;
+		}, this);
+	};
+
+	/**
+	 * Deletes an attribute from the custom XML node.
+	 * If the attribute exists, it will be removed.
+	 * @memberof ApiCustomXmlNode
+	 * @typeofeditors ["CDE"]
+	 * @since 9.0.0
+	 * @param {string} name - The name of the attribute to delete.
+	 * @returns {boolean} Returns `true` if the attribute was successfully deleted, `false` if the attribute didn't exist.
+	 * @see office-js-api/Examples/{Editor}/ApiCustomXmlNode/Methods/DeleteAttribute.js
+	 */
+	ApiCustomXmlNode.prototype.DeleteAttribute = function(name)
+	{
+		return this.CustomXmlPart.customXml.Change(function () {
+			if (this.CustomXmlContent.attributes[name])
+			{
+				delete this.CustomXmlContent.attributes[name];
+				return true;
+			}
+			return false;
+		}, this);
+	};
+
+	/**
+	 * Retrieves the attribute value from the custom XML node.
+	 * If the attribute doesn't exist, it returns `false`.
+	 * @memberof ApiCustomXmlNode
+	 * @typeofeditors ["CDE"]
+	 * @since 9.0.0
+	 * @param {string} name - The name of the attribute to retrieve.
+	 * @returns {string |null} The value of the attribute if it exists, or `null` if the attribute is not found.
+	 * @see office-js-api/Examples/{Editor}/ApiCustomXmlNode/Methods/GetAttribute.js
+	 */
+	ApiCustomXmlNode.prototype.GetAttribute = function(name)
+	{
+		return this.CustomXmlContent.attributes[name] || null;
+	};
+
 	//------------------------------------------------------------------------------------------------------------------
 	//
 	// ApiDocument
@@ -5790,11 +6592,13 @@
 	 * Creates a new history point.
 	 * @typeofeditors ["CDE"]
 	 * @memberof ApiDocument
+	 * @returns {boolean}
 	 * @see office-js-api/Examples/{Editor}/ApiDocument/Methods/CreateNewHistoryPoint.js
 	 */
 	ApiDocument.prototype.CreateNewHistoryPoint = function()
 	{
 		this.Document.Create_NewHistoryPoint(AscDFH.historydescription_Document_ApiBuilder);
+		return true;
 	};
 	/**
 	 * Returns a style by its name.
@@ -5949,11 +6753,13 @@
 	 * @memberof ApiDocument
 	 * @typeofeditors ["CDE"]
 	 * @param {boolean} isEvenAndOdd - If true the header/footer will be different for odd and even pages, if false they will be the same.
+	 * @returns {boolean}
 	 * @see office-js-api/Examples/{Editor}/ApiDocument/Methods/SetEvenAndOddHdrFtr.js
 	 */
 	ApiDocument.prototype.SetEvenAndOddHdrFtr = function(isEvenAndOdd)
 	{
 		this.Document.Set_DocumentEvenAndOddHeaders(isEvenAndOdd);
+		return true;
 	};
 	/**
 	 * Creates an abstract multilevel numbering with a specified type.
@@ -6059,23 +6865,23 @@
 	/**
 	 * Represents a single comment record.
 	 * @typedef {Object} CommentReportRecord
-	 * @property {boolean} IsAnswer Whether the comment is a response.
+	 * @property {boolean} IsAnswer Specifies whether the comment is a response.
 	 * @property {string} CommentMessage The comment text.
-	 * @property {number} Date Local timestamp of the comment.
-	 * @property {number} DateUTC UTC timestamp of the comment.
+	 * @property {number} Date The comment local timestamp.
+	 * @property {number} DateUTC The  comment UTC timestamp.
 	 * @property {string} [QuoteText] The quoted text (if available).
 	 */
 
 	/**
 	 * Represents a user's comment history.
 	 * @typedef {Object} UserComments
-	 * @property {CommentReportRecord[]} comments List of comments.
+	 * @property {CommentReportRecord[]} comments A list of comments.
 	 */
 
 	/**
 	 * A dictionary of users and their comments.
 	 * @typedef {Object} CommentReport
-	 * @property {UserComments} [username] Comments grouped by username.
+	 * @property {UserComments} [username] The comments grouped by username.
 	 * @example
 	 * {
 	 *   "John Smith": {
@@ -6092,6 +6898,7 @@
 	 *   }
 	 * }
 	 */
+
 	
 	
 	/**
@@ -6154,22 +6961,22 @@
 	/**
 	 * Represents a single review change record.
 	 * @typedef {Object} ReviewReportRecord
-	 * @property {ReviewReportRecordType} Type Review record type.
-	 * @property {string} [Value] Review change value (only for "TextAdd" and "TextRem" types).
-	 * @property {number} Date Timestamp of when the change was made.
+	 * @property {ReviewReportRecordType} Type The review record type.
+	 * @property {string} [Value] The review change value (only for "TextAdd" and "TextRem" types).
+	 * @property {number} Date The timestamp of the change.
 	 * @property {ApiParagraph | ApiTable} ReviewedElement The element that was reviewed.
 	 */
 
 	/**
 	 * Represents a user's review history.
 	 * @typedef {Object} UserReviewChanges
-	 * @property {ReviewReportRecord[]} reviews List of review records.
+	 * @property {ReviewReportRecord[]} reviews A list of review records.
 	 */
 
 	/**
 	 * A dictionary of users and their review changes.
 	 * @typedef {Object} ReviewReport
-	 * @property {UserReviewChanges} [username] Review changes grouped by username.
+	 * @property {UserReviewChanges} [username] The review changes grouped by username.
 	 * @example
 	 * {
 	 *   "John Smith": {
@@ -6186,6 +6993,7 @@
 	 *   }
 	 * }
 	 */
+
 	
 	/**
 	 * Returns a report about every change which was made to the document in the review mode.
@@ -6288,7 +7096,7 @@
 	 * @param {string} oProperties.searchString - Search string.
 	 * @param {string} oProperties.replaceString - Replacement string.
 	 * @param {string} [oProperties.matchCase=true] - Case sensitive or not.
-	 *
+	 * @returns {boolean}
 	 * @see office-js-api/Examples/{Editor}/ApiDocument/Methods/SearchAndReplace.js
 	 */
 	ApiDocument.prototype.SearchAndReplace = function(oProperties)
@@ -6299,7 +7107,7 @@
 
 		var oSearchEngine = this.Document.Search(oProps);
 		if (!oSearchEngine)
-			return;
+			return false;
 
 		var sReplace = oProperties["replaceString"];
 		
@@ -6314,6 +7122,7 @@
 		//sReplace = sReplace.replaceAll('\x1f', "");
 		
 		this.Document.ReplaceSearchElement(sReplace, true, null, false);
+		return true;
 	};
 	/**
 	 * Returns a list of all the content controls from the document.
@@ -6440,6 +7249,110 @@
 		return arrResult;
 	};
 	/**
+	 * Returns a list of all forms in the document with the specified role name.
+	 * @memberof ApiDocument
+	 * @typeofeditors ["CDE", "CFE"]
+	 * @param role {string} - The form role.
+	 * @returns {ApiForm[]}
+	 * @since 9.0.0
+	 * @see office-js-api/Examples/{Editor}/ApiDocument/Methods/GetFormsByRole.js
+	 */
+	ApiDocument.prototype.GetFormsByRole = function(role)
+	{
+		role = GetStringParameter(role, "");
+		if (!role)
+			return [];
+		
+		let result = [];
+		let forms = this.Document.GetFormsManager().GetAllFormsByRole(role);
+		for (let i = 0, count = forms.length; i < count; ++i)
+		{
+			let apiForm = ToApiForm(forms[i]);
+			if (apiForm)
+				result.push(apiForm);
+		}
+		
+		return result;
+	};
+	/**
+	 * Returns a list of all forms in the document with the specified key.
+	 * @memberof ApiDocument
+	 * @typeofeditors ["CDE", "CFE"]
+	 * @param key {string} - The form key.
+	 * @returns {ApiForm[]}
+	 * @since 9.0.0
+	 * @see office-js-api/Examples/{Editor}/ApiDocument/Methods/GetFormsByKey.js
+	 */
+	ApiDocument.prototype.GetFormsByKey = function(key)
+	{
+		key = GetStringParameter(key, "");
+		if (!key)
+			return [];
+		
+		let result = [];
+		let forms = this.Document.GetFormsManager().GetAllFormsByKey(key);
+		let isRadio = false; // Don't return radiobuttons by key since it's a Choice but not a Key
+		if (0 === forms.length)
+		{
+			forms = this.Document.GetFormsManager().GetRadioButtons(key);
+			isRadio = true;
+		}
+		
+		for (let i = 0, count = forms.length; i < count; ++i)
+		{
+			let apiForm = ToApiForm(forms[i]);
+			if (apiForm && isRadio === forms[i].IsRadioButton())
+				result.push(apiForm);
+		}
+		
+		return result;
+	};
+	/**
+	 * Returns a list of all form keys attached to the specified role.
+	 * @memberof ApiDocument
+	 * @typeofeditors ["CDE", "CFE"]
+	 * @param role {string} - The form role.
+	 * @returns {string[]} - A list of all form keys attached to the specified role.
+	 * @since 9.0.0
+	 * @see office-js-api/Examples/{Editor}/ApiDocument/Methods/GetFormKeysByRole.js
+	 */
+	ApiDocument.prototype.GetFormKeysByRole = function(role)
+	{
+		role = GetStringParameter(role, "");
+		if (!role)
+			return [];
+		
+		let keys = {};
+		let forms = this.Document.GetFormsManager().GetAllForms();
+		for (let i = 0, count = forms.length; i < count; ++i)
+		{
+			let apiForm = ToApiForm(forms[i]);
+			if (apiForm && role === apiForm.GetRole())
+				keys[apiForm.GetFormKey()] = 1;
+		}
+		
+		return Object.keys(keys);
+	};
+	/**
+	 * Returns the form value for the specified key. For a group of radio buttons returns Choice, i.e. the name of the selected item.
+	 * @memberof ApiDocument
+	 * @typeofeditors ["CDE", "CFE"]
+	 * @param key {string} - The form key.
+	 * @returns {null | boolean | string} Returns true/false for checkboxes and string for other form types. Returns null if
+	 * there is no form with the specified key.
+	 * @since 9.0.0
+	 * @see office-js-api/Examples/{Editor}/ApiDocument/Methods/GetFormValueByKey.js
+	 */
+	ApiDocument.prototype.GetFormValueByKey = function(key)
+	{
+		let forms = this.GetFormsByKey(key);
+		if (!forms.length)
+			return null;
+		
+		return this.Document.GetFormsManager().GetFormValue(forms[0].Sdt);
+	};
+	
+	/**
 	 * The specific form type.
 	 * @typedef {("text" | "checkBox" | "picture" | "comboBox" | "dropDownList" | "dateTime" | "radio")} FormSpecificType
 	 * @see office-js-api/Examples/Enumerations/FormSpecificType.js
@@ -6478,6 +7391,7 @@
 	 * @memberof ApiDocument
 	 * @typeofeditors ["CDE", "CFE"]
 	 * @param {Array.<FormData>} arrData - An array of form data to set to the specified forms.
+	 * @returns {boolean}
 	 * @since 8.0.0
 	 * @see office-js-api/Examples/{Editor}/ApiDocument/Methods/SetFormsData.js
 	 */
@@ -6485,9 +7399,10 @@
 	{
 		return executeNoFormLockCheck(function() {
 			if (!arrData || !Array.isArray(arrData))
-				return;
+				return false;
 			
 			this.Document.GetFormsManager().SetAllFormsData(arrData);
+			return true;
 		}, this);
 	};
 	/**
@@ -6495,11 +7410,13 @@
 	 * @memberof ApiDocument
 	 * @typeofeditors ["CDE"]
 	 * @param isTrack {boolean} - Specifies if the change tracking mode is set or not.
+	 * @returns {boolean}
 	 * @see office-js-api/Examples/{Editor}/ApiDocument/Methods/SetTrackRevisions.js
 	 */
 	ApiDocument.prototype.SetTrackRevisions = function(isTrack)
 	{
 		this.Document.SetGlobalTrackRevisions(isTrack);
+		return true;
 	};
 	/**
 	 * Checks if change tracking mode is enabled or not.
@@ -6523,7 +7440,12 @@
 	 */
 	ApiDocument.prototype.GetRange = function(Start, End)
 	{
-		return new ApiRange(this.Document, Start, End);
+		let oRange = new ApiRange(this.Document, Start, End);
+		if (oRange.isEmpty) {
+			return null;
+		}
+
+		return oRange;
 	};
 	/**
 	 * Returns a range object by the current selection.
@@ -6534,9 +7456,6 @@
 	 */
 	ApiDocument.prototype.GetRangeBySelect = function()
 	{
-		if (!this.Document.IsSelectionUse())
-			return null;
-
 		private_RefreshRangesPosition();
 			
 		var selectDirection	= this.Document.GetSelectDirection();
@@ -6558,7 +7477,6 @@
 		}
 
 		this.Document.LoadDocumentState(documentState);
-		private_RemoveEmptyRanges();
 		return new ApiRange(StartPos[0].Class, StartPos, EndPos);
 	};
 	/**
@@ -6640,7 +7558,7 @@
 	 * process to arrange tables on the specified page.</note>
 	 * @memberof ApiDocument
 	 * @typeofeditors ["CDE"]
-	 * @param {number} nPage - The page number.
+	 * @param {number} nPage - The page index.
 	 * @return {ApiTable[]}
 	 * @see office-js-api/Examples/{Editor}/ApiDocument/Methods/GetAllTablesOnPage.js
 	 */
@@ -6659,15 +7577,15 @@
 		return arrApiAllTables;
 	};
 	/**
-	 * Adds a shape to the specified page.
+	 * Adds a drawing to the specified page.
 	 * <note>This method can be a little bit slow, because it runs the document calculation
 	 * process to arrange tables on the specified page.</note>
 	 * @memberof ApiDocument
 	 * @typeofeditors ["CDE"]
-	 * @param oDrawing {ApiDrawing} - A shape to add to the page.
-	 * @param nPage {number} - The page number.
-	 * @param x {EMU} - The X coordinate in English measure units.
-	 * @param y {EMU} - The Y coordinate in English measure units.
+	 * @param {ApiDrawing} oDrawing - A drawing to add to the page.
+	 * @param {number} nPage - The page index.
+	 * @param {EMU} x - The X coordinate in English measure units.
+	 * @param {EMU} y - The Y coordinate in English measure units.
 	 * @return {boolean}
 	 * @see office-js-api/Examples/{Editor}/ApiDocument/Methods/AddDrawingToPage.js
 	 */
@@ -6700,11 +7618,13 @@
 	 * Removes the current selection.
 	 * @memberof ApiDocument
 	 * @typeofeditors ["CDE"]
+	 * @returns {boolean}
 	 * @see office-js-api/Examples/{Editor}/ApiDocument/Methods/RemoveSelection.js
 	 */
 	ApiDocument.prototype.RemoveSelection = function()
 	{
 		this.Document.RemoveSelection();
+		return true;
 	};
 	/**
 	 * Searches for a scope of a document object. The search results are a collection of ApiRange objects.
@@ -6797,6 +7717,14 @@
 	 * @see office-js-api/Examples/{Editor}/ApiDocument/Methods/InsertWatermark.js
 	 */
 	ApiDocument.prototype.InsertWatermark = function(sText, bIsDiagonal){
+		if (typeof(sText) != "string") {
+			sText = "WATERMARK";
+		}
+		if (typeof(bIsDiagonal) != "boolean") {
+			bIsDiagonal = false;
+		}
+
+		let bRes = false;
 		var oSectPrMap = {};
 		if(this.Document.SectPr){
 			oSectPrMap[this.Document.SectPr.Get_Id()] = this.Document.SectPr;
@@ -6832,8 +7760,11 @@
 		for(sId in oHeadersMap){
 			if(oHeadersMap.hasOwnProperty(sId)){
 				privateInsertWatermarkToContent(this.Document.Api, oHeadersMap[sId], sText, bIsDiagonal);
+				bRes = true;
 			}
 		}
+
+		return bRes;
 	};
 
 
@@ -6881,6 +7812,7 @@
 	 * Removes a watermark from the current document.
 	 * @memberof ApiDocument
 	 * @typeofeditors ["CDE"]
+	 * @returns {boolean}
 	 * @see office-js-api/Examples/{Editor}/ApiDocument/Methods/RemoveWatermark.js
 	 */
 	ApiDocument.prototype.RemoveWatermark = function()
@@ -6888,6 +7820,7 @@
 		let Settings = new Asc.CAscWatermarkProperties();
 		Settings.put_Type(Asc.c_oAscWatermarkType.None);
 		this.Document.SetWatermarkPropsAction(Settings);
+		return true;
 	};
 
 	/**
@@ -6895,6 +7828,7 @@
 	 * @memberof ApiDocument
 	 * @typeofeditors ["CDE"]
 	 * @param {boolean} [bOnlyPageNumbers=false] - Specifies that only page numbers will be updated.
+	 * @returns {boolean}
 	 * @see office-js-api/Examples/{Editor}/ApiDocument/Methods/UpdateAllTOC.js
 	 */
 	ApiDocument.prototype.UpdateAllTOC = function(bOnlyPageNumbers)
@@ -6913,14 +7847,14 @@
 			{
 				oTOC = oDocument.GetTableOfContents();
 				if (!oTOC)
-					return;
+					return false;
 			}
 
 			if (oTOC instanceof AscCommonWord.CBlockLevelSdt)
 				oTOC = oTOC.GetInnerTableOfContents();
 
 			if (!oTOC)
-				return;
+				return false;
 
 			var oState = oDocument.SaveDocumentState();
 
@@ -6947,12 +7881,15 @@
 				oDocument.LoadDocumentState(oState);
 			}
 		}
+
+		return true;
 	};
 	/**
 	 * Updates all tables of figures in the current document.
 	 * @memberof ApiDocument
 	 * @typeofeditors ["CDE"]
 	 * @param {boolean} [bOnlyPageNumbers=false] - Specifies that only page numbers will be updated.
+	 * @returns {boolean}
 	 * @see office-js-api/Examples/{Editor}/ApiDocument/Methods/UpdateAllTOF.js
 	 */
 	ApiDocument.prototype.UpdateAllTOF = function(bOnlyPageNumbers)
@@ -6970,14 +7907,14 @@
 			{
 				oTOC = oDocument.GetTableOfContents();
 				if (!oTOC)
-					return;
+					return false;
 			}
 
 			if (oTOC instanceof AscCommonWord.CBlockLevelSdt)
 				oTOC = oTOC.GetInnerTableOfContents();
 
 			if (!oTOC)
-				return;
+				return false;
 
 			var oState = oDocument.SaveDocumentState();
 
@@ -7004,18 +7941,22 @@
 				oDocument.LoadDocumentState(oState);
 			}
 		}
+
+		return true;
 	};
 	/**
 	 * Updates all fields in the document.
 	 * @memberof ApiDocument
 	 * @typeofeditors ["CDE"]
 	 * @param {boolean} [bBySelection=false] - Specifies whether all fields will be updated within the selection.
+	 * @returns {boolean}
 	 * @since 8.2.0
 	 * @see office-js-api/Examples/{Editor}/ApiDocument/Methods/UpdateAllFields.js
 	 */
 	ApiDocument.prototype.UpdateAllFields = function(bBySelection)
 	{
 		this.Document.UpdateFields(bBySelection);
+		return true;
 	};
 	/**
 	 * Converts the ApiDocument object into the JSON object.
@@ -7073,12 +8014,14 @@
 	 * Clears all forms in the document.
 	 * @memberof ApiDocument
 	 * @typeofeditors ["CDE", "CFE"]
+	 * @returns {boolean}
 	 * @see office-js-api/Examples/{Editor}/ApiDocument/Methods/ClearAllFields.js
 	 */
 	ApiDocument.prototype.ClearAllFields = function()
 	{
 		let contentControls = this.Document.GetFormsManager().GetAllForms();
 		this.Document.ClearAllSpecialForms(contentControls);
+		return true;
 	};
 
 	/**
@@ -7089,6 +8032,7 @@
 	 * @param {byte} b - Blue color component value.
 	 * @param {boolean} [bNone=false] - Defines that highlight will not be set.
 	 * @typeofeditors ["CDE", "CFE"]
+	 * @returns {boolean}
 	 * @see office-js-api/Examples/{Editor}/ApiDocument/Methods/SetFormsHighlight.js
 	 */
 	ApiDocument.prototype.SetFormsHighlight = function(r, g, b, bNone)
@@ -7097,6 +8041,8 @@
 			this.Document.SetSpecialFormsHighlight(null, null, null);
 		else
 			this.Document.SetSpecialFormsHighlight(r, g, b);
+
+		return true;
 	};
 
 	/**
@@ -7229,22 +8175,26 @@
 	 * Accepts all changes made in review mode.
 	 * @memberof ApiDocument
 	 * @typeofeditors ["CDE"]
+	 * @returns {boolean}
 	 * @see office-js-api/Examples/{Editor}/ApiDocument/Methods/AcceptAllRevisionChanges.js
 	 */
 	ApiDocument.prototype.AcceptAllRevisionChanges = function()
 	{
 		this.Document.AcceptAllRevisionChanges();
+		return true;
 	};
 
 	/**
 	 * Rejects all changes made in review mode.
 	 * @memberof ApiDocument
 	 * @typeofeditors ["CDE"]
+	 * @returns {boolean}
 	 * @see office-js-api/Examples/{Editor}/ApiDocument/Methods/RejectAllRevisionChanges.js
 	 */
 	ApiDocument.prototype.RejectAllRevisionChanges = function()
 	{
 		this.Document.RejectAllRevisionChanges();
+		return true;
 	};
 
 	/**
@@ -7335,6 +8285,7 @@
 	 * @param {string} sImageUrl - The image source where the image to be inserted should be taken from (currently, only internet URL or Base64 encoded images are supported).
 	 * @param {EMU} Width - The image width in English measure units.
 	 * @param {EMU} Height - The image height in English measure units.
+	 * @returns {boolean}
 	 * @see office-js-api/Examples/{Editor}/ApiDocument/Methods/ReplaceCurrentImage.js
 	 */
 	ApiDocument.prototype.ReplaceCurrentImage = function(sImageUrl, Width, Height)
@@ -7344,6 +8295,7 @@
 
 		let dK = 1 / 36000 / AscCommon.g_dKoef_pix_to_mm;
 		oDrawingObjects.putImageToSelection(sImageUrl, Width * dK, Height * dK );
+		return true;
 	};
 
 	/**
@@ -7434,6 +8386,7 @@
 	 * @param {byte} b - Blue color component value.
 	 * @param {boolean} [bNone=false] - Defines that highlight will not be set.
 	 * @typeofeditors ["CDE"]
+	 * @returns {boolean}
 	 * @see office-js-api/Examples/{Editor}/ApiDocument/Methods/SetControlsHighlight.js
 	 */
 	ApiDocument.prototype.SetControlsHighlight = function(r, g, b, bNone)
@@ -7445,6 +8398,7 @@
 			this.Document.SetSdtGlobalShowHighlight(true);
 			this.Document.SetSdtGlobalColor(r, g, b);
 		}
+		return true;
 	};
 
 	/**
@@ -7453,6 +8407,7 @@
 	 * @memberof ApiDocument
 	 * @typeofeditors ["CDE"]
 	 * @param {TocPr} [oTocPr={}] - Table of contents properties.
+	 * @returns {boolean}
 	 * @see office-js-api/Examples/{Editor}/ApiDocument/Methods/AddTableOfContents.js
 	 */
 	ApiDocument.prototype.AddTableOfContents = function(oTocPr)
@@ -7529,7 +8484,7 @@
 			var oInnerTOC = oTOC.GetInnerTableOfContents();
 			oTOC = oInnerTOC;
 			if (!oTOC)
-				return;
+				return false;
 
 			var oStyles = this.Document.GetStyles();
 			var nStylesType = oTargetPr.get_StylesType();
@@ -7541,10 +8496,11 @@
 
 			oTOC.SetPr(oTargetPr);
 			oTOC.Update();
-			return;
+			return true;
 		}
 
 		this.Document.AddTableOfContents(null, oTargetPr, undefined);
+		return true;
 	};
 
 	/**
@@ -7788,22 +8744,22 @@
 	ApiDocument.prototype.GetDocumentInfo = function()
 	{
 		const oDocInfo = {
-			Application: '',
-			CreatedRaw: null,
-			Created: '',
-			LastModifiedRaw: null,
-			LastModified: '',
-			LastModifiedBy: '',
-			Authors: [],
-			Title: '',
-			Tags: '',
-			Subject: '',
-			Comment: ''
+			"Application": '',
+			"CreatedRaw": null,
+			"Created": '',
+			"LastModifiedRaw": null,
+			"LastModified": '',
+			"LastModifiedBy": '',
+			"Authors": [],
+			"Title": '',
+			"Tags": '',
+			"Subject": '',
+			"Comment": ''
 		};
 		const api = this.Document.Api;
 
 		let props = (api) ? api.asc_getAppProps() : null;
-		oDocInfo.Application = (props.asc_getApplication() || '') + (props.asc_getAppVersion() ? ' ' : '') + (props.asc_getAppVersion() || '');
+		oDocInfo["Application"] = (props.asc_getApplication() || '') + (props.asc_getAppVersion() ? ' ' : '') + (props.asc_getAppVersion() || '');
 		
 		let langCode = 1033; // en-US
 		let langName = 'en-us';
@@ -7820,35 +8776,35 @@
 		}
 
 		props = api.asc_getCoreProps();
-		oDocInfo.CreatedRaw = props.asc_getCreated();
-		oDocInfo.LastModifiedRaw = props.asc_getModified();
+		oDocInfo["CreatedRaw"] = props.asc_getCreated();
+		oDocInfo["LastModifiedRaw"] = props.asc_getModified();
 
 		try {
-			if (oDocInfo.CreatedRaw)
-				oDocInfo.Created = (oDocInfo.CreatedRaw.toLocaleString(langName, {year: 'numeric', month: '2-digit', day: '2-digit'}) + ' ' +oDocInfo. CreatedRaw.toLocaleString(langName, {timeStyle: 'short'}));
+			if (oDocInfo["CreatedRaw"])
+				oDocInfo["Created"] = (oDocInfo["CreatedRaw"].toLocaleString(langName, {year: 'numeric', month: '2-digit', day: '2-digit'}) + ' ' + oDocInfo["CreatedRaw"].toLocaleString(langName, {timeStyle: 'short'}));
 			
-			if (oDocInfo.LastModifiedRaw)
-				oDocInfo.LastModified = (oDocInfo.LastModifiedRaw.toLocaleString(langName, {year: 'numeric', month: '2-digit', day: '2-digit'}) + ' ' + oDocInfo.LastModifiedRaw.toLocaleString(langName, {timeStyle: 'short'}));
+			if (oDocInfo["LastModifiedRaw"])
+				oDocInfo["LastModified"] = (oDocInfo["LastModifiedRaw"].toLocaleString(langName, {year: 'numeric', month: '2-digit', day: '2-digit'}) + ' ' + oDocInfo["LastModifiedRaw"].toLocaleString(langName, {timeStyle: 'short'}));
 		} catch (e) {
 			langName = 'en';
-			if (oDocInfo.CreatedRaw)
-				oDocInfo.Created = (oDocInfo.CreatedRaw.toLocaleString(langName, {year: 'numeric', month: '2-digit', day: '2-digit'}) + ' ' + oDocInfo.CreatedRaw.toLocaleString(langName, {timeStyle: 'short'}));
+			if (oDocInfo["CreatedRaw"])
+				oDocInfo["Created"] = (oDocInfo["CreatedRaw"].toLocaleString(langName, {year: 'numeric', month: '2-digit', day: '2-digit'}) + ' ' + oDocInfo["CreatedRaw"].toLocaleString(langName, {timeStyle: 'short'}));
 
-			if (oDocInfo.LastModifiedRaw)
-				oDocInfo.LastModified = (oDocInfo.LastModifiedRaw.toLocaleString(langName, {year: 'numeric', month: '2-digit', day: '2-digit'}) + ' ' + oDocInfo.LastModifiedRaw.toLocaleString(langName, {timeStyle: 'short'}));
+			if (oDocInfo["LastModifiedRaw"])
+				oDocInfo["LastModified"] = (oDocInfo["LastModifiedRaw"].toLocaleString(langName, {year: 'numeric', month: '2-digit', day: '2-digit'}) + ' ' + oDocInfo["LastModifiedRaw"].toLocaleString(langName, {timeStyle: 'short'}));
 		}
 
 		const LastModifiedBy = props.asc_getLastModifiedBy();
-		oDocInfo.LastModifiedBy = AscCommon.UserInfoParser.getParsedName(LastModifiedBy);
+		oDocInfo["LastModifiedBy"] = AscCommon.UserInfoParser.getParsedName(LastModifiedBy);
 
-		oDocInfo.Title = (props.asc_getTitle() || '');
-		oDocInfo.Tags = (props.asc_getKeywords() || '');
-		oDocInfo.Subject = (props.asc_getSubject() || '');
-		oDocInfo.Comment = (props.asc_getDescription() || '');
+		oDocInfo["Title"] = (props.asc_getTitle() || '');
+		oDocInfo["Tags"] = (props.asc_getKeywords() || '');
+		oDocInfo["Subject"] = (props.asc_getSubject() || '');
+		oDocInfo["Comment"] = (props.asc_getDescription() || '');
 
 		const authors = props.asc_getCreator();
 		if (authors)
-			oDocInfo.Authors = authors.split(/\s*[,;]\s*/);
+			oDocInfo["Authors"] = authors.split(/\s*[,;]\s*/);
 
 		return oDocInfo;
 	};
@@ -7911,9 +8867,9 @@
 	 * Adds a comment to the current document selection, or to the current word if no text is selected.
 	 * @memberof ApiDocument
 	 * @typeofeditors ["CDE"]
-	 * @param {string} sText - The comment text (required).
-	 * @param {string} sAuthor - The author's name (optional).
-	 * @param {string} sUserId - The user ID of the comment author (optional).
+	 * @param {string} sText - The comment text.
+	 * @param {string} [sAuthor] - The author's name.
+	 * @param {string} [sUserId] - The user ID of the comment author.
 	 * @returns {?ApiComment} - Returns null if the comment was not added.
 	 * @see office-js-api/Examples/{Editor}/ApiDocument/Methods/AddComment.js
 	 */
@@ -7984,6 +8940,7 @@
 	 * @param {"unicode" | "latex"} [sFormat="unicode"] - The format of the specified linear representation.
 	 * @memberof ApiDocument
 	 * @typeofeditors ["CDE"]
+	 * @returns {boolean}
 	 * @since 8.2.0
 	 * @see office-js-api/Examples/{Editor}/ApiDocument/Methods/AddMathEquation.js
 	 */
@@ -8004,9 +8961,10 @@
 		let info = logicDocument.GetSelectedElementsInfo();
 		let paraMath = info.GetMath();
 		if (!paraMath)
-			return;
+			return false;
 		
 		paraMath.ConvertView(false, "latex" === format ? Asc.c_oAscMathInputType.LaTeX : Asc.c_oAscMathInputType.Unicode);
+		return true;
 	};
 
 	/**
@@ -8041,6 +8999,154 @@
 			return null;
 
 		return new ApiGroup(oParaDrawing.GraphicObj);
+	};
+
+	/**
+	 * Moves a cursor to a specified position of the current document.
+	 * If there is any selection in the document, it will be removed.
+	 * @memberof ApiDocument
+	 * @param {number} [nPos=0] - The desired cursor position.
+	 * @typeofeditors ["CDE"]
+	 * @returns {boolean}
+	 * @since 9.0.0
+	 * @see office-js-api/Examples/{Editor}/ApiDocument/Methods/MoveCursorToPos.js
+	 */
+	ApiDocument.prototype.MoveCursorToPos = function(nPos)
+	{
+		let oRange = this.GetRange();
+		return oRange.MoveCursorToPos(nPos);
+	};
+	
+	/**
+	 * Adds a new checkbox content control to the document.
+	 * @memberof ApiDocument
+	 * @typeofeditors ["CDE"]
+	 * @since 9.0.0
+	 * @param {ContentControlCheckBoxPr} checkBoxPr The configuration object for the checkbox.
+	 * @returns {ApiInlineLvlSdt} An instance of the ApiInlineLvlSdt object representing the checkbox content control.
+	 * @see office-js-api/Examples/{Editor}/ApiDocument/Methods/AddCheckBoxContentControl.js
+	 */
+	ApiDocument.prototype.AddCheckBoxContentControl = function(checkBoxPr)
+	{
+		let pr = getSdtCheckBoxPr(checkBoxPr);
+		var oCheckBoxCC = this.Document.AddContentControlCheckBox(pr);
+		return ToApiContentControl(oCheckBoxCC);
+	};
+	
+	/**
+	 * Adds a new picture content control to the document.
+	 * @memberof ApiDocument
+	 * @typeofeditors ["CDE"]
+	 * @since 9.0.0
+	 * @param {EMU} [width] - The optional width of the image.
+	 * @param {EMU} [height] - The optional height of the image.
+	 * @returns {ApiInlineLvlSdt} An instance of the ApiInlineLvlSdt object representing the picture content control.
+	 * @see office-js-api/Examples/{Editor}/ApiDocument/Methods/AddPictureContentControl.js
+	 */
+	ApiDocument.prototype.AddPictureContentControl = function(width, height)
+	{
+		var nW = width ? private_EMU2MM(width) : -1;
+		var nH = height ? private_EMU2MM(height) : -1;
+		
+		var oPictureCC = this.Document.AddContentControlPicture(nW, nH);
+		return ToApiContentControl(oPictureCC);
+	};
+	
+	/**
+	 * Adds a new combo box content control to the document.
+	 * @memberof ApiDocument
+	 * @typeofeditors ["CDE"]
+	 * @since 9.0.0
+	 * @param {ContentControlListItem[]} [list] - An array of objects representing the items in the combo box.
+	 * @param {string} [selected] - The optional value of the item that should be selected by default (must match one of the ListItem.Value).
+	 * @returns {ApiInlineLvlSdt}
+	 * @see office-js-api/Examples/{Editor}/ApiDocument/Methods/AddComboBoxContentControl.js
+	 */
+	ApiDocument.prototype.AddComboBoxContentControl = function(list, selected)
+	{
+		let pr = getSdtComboBoxPr(list);
+		let comboBox = this.Document.AddContentControlComboBox(pr);
+		
+		selected = GetIntParameter(selected, -1);
+		if (-1 !== selected && list && list[selected])
+			comboBox.SelectListItem(list[selected]["value"]);
+		
+		return ToApiContentControl(comboBox);
+	};
+	
+	/**
+	 * Adds a new drop-down list content control to the document.
+	 * @memberof ApiDocument
+	 * @typeofeditors ["CDE"]
+	 * @since 9.0.0
+	 * @param {ContentControlListItem[]} [list] - An array of objects representing the items in the drop-down list.
+	 * @param {string} [selected] - The optional value of the item that should be selected by default (must match one of the ListItem.Value).
+	 * @returns {ApiInlineLvlSdt}
+	 * @see office-js-api/Examples/{Editor}/ApiDocument/Methods/AddDropDownListContentControl.js
+	 */
+	ApiDocument.prototype.AddDropDownListContentControl = function(list, selected)
+	{
+		let pr = getSdtComboBoxPr(list);
+		let dropDown = this.Document.AddContentControlDropDownList(pr);
+		if (-1 !== selected && list && list[selected])
+			dropDown.SelectListItem(list[selected]["value"]);
+		
+		return ToApiContentControl(dropDown);
+	};
+	
+	/**
+	 * Adds a new date picker content control to the document.
+	 * @memberof ApiDocument
+	 * @typeofeditors ["CDE"]
+	 * @since 9.0.0
+	 * @param {ContentControlDatePr} [datePickerPr] - The optional date picker properties.
+	 * @returns {ApiInlineLvlSdt}
+	 * @see office-js-api/Examples/{Editor}/ApiDocument/Methods/AddDatePickerContentControl.js
+	 */
+	ApiDocument.prototype.AddDatePickerContentControl = function(datePickerPr)
+	{
+		let pr = getSdtDatePickerPr(datePickerPr);
+		let datePicker = this.Document.AddContentControlDatePicker(pr);
+		return ToApiContentControl(datePicker);
+	};
+	
+	/**
+	 * Retrieves the custom XML manager associated with the document.
+	 * This manager allows manipulation and access to custom XML parts within the document.
+	 * @memberof ApiDocument
+	 * @typeofeditors ["CDE"]
+	 * @since 9.0.0
+	 * @returns {ApiCustomXmlParts|null} Returns an instance of ApiCustomXmlParts if the custom XML manager exists, otherwise returns null.
+	 * @see office-js-api/Examples/{Editor}/ApiDocument/Methods/GetCustomXmlParts.js
+	 */
+	ApiDocument.prototype.GetCustomXmlParts = function()
+	{
+		return new ApiCustomXmlParts(this.Document);
+	};
+
+	/**
+	 * Retrieves the core properties interface for the current document.
+	 * This method is used to view or modify standard metadata such as title, author, and keywords.
+	 * @memberof ApiDocument
+	 * @returns {ApiCore} - The core document properties object.
+	 * @typeofeditors ["CDE"]
+	 * @since 9.0.0
+	 * @see office-js-api/Examples/{Editor}/ApiDocument/Methods/GetCore.js
+	 */
+	ApiDocument.prototype.GetCore = function () {
+		return new ApiCore(this.Document.Core);
+	};
+
+	/**
+	 * Retrieves the custom properties from the document.
+	 * @memberof ApiDocument
+	 * @returns {ApiCustomProperties}
+	 * @typeofeditors ["CDE"]
+	 * @since 9.0.0
+	 * @see office-js-api/Examples/{Editor}/ApiDocument/Methods/GetCustomProperties.js
+	 */
+	ApiDocument.prototype.GetCustomProperties = function () {
+		return new ApiCustomProperties(this.Document.CustomProperties);
 	};
 
 	//------------------------------------------------------------------------------------------------------------------
@@ -8201,14 +9307,16 @@
 	 * @typeofeditors ["CDE"]
 	 * @see Same as {@link ApiParagraph#SetNumPr}
 	 * @param {ApiNumberingLevel} oNumberingLevel - The numbering level which will be used for assigning the numbers to the paragraph.
+	 * @returns {boolean}
 	 * @see office-js-api/Examples/{Editor}/ApiParagraph/Methods/SetNumbering.js
 	 */
 	ApiParagraph.prototype.SetNumbering = function(oNumberingLevel)
 	{
 		if (!(oNumberingLevel instanceof ApiNumberingLevel))
-			return;
+			return false;
 
 		this.SetNumPr(oNumberingLevel.GetNumbering(), oNumberingLevel.GetLevelIndex());
+		return true;
 	};
 	/**
 	 * Returns a number of elements in the current paragraph.
@@ -8246,15 +9354,17 @@
 	 * @memberof ApiParagraph
 	 * @typeofeditors ["CDE", "CSE", "CPE"]
 	 * @param {number} nPos - The element position which we want to remove from the paragraph.
+	 * @returns {boolean}
 	 * @see office-js-api/Examples/{Editor}/ApiParagraph/Methods/RemoveElement.js
 	 */
 	ApiParagraph.prototype.RemoveElement = function(nPos)
 	{
 		if (nPos < 0 || nPos >= this.Paragraph.Content.length - 1)
-			return;
+			return false;
 
 		this.Paragraph.RemoveFromContent(nPos, 1);
 		this.Paragraph.CorrectContent();
+		return true;
 	};
 	/**
 	 * Removes all the elements from the current paragraph.
@@ -8262,6 +9372,7 @@
 	 * content to this run, use the {@link ApiParagraph#GetElement} method.</note>
 	 * @memberof ApiParagraph
 	 * @typeofeditors ["CDE", "CSE", "CPE"]
+	 * @returns {boolean}
 	 * @see office-js-api/Examples/{Editor}/ApiParagraph/Methods/RemoveAllElements.js
 	 */
 	ApiParagraph.prototype.RemoveAllElements = function()
@@ -8271,6 +9382,8 @@
 			this.Paragraph.RemoveFromContent(0, this.Paragraph.Content.length - 1);
 			this.Paragraph.CorrectContent();
 		}
+
+		return true;
 	};
 	/**
 	 * Deletes the current paragraph.
@@ -8438,9 +9551,9 @@
 	 * <note>Please note that this paragraph must be in the document.</note>
 	 * @memberof ApiParagraph
 	 * @typeofeditors ["CDE"]
-	 * @param {string} sText - The comment text (required).
-	 * @param {string} sAuthor - The author's name (optional).
-	 * @param {string} sUserId - The user ID of the comment author (optional).
+	 * @param {string} sText - The comment text.
+	 * @param {string} [sAuthor] - The author's name.
+	 * @param {string} [sUserId] - The user ID of the comment author.
 	 * @returns {ApiComment?} - Returns null if the comment was not added.
 	 * @see office-js-api/Examples/{Editor}/ApiParagraph/Methods/AddComment.js
 	 */
@@ -8523,7 +9636,12 @@
 	 */
 	ApiParagraph.prototype.GetRange = function(Start, End)
 	{
-		return new ApiRange(this.Paragraph, Start, End);
+		let oRange = new ApiRange(this.Paragraph, Start, End);
+		if (oRange.isEmpty) {
+			return null;
+		}
+
+		return oRange;
 	};
 	/**
 	 * Adds an element to the current paragraph.
@@ -8658,10 +9776,15 @@
 		}
 		else
 		{
-			var Unifill        = new AscFormat.CUniFill();
-			Unifill.fill       = new AscFormat.CSolidFill();
-			Unifill.fill.color = AscFormat.CorrectUniColor(color, Unifill.fill.color, 1);
-			this.Paragraph.Add(new AscCommonWord.ParaTextPr({Unifill : Unifill}));
+			this.Paragraph.Add(new AscCommonWord.ParaTextPr({
+				Color      : {
+					Auto : false,
+					r    : r,
+					g    : g,
+					b    : b
+				}, Unifill : undefined
+			}));
+			
 		}
 		this.Paragraph.SetApplyToAll(false);
 		
@@ -8815,7 +9938,7 @@
 	ApiParagraph.prototype.SetPosition = function(nPosition)
 	{
 		this.Paragraph.SetApplyToAll(true);
-		this.Paragraph.Add(new AscCommonWord.ParaTextPr({Position : nPosition}));
+		this.Paragraph.Add(new AscCommonWord.ParaTextPr({Position : private_PtToMM(private_GetHps(nPosition))}));
 		this.Paragraph.SetApplyToAll(false);
 		
 		return this;
@@ -8851,7 +9974,7 @@
 	ApiParagraph.prototype.SetSpacing = function(nSpacing)
 	{
 		this.Paragraph.SetApplyToAll(true);
-		this.Paragraph.Add(new AscCommonWord.ParaTextPr({Spacing : nSpacing}));
+		this.Paragraph.Add(new AscCommonWord.ParaTextPr({Spacing : private_Twips2MM(nSpacing)}));
 		this.Paragraph.SetApplyToAll(false);
 		
 		return this;
@@ -9121,7 +10244,7 @@
 		return this.Paragraph.GetText(oProp);
 	};
 	/**
-	 * Returns the paragraph text properties.
+	 * Returns the text properties for a paragraph end mark.
 	 * @memberof ApiParagraph
 	 * @typeofeditors ["CDE"]
 	 * @return {ApiTextPr}  
@@ -9319,6 +10442,7 @@
 	 * Wraps the paragraph content in a mail merge field.
 	 * @memberof ApiParagraph
 	 * @typeofeditors ["CDE"]
+	 * @returns {boolean}
 	 * @see office-js-api/Examples/{Editor}/ApiParagraph/Methods/WrapInMailMergeField.js
 	 */
 	ApiParagraph.prototype.WrapInMailMergeField = function()
@@ -9345,6 +10469,7 @@
 		this.RemoveAllElements();
 		oDocument.Register_Field(oField);
 		this.Paragraph.AddToParagraph(oField);
+		return true;
 	};
 
 	/**
@@ -9949,26 +11074,31 @@
 	 * Clears the content from the current run.
 	 * @memberof ApiRun
 	 * @typeofeditors ["CDE", "CSE", "CPE"]
+	 * @returns {boolean}
 	 * @see office-js-api/Examples/{Editor}/ApiRun/Methods/ClearContent.js
 	 */
 	ApiRun.prototype.ClearContent = function()
 	{
 		this.Run.Remove_FromContent(0, this.Run.Content.length);
+		return true;
 	};
 	/**
 	 * Removes all the elements from the current run.
 	 * @memberof ApiRun
 	 * @typeofeditors ["CDE", "CSE", "CPE"]
+	 * @returns {boolean}
 	 * @see office-js-api/Examples/{Editor}/ApiRun/Methods/RemoveAllElements.js
 	 */
 	ApiRun.prototype.RemoveAllElements = function()
 	{
 		this.Run.Remove_FromContent(0, this.Run.Content.length);
+		return true;
 	};
 	/**
 	 * Deletes the current run.
 	 * @memberof ApiRun
 	 * @typeofeditors ["CDE", "CSE", "CPE"]
+	 * @returns {boolean}
 	 * @see office-js-api/Examples/{Editor}/ApiRun/Methods/Delete.js
 	 */
 	ApiRun.prototype.Delete = function()
@@ -9983,60 +11113,72 @@
 		}
 		else 
 			return false;
+
+		return true;
 	};
 	/**
 	 * Adds some text to the current run.
 	 * @memberof ApiRun
 	 * @typeofeditors ["CDE", "CSE", "CPE"]
 	 * @param {string} sText - The text which will be added to the current run.
+	 * @returns {boolean}
 	 * @see office-js-api/Examples/{Editor}/ApiRun/Methods/AddText.js
 	 */
 	ApiRun.prototype.AddText = function(sText)
 	{
 		if (!sText || !sText.length)
-			return;
+			return false;
 
 		this.Run.AddText(sText);
+		return true;
 	};
 	/**
 	 * Adds a page break and starts the next element from a new page.
 	 * @memberof ApiRun
 	 * @typeofeditors ["CDE"]
+	 * @returns {boolean}
 	 * @see office-js-api/Examples/{Editor}/ApiRun/Methods/AddPageBreak.js
 	 */
 	ApiRun.prototype.AddPageBreak = function()
 	{
 		this.Run.Add_ToContent(this.Run.Content.length, new AscWord.CRunBreak(AscWord.break_Page));
+		return true;
 	};
 	/**
 	 * Adds a line break to the current run position and starts the next element from a new line.
 	 * @memberof ApiRun
 	 * @typeofeditors ["CDE", "CSE", "CPE"]
+	 * @returns {boolean}
 	 * @see office-js-api/Examples/{Editor}/ApiRun/Methods/AddLineBreak.js
 	 */
 	ApiRun.prototype.AddLineBreak = function()
 	{
 		this.Run.Add_ToContent(this.Run.Content.length, new AscWord.CRunBreak(AscWord.break_Line));
+		return true;
 	};
 	/**
 	 * Adds a column break to the current run position and starts the next element from a new column.
 	 * @memberof ApiRun
 	 * @typeofeditors ["CDE"]
+	 * @returns {boolean}
 	 * @see office-js-api/Examples/{Editor}/ApiRun/Methods/AddColumnBreak.js
 	 */
 	ApiRun.prototype.AddColumnBreak = function()
 	{
 		this.Run.Add_ToContent(this.Run.Content.length, new AscWord.CRunBreak(AscWord.break_Column));
+		return true;
 	};
 	/**
 	 * Adds a tab stop to the current run.
 	 * @memberof ApiRun
 	 * @typeofeditors ["CDE", "CSE", "CPE"]
+	 * @returns {boolean}
 	 * @see office-js-api/Examples/{Editor}/ApiRun/Methods/AddTabStop.js
 	 */
 	ApiRun.prototype.AddTabStop = function()
 	{
 		this.Run.Add_ToContent(this.Run.Content.length, new AscWord.CRunTab());
+		return true;
 	};
 	/**
 	 * Adds a drawing object (image, shape or chart) to the current text run.
@@ -10191,7 +11333,12 @@
 	 */
 	ApiRun.prototype.GetRange = function(Start, End)
 	{
-		return new ApiRange(this.Run, Start, End);
+		let oRange = new ApiRange(this.Run, Start, End);
+		if (oRange.isEmpty) {
+			return null;
+		}
+
+		return oRange;
 	};
 
 	/**
@@ -10257,6 +11404,21 @@
         }
 
         return null;
+    };
+    /**
+     * Returns a parent paragraph of the current run.
+     * @memberof ApiRun
+	 * @typeofeditors ["CDE"]
+     * @return {?ApiParagraph}
+     * @see office-js-api/Examples/{Editor}/ApiRun/Methods/GetParentParagraph.js
+	 */
+    ApiRun.prototype.GetParentParagraph = function()
+    {
+		let oPara = this.Run.GetParagraph();
+		if (!oPara)
+			return null;
+
+        return new ApiParagraph(oPara); 
     };
 	/**
 	 * Sets the text properties to the current run.
@@ -10582,6 +11744,7 @@
 	 * Wraps a run in a mail merge field.
 	 * @memberof ApiRun
 	 * @typeofeditors ["CDE"]
+	 * @returns {boolean}
 	 * @see office-js-api/Examples/{Editor}/ApiRun/Methods/WrapInMailMergeField.js
 	 */
 	ApiRun.prototype.WrapInMailMergeField = function()
@@ -10609,6 +11772,7 @@
 		}
 		
 		oDocument.Register_Field(oField);
+		return true;
 	};
 	/**
 	 * Converts the ApiRun object into the JSON object.
@@ -10632,9 +11796,9 @@
 	 * <note>Please note that this run must be in the document.</note>
 	 * @memberof ApiRun
 	 * @typeofeditors ["CDE"]
-	 * @param {string} sText - The comment text (required).
-	 * @param {string} sAuthor - The author's name (optional).
-	 * @param {string} sUserId - The user ID of the comment author (optional).
+	 * @param {string} sText - The comment text.
+	 * @param {string} [sAuthor] - The author's name.
+	 * @param {string} [sUserId] - The user ID of the comment author.
 	 * @returns {ApiComment?} - Returns null if the comment was not added.
 	 * @see office-js-api/Examples/{Editor}/ApiRun/Methods/AddComment.js
 	 */
@@ -10761,20 +11925,35 @@
 	 * @memberof ApiSection
 	 * @typeofeditors ["CDE"]
 	 * @param {SectionBreakType} sType - The section break type.
+	 * @returns {boolean}
 	 * @see office-js-api/Examples/{Editor}/ApiSection/Methods/SetType.js
 	 */
 	ApiSection.prototype.SetType = function(sType)
 	{
-		if ("oddPage" === sType)
-			this.Section.Set_Type(c_oAscSectionBreakType.OddPage);
-		else if ("evenPage" === sType)
-			this.Section.Set_Type(c_oAscSectionBreakType.EvenPage);
-		else if ("continuous" === sType)
-			this.Section.Set_Type(c_oAscSectionBreakType.Continuous);
-		else if ("nextColumn" === sType)
-			this.Section.Set_Type(c_oAscSectionBreakType.Column);
-		else if ("nextPage" === sType)
-			this.Section.Set_Type(c_oAscSectionBreakType.NextPage);
+		switch (sType) {
+			case "oddPage": {
+				this.Section.Set_Type(c_oAscSectionBreakType.OddPage);
+				return true;
+			}
+			case "evenPage": {
+				this.Section.Set_Type(c_oAscSectionBreakType.EvenPage);
+				return true;
+			}
+			case "continuous": {
+				this.Section.Set_Type(c_oAscSectionBreakType.Continuous);
+				return true;
+			}
+			case "nextColumn": {
+				this.Section.Set_Type(c_oAscSectionBreakType.Column);
+				return true;
+			}
+			case "nextPage": {
+				this.Section.Set_Type(c_oAscSectionBreakType.NextPage);
+				return true;
+			}
+			default:
+				return false;
+		}
 	};
 
 	/**
@@ -10807,6 +11986,7 @@
 	 * @typeofeditors ["CDE"]
 	 * @param {number} nCount - Number of columns.
 	 * @param {twips} nSpace - Distance between columns measured in twentieths of a point (1/1440 of an inch).
+	 * @returns {boolean}
 	 * @see office-js-api/Examples/{Editor}/ApiSection/Methods/SetEqualColumns.js
 	 */
 	ApiSection.prototype.SetEqualColumns = function(nCount, nSpace)
@@ -10814,6 +11994,7 @@
 		this.Section.Set_Columns_EqualWidth(true);
 		this.Section.Set_Columns_Num(nCount);
 		this.Section.Set_Columns_Space(private_Twips2MM(nSpace));
+		return true;
 	};
 	/**
 	 * Specifies that all the columns in the current section have the different widths. Number of columns is equal 
@@ -10822,12 +12003,13 @@
 	 * @typeofeditors ["CDE"]
 	 * @param {twips[]} aWidths - An array of column width values measured in twentieths of a point (1/1440 of an inch).
 	 * @param {twips[]} aSpaces - An array of distance values between the columns measured in twentieths of a point (1/1440 of an inch).
+	 * @returns {boolean}
 	 * @see office-js-api/Examples/{Editor}/ApiSection/Methods/SetNotEqualColumns.js
 	 */
 	ApiSection.prototype.SetNotEqualColumns = function(aWidths, aSpaces)
 	{
 		if (!aWidths || !aWidths.length || aWidths.length <= 1 || aSpaces.length !== aWidths.length - 1)
-			return;
+			return false;
 
 		this.Section.Set_Columns_EqualWidth(false);
 		var aCols = [];
@@ -10841,6 +12023,7 @@
 
 		this.Section.Set_Columns_Cols(aCols);
 		this.Section.Set_Columns_Num(aCols.length);
+		return true;
 	};
 	/**
 	 * Specifies the properties (size and orientation) for all the pages in the current section.
@@ -10849,12 +12032,14 @@
 	 * @param {twips} nWidth - The page width measured in twentieths of a point (1/1440 of an inch).
 	 * @param {twips} nHeight - The page height measured in twentieths of a point (1/1440 of an inch).
 	 * @param {boolean} [isPortrait=false] - Specifies the orientation of all the pages in this section (if set to true, then the portrait orientation is chosen).
+	 * @returns {boolean}
 	 * @see office-js-api/Examples/{Editor}/ApiSection/Methods/SetPageSize.js
 	 */
 	ApiSection.prototype.SetPageSize = function(nWidth, nHeight, isPortrait)
 	{
 		this.Section.SetPageSize(private_Twips2MM(nWidth), private_Twips2MM(nHeight));
 		this.Section.SetOrientation(false === isPortrait ? Asc.c_oAscPageOrientation.PageLandscape : Asc.c_oAscPageOrientation.PagePortrait, false);
+		return true;
 	};
 	/**
 	 * Gets page height for current section.
@@ -10887,22 +12072,26 @@
 	 * @param {twips} nTop - The top margin height measured in twentieths of a point (1/1440 of an inch).
 	 * @param {twips} nRight - The right margin width measured in twentieths of a point (1/1440 of an inch).
 	 * @param {twips} nBottom - The bottom margin height measured in twentieths of a point (1/1440 of an inch).
+	 * @returns {boolean}
 	 * @see office-js-api/Examples/{Editor}/ApiSection/Methods/SetPageMargins.js
 	 */
 	ApiSection.prototype.SetPageMargins = function(nLeft, nTop, nRight, nBottom)
 	{
 		this.Section.SetPageMargins(private_Twips2MM(nLeft), private_Twips2MM(nTop), private_Twips2MM(nRight), private_Twips2MM(nBottom));
+		return true;
 	};
 	/**
 	 * Specifies the distance from the top edge of the page to the top edge of the header.
 	 * @memberof ApiSection
 	 * @typeofeditors ["CDE"]
 	 * @param {twips} nDistance - The distance from the top edge of the page to the top edge of the header measured in twentieths of a point (1/1440 of an inch).
+	 * @returns {boolean}
 	 * @see office-js-api/Examples/{Editor}/ApiSection/Methods/SetHeaderDistance.js
 	 */
 	ApiSection.prototype.SetHeaderDistance = function(nDistance)
 	{
 		this.Section.SetPageMarginHeader(private_Twips2MM(nDistance));
+		return true;
 	};
 	/**
 	 * Specifies the distance from the bottom edge of the page to the bottom edge of the footer.
@@ -10910,11 +12099,13 @@
 	 * @typeofeditors ["CDE"]
 	 * @param {twips} nDistance - The distance from the bottom edge of the page to the bottom edge of the footer measured
 	 * in twentieths of a point (1/1440 of an inch).
+	 * @returns {boolean}
 	 * @see office-js-api/Examples/{Editor}/ApiSection/Methods/SetFooterDistance.js
 	 */
 	ApiSection.prototype.SetFooterDistance = function(nDistance)
 	{
 		this.Section.SetPageMarginFooter(private_Twips2MM(nDistance));
+		return true;
 	};
 	/**
 	 * Returns the content for the specified header type.
@@ -10961,6 +12152,7 @@
 	 * @memberof ApiSection
 	 * @typeofeditors ["CDE"]
 	 * @param {HdrFtrType} sType - Header type to be removed.
+	 * @returns {boolean}
 	 * @see office-js-api/Examples/{Editor}/ApiSection/Methods/RemoveHeader.js
 	 */
 	ApiSection.prototype.RemoveHeader = function(sType)
@@ -10971,6 +12163,10 @@
 			this.Section.Set_Header_Even(null);
 		else if ("default" === sType)
 			this.Section.Set_Header_Default(null);
+		else
+			return false;
+
+		return true;
 	};
 	/**
 	 * Returns the content for the specified footer type.
@@ -11018,6 +12214,7 @@
 	 * @memberof ApiSection
 	 * @typeofeditors ["CDE"]
 	 * @param {HdrFtrType} sType - Footer type to be removed.
+	 * @returns {boolean}
 	 * @see office-js-api/Examples/{Editor}/ApiSection/Methods/RemoveFooter.js
 	 */
 	ApiSection.prototype.RemoveFooter = function(sType)
@@ -11028,17 +12225,23 @@
 			this.Section.Set_Footer_Even(null);
 		else if ("default" === sType)
 			this.Section.Set_Footer_Default(null);
+		else
+			return false;
+
+		return true;
 	};
 	/**
 	 * Specifies whether the current section in this document has the different header and footer for the section first page.
 	 * @memberof ApiSection
 	 * @typeofeditors ["CDE"]
 	 * @param {boolean} isTitlePage - If true, the first page of the section will have header and footer that will differ from the other pages of the same section.
+	 * @returns {boolean}
 	 * @see office-js-api/Examples/{Editor}/ApiSection/Methods/SetTitlePage.js
 	 */
 	ApiSection.prototype.SetTitlePage = function(isTitlePage)
 	{
 		this.Section.Set_TitlePage(private_GetBoolean(isTitlePage));
+		return true;
 	};
 	/**
 	 * Returns the next section if exists.
@@ -11304,6 +12507,7 @@
 	 * @param {boolean} isLastRow - Specifies that the last row conditional formatting will be applied to the table.
 	 * @param {boolean} isHorBand - Specifies that the horizontal band conditional formatting will not be applied to the table.
 	 * @param {boolean} isVerBand - Specifies that the vertical band conditional formatting will not be applied to the table.
+	 * @returns {boolean}
 	 * @see office-js-api/Examples/{Editor}/ApiTable/Methods/SetTableLook.js
 	 */
 	ApiTable.prototype.SetTableLook = function(isFirstColumn, isFirstRow, isLastColumn, isLastRow, isHorBand, isVerBand)
@@ -11315,6 +12519,7 @@
 			private_GetBoolean(isHorBand),
 			private_GetBoolean(isVerBand));
 		this.Table.Set_TableLook(oTableLook);
+		return true;
 	};
 	/**
 	 * Splits the cell into a given number of rows and columns.
@@ -11419,6 +12624,7 @@
 	 * @param {ApiTableCell} [oCell] - The cell after which a new column will be added. If not specified, a new column will be added at the end of the table.
 	 * @param {boolean} [isBefore=false] - Adds a new column before (false) or after (true) the specified cell. If no cell is specified,
 	 * then this parameter will be ignored.
+	 * @returns {boolean}
 	 * @see office-js-api/Examples/{Editor}/ApiTable/Methods/AddColumn.js
 	 */
 	ApiTable.prototype.AddColumn = function(oCell, isBefore)
@@ -11442,6 +12648,7 @@
 		this.Table.AddTableColumn(_isBefore);
 
 		private_EndSilentMode();
+		return true;
 	};
 	/**
 	 * Adds the new columns to the current table.
@@ -11451,6 +12658,7 @@
 	 * @param {Number} nCount - Count of columns to be added.
 	 * @param {boolean} [isBefore=false] - Adds the new columns before (false) or after (true) the specified cell. If no cell is specified,
 	 * then this parameter will be ignored.
+	 * @returns {ApiTable}
 	 * @see office-js-api/Examples/{Editor}/ApiTable/Methods/AddColumns.js
 	 */
 	ApiTable.prototype.AddColumns = function(oCell, nCount, isBefore)
@@ -11469,6 +12677,7 @@
 	 * @param {ApiTableCell} oCell - The cell where the specified element will be added.
 	 * @param {number} nPos - The position in the cell where the specified element will be added.
 	 * @param {DocumentElement} oElement - The document element which will be added at the current position.
+	 * @returns {boolean}
 	 * @see office-js-api/Examples/{Editor}/ApiTable/Methods/AddElement.js
 	 */
 	ApiTable.prototype.AddElement = function(oCell, nPos, oElement)
@@ -11599,7 +12808,12 @@
 	 */
 	ApiTable.prototype.GetRange = function(Start, End)
 	{
-		return new ApiRange(this.Table, Start, End);
+		let oRange = new ApiRange(this.Table, Start, End);
+		if (oRange.isEmpty) {
+			return null;
+		}
+
+		return oRange;
 	};
 	/**
      * Sets the horizontal alignment to the table.
@@ -11999,9 +13213,9 @@
 	 * <note>Please note that this table must be in the document.</note>
 	 * @memberof ApiTable
 	 * @typeofeditors ["CDE"]
-	 * @param {string} sText - The comment text (required).
-	 * @param {string} sAuthor - The author's name (optional).
-	 * @param {string} sUserId - The user ID of the comment author (optional).
+	 * @param {string} sText - The comment text.
+	 * @param {string} [sAuthor] - The author's name.
+	 * @param {string} [sUserId] - The user ID of the comment author.
 	 * @returns {ApiComment?} - Returns null if the comment was not added.
 	 * @see office-js-api/Examples/{Editor}/ApiTable/Methods/AddComment.js
 	 */
@@ -12572,14 +13786,14 @@
 	 * Removes a column containing the current cell.
 	 * @memberof ApiTableCell
 	 * @typeofeditors ["CDE"]
-	 * @returns {?boolean} - removes null if table doen't exist
+	 * @returns {boolean} - returns false if table doen't exist
 	 * @see office-js-api/Examples/{Editor}/ApiTableCell/Methods/RemoveColumn.js
 	 */
 	ApiTableCell.prototype.RemoveColumn = function()
 	{
 		var oTable = this.GetParentTable();
 		if (!oTable)
-			return null;
+			return false;
 
 		return oTable.RemoveColumn(this);
 	};
@@ -12878,11 +14092,13 @@
 	 * @memberof ApiStyle
 	 * @typeofeditors ["CDE"]
 	 * @param {string} sStyleName - The name which will be used for the current style.
+	 * @returns {boolean}
 	 * @see office-js-api/Examples/{Editor}/ApiStyle/Methods/SetName.js
 	 */
 	ApiStyle.prototype.SetName = function(sStyleName)
 	{
 		this.Style.Set_Name(sStyleName);
+		return true;
 	};
 	/**
 	 * Returns a type of the current style.
@@ -12977,14 +14193,16 @@
 	 * @memberof ApiStyle
 	 * @typeofeditors ["CDE"]
 	 * @param {ApiStyle} oStyle - The parent style which the style inherits properties from.
+	 * @returns {boolean}
 	 * @see office-js-api/Examples/{Editor}/ApiStyle/Methods/SetBasedOn.js
 	 */
 	ApiStyle.prototype.SetBasedOn = function(oStyle)
 	{
 		if (!(oStyle instanceof ApiStyle) || this.Style.Get_Type() !== oStyle.Style.Get_Type())
-			return;
+			return false;
 
 		this.Style.Set_BasedOn(oStyle.Style.Get_Id());
+		return true;
 	};
 	/**
 	 * Returns a set of formatting properties which will be conditionally applied to the parts of a table that match the 
@@ -13232,16 +14450,37 @@
 	};
 
 	/**
-	 * Gets the font family from the current text properties.
+	 * Returns the font family from the current text properties.
+	 * The method automatically calculates the font from the theme if the font was set via the theme.
 	 * @memberof ApiTextPr
 	 * @typeofeditors ["CDE", "CSE", "CPE"]
+	 * param {undefined | "ascii" | "eastAsia" | "hAnsi" | "cs"} [fontSlot="ascii"] - The font slot.
+	 * If this parameter is not specified, the "ascii" value is used.
 	 * @return {?string}
 	 * @since 8.1.0
 	 * @see office-js-api/Examples/{Editor}/ApiTextPr/Methods/GetFontFamily.js
 	 */
-	ApiTextPr.prototype.GetFontFamily = function()
+	ApiTextPr.prototype.GetFontFamily = function(fontSlot)
 	{
-		return this.TextPr.GetFontFamily();
+		let textPr = this.TextPr;
+		let logicDocument = private_GetLogicDocument();
+		if (logicDocument && logicDocument.IsDocumentEditor())
+		{
+			textPr = textPr.Copy();
+			textPr.ReplaceThemeFonts(logicDocument.GetTheme().themeElements.fontScheme);
+		}
+		
+		fontSlot = GetStringParameter(fontSlot, "ascii");
+		
+		let fs = AscWord.fontslot_ASCII;
+		if ("eastAsia" === fontSlot)
+			fs = AscWord.fontslot_EastAsia;
+		else if ("hAnsi" === fontSlot)
+			fs = AscWord.fontslot_HAnsi;
+		else if ("cs" === fontSlot)
+			fs = AscWord.fontslot_CS;
+		
+		return textPr.GetFontFamily(fs);
 	};
 
 	/**
@@ -13789,15 +15028,17 @@
 	 * @memberof ApiParaPr
 	 * @typeofeditors ["CDE"]
 	 * @param {ApiStyle} oStyle - The style of the paragraph to be set.
+	 * @returns {boolean}
 	 * @see office-js-api/Examples/{Editor}/ApiParaPr/Methods/SetStyle.js
 	 */
 	ApiParaPr.prototype.SetStyle = function(oStyle)
 	{
 		if (!oStyle || !(oStyle instanceof ApiStyle))
-			return;
+			return false;
 
 		this.ParaPr.PStyle = oStyle.Style.Get_Id();
 		this.private_OnChange();
+		return true;
 	};
 	/**
 	 * Returns the paragraph style method.
@@ -13834,24 +15075,28 @@
 	 * @memberof ApiParaPr
 	 * @typeofeditors ["CDE"]
 	 * @param {boolean} isContextualSpacing - The true value will enable the paragraph contextual spacing.
+	 * @returns {boolean}
 	 * @see office-js-api/Examples/{Editor}/ApiParaPr/Methods/SetContextualSpacing.js
 	 */
 	ApiParaPr.prototype.SetContextualSpacing = function(isContextualSpacing)
 	{
 		this.ParaPr.ContextualSpacing = private_GetBoolean(isContextualSpacing);
 		this.private_OnChange();
+		return true;
 	};
 	/**
 	 * Sets the paragraph left side indentation.
 	 * @memberof ApiParaPr
 	 * @typeofeditors ["CDE", "CSE", "CPE"]
 	 * @param {twips} nValue - The paragraph left side indentation value measured in twentieths of a point (1/1440 of an inch).
+	 * @returns {boolean}
 	 * @see office-js-api/Examples/{Editor}/ApiParaPr/Methods/SetIndLeft.js
 	 */
 	ApiParaPr.prototype.SetIndLeft = function(nValue)
 	{
 		this.ParaPr.Ind.Left = private_Twips2MM(nValue);
 		this.private_OnChange();
+		return true;
 	};
 	/**
 	 * Returns the paragraph left side indentation.
@@ -13875,12 +15120,14 @@
 	 * @memberof ApiParaPr
 	 * @typeofeditors ["CDE", "CSE", "CPE"]
 	 * @param {twips} nValue - The paragraph right side indentation value measured in twentieths of a point (1/1440 of an inch).
+	 * @returns {boolean}
 	 * @see office-js-api/Examples/{Editor}/ApiParaPr/Methods/SetIndRight.js
 	 */
 	ApiParaPr.prototype.SetIndRight = function(nValue)
 	{
 		this.ParaPr.Ind.Right = private_Twips2MM(nValue);
 		this.private_OnChange();
+		return true;
 	};
 	/**
 	 * Returns the paragraph right side indentation.
@@ -13905,12 +15152,14 @@
 	 * @memberof ApiParaPr
 	 * @typeofeditors ["CDE", "CSE", "CPE"]
 	 * @param {twips} nValue - The paragraph first line indentation value measured in twentieths of a point (1/1440 of an inch).
+	 * @returns {boolean}
 	 * @see office-js-api/Examples/{Editor}/ApiParaPr/Methods/SetIndFirstLine.js
 	 */
 	ApiParaPr.prototype.SetIndFirstLine = function(nValue)
 	{
 		this.ParaPr.Ind.FirstLine = private_Twips2MM(nValue);
 		this.private_OnChange();
+		return true;
 	};
 	/**
 	 * Returns the paragraph first line indentation.
@@ -13937,12 +15186,14 @@
 	 * @typeofeditors ["CDE", "CSE", "CPE"]
 	 * @param {("left" | "right" | "both" | "center")} sJc - The justification type that
 	 * will be applied to the paragraph contents.
+	 * @returns {boolean}
 	 * @see office-js-api/Examples/{Editor}/ApiParaPr/Methods/SetJc.js
 	 */
 	ApiParaPr.prototype.SetJc = function(sJc)
 	{
 		this.ParaPr.Jc = private_GetParaAlign(sJc);
 		this.private_OnChange();
+		return true;
 	};
 	/**
 	 * Returns the paragraph contents justification.
@@ -13985,12 +15236,14 @@
 	 * @memberof ApiParaPr
 	 * @typeofeditors ["CDE"]
 	 * @param {boolean} isKeepLines - The true value enables the option to keep lines of the paragraph on a single page.
+	 * @returns {boolean}
 	 * @see office-js-api/Examples/{Editor}/ApiParaPr/Methods/SetKeepLines.js
 	 */
 	ApiParaPr.prototype.SetKeepLines = function(isKeepLines)
 	{
 		this.ParaPr.KeepLines = isKeepLines;
 		this.private_OnChange();
+		return true;
 	};
 	/**
 	 * Specifies that when rendering the document using a paginated view, the contents of the current paragraph are at least
@@ -13999,12 +15252,14 @@
 	 * @typeofeditors ["CDE"]
 	 * @param {boolean} isKeepNext - The true value enables the option to keep lines of the paragraph on the same
 	 * page as the following paragraph.
+	 * @returns {boolean}
 	 * @see office-js-api/Examples/{Editor}/ApiParaPr/Methods/SetKeepNext.js
 	 */
 	ApiParaPr.prototype.SetKeepNext = function(isKeepNext)
 	{
 		this.ParaPr.KeepNext = isKeepNext;
 		this.private_OnChange();
+		return true;
 	};
 	/**
 	 * Specifies that when rendering the document using a paginated view, the contents of the current paragraph are rendered at
@@ -14013,12 +15268,14 @@
 	 * @typeofeditors ["CDE"]
 	 * @param {boolean} isPageBreakBefore - The true value enables the option to render the contents of the paragraph
 	 * at the beginning of a new page in the document.
+	 * @returns {boolean}
 	 * @see office-js-api/Examples/{Editor}/ApiParaPr/Methods/SetPageBreakBefore.js
 	 */
 	ApiParaPr.prototype.SetPageBreakBefore = function(isPageBreakBefore)
 	{
 		this.ParaPr.PageBreakBefore = isPageBreakBefore;
 		this.private_OnChange();
+		return true;
 	};
 	/**
 	 * Sets the paragraph line spacing. If the value of the sLineRule parameter is either 
@@ -14029,6 +15286,7 @@
 	 * @typeofeditors ["CDE", "CSE", "CPE"]
 	 * @param {(twips | line240)} nLine - The line spacing value measured either in twentieths of a point (1/1440 of an inch) or in 240ths of a line.
 	 * @param {("auto" | "atLeast" | "exact")} sLineRule - The rule that determines the measuring units of the line spacing.
+	 * @returns {boolean}
 	 * @see office-js-api/Examples/{Editor}/ApiParaPr/Methods/SetSpacingLine.js
 	 */
 	ApiParaPr.prototype.SetSpacingLine = function(nLine, sLineRule)
@@ -14054,6 +15312,7 @@
 		}
 
 		this.private_OnChange();
+		return true;
 	};
 	/**
 	 * Returns the paragraph line spacing value.
@@ -14131,6 +15390,7 @@
 	 * @typeofeditors ["CDE", "CSE", "CPE"]
 	 * @param {twips} nBefore - The value of the spacing before the current paragraph measured in twentieths of a point (1/1440 of an inch).
 	 * @param {boolean} [isBeforeAuto=false] - The true value disables the spacing before the current paragraph.
+	 * @returns {boolean}
 	 * @see office-js-api/Examples/{Editor}/ApiParaPr/Methods/SetSpacingBefore.js
 	 */
 	ApiParaPr.prototype.SetSpacingBefore = function(nBefore, isBeforeAuto)
@@ -14142,6 +15402,7 @@
 			this.ParaPr.Spacing.BeforeAutoSpacing = isBeforeAuto;
 
 		this.private_OnChange();
+		return true;
 	};
 	/**
 	 * Returns the spacing before value of the current paragraph.
@@ -14170,6 +15431,7 @@
 	 * @typeofeditors ["CDE", "CSE", "CPE"]
 	 * @param {twips} nAfter - The value of the spacing after the current paragraph measured in twentieths of a point (1/1440 of an inch).
 	 * @param {boolean} [isAfterAuto=false] - The true value disables the spacing after the current paragraph.
+	 * @returns {boolean}
 	 * @see office-js-api/Examples/{Editor}/ApiParaPr/Methods/SetSpacingAfter.js
 	 */
 	ApiParaPr.prototype.SetSpacingAfter = function(nAfter, isAfterAuto)
@@ -14181,6 +15443,7 @@
 			this.ParaPr.Spacing.AfterAutoSpacing = isAfterAuto;
 
 		this.private_OnChange();
+		return true;
 	};
 	/**
 	 * Returns the spacing after value of the current paragraph. 
@@ -14210,12 +15473,14 @@
 	 * @param {byte} g - Green color component value.
 	 * @param {byte} b - Blue color component value.
 	 * @param {boolean} [isAuto=false] - The true value disables paragraph contents shading.
+	 * @returns {boolean}
 	 * @see office-js-api/Examples/{Editor}/ApiParaPr/Methods/SetShd.js
 	 */
 	ApiParaPr.prototype.SetShd = function(sType, r, g, b, isAuto)
 	{
 		this.ParaPr.Shd = private_GetShd(sType, r, g, b, isAuto);
 		this.private_OnChange();
+		return true;
 	};
 	/**
 	 * Returns the shading applied to the contents of the paragraph.
@@ -14263,12 +15528,14 @@
 	 * @param {byte} r - Red color component value.
 	 * @param {byte} g - Green color component value.
 	 * @param {byte} b - Blue color component value.
+	 * @returns {boolean}
 	 * @see office-js-api/Examples/{Editor}/ApiParaPr/Methods/SetBottomBorder.js
 	 */
 	ApiParaPr.prototype.SetBottomBorder = function(sType, nSize, nSpace, r, g, b)
 	{
 		this.ParaPr.Brd.Bottom = private_GetTableBorder(sType, nSize, nSpace, r, g, b);
 		this.private_OnChange();
+		return true;
 	};
 	/**
 	 * Specifies the border which will be displayed at the left side of the page around the specified paragraph.
@@ -14280,12 +15547,14 @@
 	 * @param {byte} r - Red color component value.
 	 * @param {byte} g - Green color component value.
 	 * @param {byte} b - Blue color component value.
+	 * @returns {boolean}
 	 * @see office-js-api/Examples/{Editor}/ApiParaPr/Methods/SetLeftBorder.js
 	 */
 	ApiParaPr.prototype.SetLeftBorder = function(sType, nSize, nSpace, r, g, b)
 	{
 		this.ParaPr.Brd.Left = private_GetTableBorder(sType, nSize, nSpace, r, g, b);
 		this.private_OnChange();
+		return true;
 	};
 	/**
 	 * Specifies the border which will be displayed at the right side of the page around the specified paragraph.
@@ -14297,12 +15566,14 @@
 	 * @param {byte} r - Red color component value.
 	 * @param {byte} g - Green color component value.
 	 * @param {byte} b - Blue color component value.
+	 * @returns {boolean}
 	 * @see office-js-api/Examples/{Editor}/ApiParaPr/Methods/SetRightBorder.js
 	 */
 	ApiParaPr.prototype.SetRightBorder = function(sType, nSize, nSpace, r, g, b)
 	{
 		this.ParaPr.Brd.Right = private_GetTableBorder(sType, nSize, nSpace, r, g, b);
 		this.private_OnChange();
+		return true;
 	};
 	/**
 	 * Specifies the border which will be displayed above a set of paragraphs which have the same set of paragraph border settings.
@@ -14315,12 +15586,14 @@
 	 * @param {byte} r - Red color component value.
 	 * @param {byte} g - Green color component value.
 	 * @param {byte} b - Blue color component value.
+	 * @returns {boolean}
 	 * @see office-js-api/Examples/{Editor}/ApiParaPr/Methods/SetTopBorder.js
 	 */
 	ApiParaPr.prototype.SetTopBorder = function(sType, nSize, nSpace, r, g, b)
 	{
 		this.ParaPr.Brd.Top = private_GetTableBorder(sType, nSize, nSpace, r, g, b);
 		this.private_OnChange();
+		return true;
 	};
 	/**
 	 * Specifies the border which will be displayed between each paragraph in a set of paragraphs which have the same set of paragraph border settings.
@@ -14332,24 +15605,28 @@
 	 * @param {byte} r - Red color component value.
 	 * @param {byte} g - Green color component value.
 	 * @param {byte} b - Blue color component value.
+	 * @returns {boolean}
 	 * @see office-js-api/Examples/{Editor}/ApiParaPr/Methods/SetBetweenBorder.js
 	 */
 	ApiParaPr.prototype.SetBetweenBorder = function(sType, nSize, nSpace, r, g, b)
 	{
 		this.ParaPr.Brd.Between = private_GetTableBorder(sType, nSize, nSpace, r, g, b);
 		this.private_OnChange();
+		return true;
 	};
 	/**
 	 * Specifies whether a single line of the current paragraph will be displayed on a separate page from the remaining content at display time by moving the line onto the following page.
 	 * @memberof ApiParaPr
 	 * @typeofeditors ["CDE"]
 	 * @param {boolean} isWidowControl - The true value means that a single line of the current paragraph will be displayed on a separate page from the remaining content at display time by moving the line onto the following page.
+	 * @returns {boolean}
 	 * @see office-js-api/Examples/{Editor}/ApiParaPr/Methods/SetWidowControl.js
 	 */
 	ApiParaPr.prototype.SetWidowControl = function(isWidowControl)
 	{
 		this.ParaPr.WidowControl = isWidowControl;
 		this.private_OnChange();
+		return true;
 	};
 	/**
 	 * Specifies a sequence of custom tab stops which will be used for any tab characters in the current paragraph.
@@ -14360,12 +15637,13 @@
 	 * measured in twentieths of a point (1/1440 of an inch).
 	 * @param {TabJc[]} aVal - An array of the styles of custom tab stops, which determines the behavior of the tab
 	 * stop and the alignment which will be applied to text entered at the current custom tab stop.
+	 * @returns {boolean}
 	 * @see office-js-api/Examples/{Editor}/ApiParaPr/Methods/SetTabs.js
 	 */
 	ApiParaPr.prototype.SetTabs = function(aPos, aVal)
 	{
 		if (!(aPos instanceof Array) || !(aVal instanceof Array) || aPos.length !== aVal.length)
-			return;
+			return false;
 
 		var oTabs = new CParaTabs();
 		for (var nIndex = 0, nCount = aPos.length; nIndex < nCount; ++nIndex)
@@ -14374,6 +15652,7 @@
 		}
 		this.ParaPr.Tabs = oTabs;
 		this.private_OnChange();
+		return true;
 	};
 	/**
 	 * Specifies that the current paragraph references a numbering definition instance in the current document.
@@ -14383,12 +15662,13 @@
 	 * @param {number} [nLvl=0] - Specifies a numbering level reference. If the current instance of the ApiParaPr class is direct
 	 * formatting of a paragraph, then this parameter MUST BE specified. Otherwise, if the current instance of the ApiParaPr class
 	 * is the part of ApiStyle properties, this parameter will be ignored.
+	 * @returns {boolean}
 	 * @see office-js-api/Examples/{Editor}/ApiParaPr/Methods/SetNumPr.js
 	 */
 	ApiParaPr.prototype.SetNumPr = function(oNumPr, nLvl)
 	{
 		if (!(oNumPr instanceof ApiNumbering))
-			return;
+			return false;
 		
 		let numId  = oNumPr.Num.GetId();
 		let numLvl = undefined;
@@ -14398,6 +15678,7 @@
 		
 		this.ParaPr.NumPr = new AscWord.NumPr(numId, numLvl);
 		this.private_OnChange();
+		return true;
 	};
 	/**
 	 * Sets the bullet or numbering to the current paragraph.
@@ -14585,6 +15866,7 @@
 	 * @typeofeditors ["CDE"]
 	 * @param {("none" | "bullet" | "1)" | "1." | "I." | "A." | "a)" | "a." | "i." )} sType - The predefined numbering template.
 	 * @param {string} [sSymbol=""] - The symbol used for the list numbering. This parameter has the meaning only if the predefined numbering template is "bullet".
+	 * @returns {boolean}
 	 * @see office-js-api/Examples/{Editor}/ApiNumberingLevel/Methods/SetTemplateType.js
 	 */
 	ApiNumberingLevel.prototype.SetTemplateType = function(sType, sSymbol)
@@ -14618,7 +15900,11 @@
 			case "i."    :
 				this.Num.SetLvlByType(this.Lvl, c_oAscNumberingLevel.LowerRomanDot_Right);
 				break;
+			default:
+				return false;
 		}
+
+		return true;
 	};
 	/**
 	 * Sets your own customized numbering type.
@@ -14628,6 +15914,7 @@
 	 *     "decimalZero")} sType - The custom numbering type used for the current numbering definition.
 	 * @param {string} sTextFormatString - Any text in this parameter will be taken as literal text to be repeated in each instance of this numbering level, except for any use of the percent symbol (%) followed by a number, which will be used to indicate the one-based index of the number to be used at this level. Any number of a level higher than this level will be ignored.
 	 * @param {("left" | "right" | "center")} sAlign - Type of justification applied to the text run in the current numbering level.
+	 * @returns {boolean}
 	 * @see office-js-api/Examples/{Editor}/ApiNumberingLevel/Methods/SetCustomType.js
 	 */
 	ApiNumberingLevel.prototype.SetCustomType = function(sType, sTextFormatString, sAlign)
@@ -14649,6 +15936,8 @@
 			nType = Asc.c_oAscNumberingFormat.UpperLetter;
 		else if ("decimalZero" === sType)
 			nType = Asc.c_oAscNumberingFormat.DecimalZero;
+		else
+			return false;
 
 		var nAlign = align_Left;
 		if ("left" === sAlign)
@@ -14657,36 +15946,44 @@
 			nAlign = align_Right;
 		else if ("center" === sAlign)
 			nAlign = align_Center;
+		else
+			return false;
 
 		this.Num.SetLvlByFormat(this.Lvl, nType, sTextFormatString, nAlign);
+		return true;
 	};
 	/**
 	 * Specifies a one-based index which determines when a numbering level should restart to its starting value. A numbering level restarts when an instance of the specified numbering level which is higher (earlier than this level) is used in the given document contents. By default this value is true.
 	 * @memberof ApiNumberingLevel
 	 * @typeofeditors ["CDE"]
 	 * @param {boolean} isRestart - The true value means that a numbering level will be restarted to its starting value.
+	 * @returns {boolean}
 	 * @see office-js-api/Examples/{Editor}/ApiNumberingLevel/Methods/SetRestart.js
 	 */
 	ApiNumberingLevel.prototype.SetRestart = function(isRestart)
 	{
 		this.Num.SetLvlRestart(this.Lvl, private_GetBoolean(isRestart, true));
+		return true;
 	};
 	/**
 	 * Specifies the starting value for the numbering used by the parent numbering level within a given numbering level definition. By default this value is 1.
 	 * @memberof ApiNumberingLevel
 	 * @typeofeditors ["CDE"]
 	 * @param {number} nStart - The starting value for the numbering used by the parent numbering level.
+	 * @returns {boolean}
 	 * @see office-js-api/Examples/{Editor}/ApiNumberingLevel/Methods/SetStart.js
 	 */
 	ApiNumberingLevel.prototype.SetStart = function(nStart)
 	{
 		this.Num.SetLvlStart(this.Lvl, private_GetInt(nStart));
+		return true;
 	};
 	/**
 	 * Specifies the content which will be added between the given numbering level text and the text of every numbered paragraph which references that numbering level. By default this value is "tab".
 	 * @memberof ApiNumberingLevel
 	 * @typeofeditors ["CDE"]
 	 * @param {("space" | "tab" | "none")} sType - The content added between the numbering level text and the text in the numbered paragraph.
+	 * @returns {boolean}
 	 * @see office-js-api/Examples/{Editor}/ApiNumberingLevel/Methods/SetSuff.js
 	 */
 	ApiNumberingLevel.prototype.SetSuff = function(sType)
@@ -14697,6 +15994,10 @@
 			this.Num.SetLvlSuff(this.Lvl, Asc.c_oAscNumberingSuff.Tab);
 		else if ("none" === sType)
 			this.Num.SetLvlSuff(this.Lvl, Asc.c_oAscNumberingSuff.None);
+		else
+			return false;
+
+		return true;
 	};
 	
 	/**
@@ -14704,20 +16005,22 @@
 	 * @memberof ApiNumberingLevel
 	 * @typeofeditors ["CDE"]
 	 * @param {ApiStyle} oStyle - The paragraph style.
+	 * @returns {boolean}
 	 * @since 8.3.0
 	 * @see office-js-api/Examples/{Editor}/ApiNumberingLevel/Methods/LinkWithStyle.js
 	 */
 	ApiNumberingLevel.prototype.LinkWithStyle = function(oStyle)
 	{
 		if (!oStyle || !(oStyle instanceof ApiStyle))
-			return;
+			return false;
 		
 		let logicDocument = private_GetLogicDocument();
 		if (!logicDocument)
-			return;
+			return false;
 		
 		let styles = logicDocument.GetStyleManager();
 		this.Num.LinkWithStyle(this.Lvl, oStyle.Style.Get_Id(), styles);
+		return true;
 	};
 
 	//------------------------------------------------------------------------------------------------------------------
@@ -14742,30 +16045,35 @@
 	 * @memberof ApiTablePr
 	 * @typeofeditors ["CDE"]
 	 * @param {number} nCount - The number of columns measured in positive integers.
+	 * @returns {boolean}
 	 * @see office-js-api/Examples/{Editor}/ApiTablePr/Methods/SetStyleColBandSize.js
 	 */
 	ApiTablePr.prototype.SetStyleColBandSize = function(nCount)
 	{
 		this.TablePr.TableStyleColBandSize = private_GetInt(nCount, 1, null);
 		this.private_OnChange();
+		return true;
 	};
 	/**
 	 * Specifies a number of rows which will comprise each table row band for this table style.
 	 * @memberof ApiTablePr
 	 * @typeofeditors ["CDE"]
 	 * @param {number} nCount - The number of rows measured in positive integers.
+	 * @returns {boolean}
 	 * @see office-js-api/Examples/{Editor}/ApiTablePr/Methods/SetStyleRowBandSize.js
 	 */
 	ApiTablePr.prototype.SetStyleRowBandSize = function(nCount)
 	{
 		this.TablePr.TableStyleRowBandSize = private_GetInt(nCount, 1, null);
 		this.private_OnChange();
+		return true;
 	};
 	/**
 	 * Specifies the alignment of the current table with respect to the text margins in the current section.
 	 * @memberof ApiTablePr
 	 * @typeofeditors ["CDE"]
 	 * @param {("left" | "right" | "center")} sJcType - The alignment type used for the current table placement.
+	 * @returns {boolean}
 	 * @see office-js-api/Examples/{Editor}/ApiTablePr/Methods/SetJc.js
 	 */
 	ApiTablePr.prototype.SetJc = function(sJcType)
@@ -14777,6 +16085,7 @@
 		else if ("center" === sJcType)
 			this.TablePr.Jc = align_Center;
 		this.private_OnChange();
+		return true;
 	};
 	/**
 	 * Specifies the shading which is applied to the extents of the current table.
@@ -14787,12 +16096,14 @@
 	 * @param {byte} g - Green color component value.
 	 * @param {byte} b - Blue color component value.
 	 * @param {boolean} [isAuto=false] - The true value disables the SetShd method use.
+	 * @returns {boolean}
 	 * @see office-js-api/Examples/{Editor}/ApiTablePr/Methods/SetShd.js
 	 */
 	ApiTablePr.prototype.SetShd = function(sType, r, g, b, isAuto)
 	{
 		this.TablePr.Shd = private_GetShd(sType, r, g, b, isAuto);
 		this.private_OnChange();
+		return true;
 	};
 	/**
 	 * Sets the border which will be displayed at the top of the current table.
@@ -14804,12 +16115,14 @@
 	 * @param {byte} r - Red color component value.
 	 * @param {byte} g - Green color component value.
 	 * @param {byte} b - Blue color component value.
+	 * @returns {boolean}
 	 * @see office-js-api/Examples/{Editor}/ApiTablePr/Methods/SetTableBorderTop.js
 	 */
 	ApiTablePr.prototype.SetTableBorderTop = function(sType, nSize, nSpace, r, g, b)
 	{
 		this.TablePr.TableBorders.Top = private_GetTableBorder(sType, nSize, nSpace, r, g, b);
 		this.private_OnChange();
+		return true;
 	};
 	/**
 	 * Sets the border which will be displayed at the bottom of the current table.
@@ -14821,12 +16134,14 @@
 	 * @param {byte} r - Red color component value.
 	 * @param {byte} g - Green color component value.
 	 * @param {byte} b - Blue color component value.
+	 * @returns {boolean}
 	 * @see office-js-api/Examples/{Editor}/ApiTablePr/Methods/SetTableBorderBottom.js
 	 */
 	ApiTablePr.prototype.SetTableBorderBottom = function(sType, nSize, nSpace, r, g, b)
 	{
 		this.TablePr.TableBorders.Bottom = private_GetTableBorder(sType, nSize, nSpace, r, g, b);
 		this.private_OnChange();
+		return true;
 	};
 	/**
 	 * Sets the border which will be displayed on the left of the current table.
@@ -14838,12 +16153,14 @@
 	 * @param {byte} r - Red color component value.
 	 * @param {byte} g - Green color component value.
 	 * @param {byte} b - Blue color component value.
+	 * @returns {boolean}
 	 * @see office-js-api/Examples/{Editor}/ApiTablePr/Methods/SetTableBorderLeft.js
 	 */
 	ApiTablePr.prototype.SetTableBorderLeft = function(sType, nSize, nSpace, r, g, b)
 	{
 		this.TablePr.TableBorders.Left = private_GetTableBorder(sType, nSize, nSpace, r, g, b);
 		this.private_OnChange();
+		return true;
 	};
 	/**
 	 * Sets the border which will be displayed on the right of the current table.
@@ -14855,12 +16172,14 @@
 	 * @param {byte} r - Red color component value.
 	 * @param {byte} g - Green color component value.
 	 * @param {byte} b - Blue color component value.
+	 * @returns {boolean}
 	 * @see office-js-api/Examples/{Editor}/ApiTablePr/Methods/SetTableBorderRight.js
 	 */
 	ApiTablePr.prototype.SetTableBorderRight = function(sType, nSize, nSpace, r, g, b)
 	{
 		this.TablePr.TableBorders.Right = private_GetTableBorder(sType, nSize, nSpace, r, g, b);
 		this.private_OnChange();
+		return true;
 	};
 	/**
 	 * Specifies the border which will be displayed on all horizontal table cell borders which are not on the outmost edge
@@ -14873,12 +16192,14 @@
 	 * @param {byte} r - Red color component value.
 	 * @param {byte} g - Green color component value.
 	 * @param {byte} b - Blue color component value.
+	 * @returns {boolean}
 	 * @see office-js-api/Examples/{Editor}/ApiTablePr/Methods/SetTableBorderInsideH.js
 	 */
 	ApiTablePr.prototype.SetTableBorderInsideH = function(sType, nSize, nSpace, r, g, b)
 	{
 		this.TablePr.TableBorders.InsideH = private_GetTableBorder(sType, nSize, nSpace, r, g, b);
 		this.private_OnChange();
+		return true;
 	};
 	/**
 	 * Specifies the border which will be displayed on all vertical table cell borders which are not on the outmost edge
@@ -14891,12 +16212,39 @@
 	 * @param {byte} r - Red color component value.
 	 * @param {byte} g - Green color component value.
 	 * @param {byte} b - Blue color component value.
+	 * @returns {boolean}
 	 * @see office-js-api/Examples/{Editor}/ApiTablePr/Methods/SetTableBorderInsideV.js
 	 */
 	ApiTablePr.prototype.SetTableBorderInsideV = function(sType, nSize, nSpace, r, g, b)
 	{
 		this.TablePr.TableBorders.InsideV = private_GetTableBorder(sType, nSize, nSpace, r, g, b);
 		this.private_OnChange();
+		return true;
+	};
+	/**
+	 * Specifies a border which will be displayed on all table cell borders.
+	 * @memberof ApiTablePr
+	 * @typeofeditors ["CDE"]
+	 * @param {BorderType} sType - The border style.
+	 * @param {pt_8} nSize - The width of the current border measured in eighths of a point.
+	 * @param {pt} nSpace - The spacing offset in the table cells measured in points used to place this border.
+	 * @param {byte} r - Red color component value.
+	 * @param {byte} g - Green color component value.
+	 * @param {byte} b - Blue color component value.
+	 * @returns {boolean}
+	 * @since 9.0.0
+	 * @see office-js-api/Examples/{Editor}/ApiTablePr/Methods/SetTableBorderAll.js
+	 */
+	ApiTablePr.prototype.SetTableBorderAll = function(sType, nSize, nSpace, r, g, b)
+	{
+		this.TablePr.TableBorders.Top = private_GetTableBorder(sType, nSize, nSpace, r, g, b);
+		this.TablePr.TableBorders.Bottom = private_GetTableBorder(sType, nSize, nSpace, r, g, b);
+		this.TablePr.TableBorders.Left = private_GetTableBorder(sType, nSize, nSpace, r, g, b);
+		this.TablePr.TableBorders.Right = private_GetTableBorder(sType, nSize, nSpace, r, g, b);
+		this.TablePr.TableBorders.InsideH = private_GetTableBorder(sType, nSize, nSpace, r, g, b);
+		this.TablePr.TableBorders.InsideV = private_GetTableBorder(sType, nSize, nSpace, r, g, b);
+		this.private_OnChange();
+		return true;
 	};
 
 	/**
@@ -14906,12 +16254,14 @@
 	 * @typeofeditors ["CDE"]
 	 * @param {twips} nValue - The value for the amount of space below the bottom extent of the cell measured in
 	 * twentieths of a point (1/1440 of an inch).
+	 * @returns {boolean}
 	 * @see office-js-api/Examples/{Editor}/ApiTablePr/Methods/SetTableCellMarginBottom.js
 	 */
 	ApiTablePr.prototype.SetTableCellMarginBottom = function(nValue)
 	{
 		this.TablePr.TableCellMar.Bottom = private_GetTableMeasure("twips", nValue);
 		this.private_OnChange();
+		return true;
 	};
 	/**
 	 * Specifies an amount of space which will be left between the left extent of the cell contents and the left
@@ -14919,12 +16269,14 @@
 	 * @memberof ApiTablePr
 	 * @typeofeditors ["CDE"]
 	 * @param {twips} nValue - The value for the amount of space to the left extent of the cell measured in twentieths of a point (1/1440 of an inch).
+	 * @returns {boolean}
 	 * @see office-js-api/Examples/{Editor}/ApiTablePr/Methods/SetTableCellMarginLeft.js
 	 */
 	ApiTablePr.prototype.SetTableCellMarginLeft = function(nValue)
 	{
 		this.TablePr.TableCellMar.Left = private_GetTableMeasure("twips", nValue);
 		this.private_OnChange();
+		return true;
 	};
 	/**
 	 * Specifies an amount of space which will be left between the right extent of the cell contents and the right
@@ -14932,12 +16284,14 @@
 	 * @memberof ApiTablePr
 	 * @typeofeditors ["CDE"]
 	 * @param {twips} nValue - The value for the amount of space to the right extent of the cell measured in twentieths of a point (1/1440 of an inch).
+	 * @returns {boolean}
 	 * @see office-js-api/Examples/{Editor}/ApiTablePr/Methods/SetTableCellMarginRight.js
 	 */
 	ApiTablePr.prototype.SetTableCellMarginRight = function(nValue)
 	{
 		this.TablePr.TableCellMar.Right = private_GetTableMeasure("twips", nValue);
 		this.private_OnChange();
+		return true;
 	};
 	/**
 	 * Specifies an amount of space which will be left between the top extent of the cell contents and the top border
@@ -14945,18 +16299,21 @@
 	 * @memberof ApiTablePr
 	 * @typeofeditors ["CDE"]
 	 * @param {twips} nValue - The value for the amount of space above the top extent of the cell measured in twentieths of a point (1/1440 of an inch).
+	 * @returns {boolean}
 	 * @see office-js-api/Examples/{Editor}/ApiTablePr/Methods/SetTableCellMarginTop.js
 	 */
 	ApiTablePr.prototype.SetTableCellMarginTop = function(nValue)
 	{
 		this.TablePr.TableCellMar.Top = private_GetTableMeasure("twips", nValue);
 		this.private_OnChange();
+		return true;
 	};
 	/**
 	 * Specifies the default table cell spacing (the spacing between adjacent cells and the edges of the table).
 	 * @memberof ApiTablePr
 	 * @typeofeditors ["CDE"]
 	 * @param {?twips} nValue - Spacing value measured in twentieths of a point (1/1440 of an inch). <code>"Null"</code> means that no spacing will be applied.
+	 * @returns {boolean}
 	 * @see office-js-api/Examples/{Editor}/ApiTablePr/Methods/SetCellSpacing.js
 	 */
 	ApiTablePr.prototype.SetCellSpacing = function(nValue)
@@ -14966,6 +16323,7 @@
 		else
 			this.TablePr.TableCellSpacing = private_Twips2MM(nValue);
 		this.private_OnChange();
+		return true;
 	};
 	/**
 	 * Specifies the indentation which will be added before the leading edge of the current table in the document
@@ -14973,12 +16331,14 @@
 	 * @memberof ApiTablePr
 	 * @typeofeditors ["CDE"]
 	 * @param {twips} nValue - The indentation value measured in twentieths of a point (1/1440 of an inch).
+	 * @returns {boolean}
 	 * @see office-js-api/Examples/{Editor}/ApiTablePr/Methods/SetTableInd.js
 	 */
 	ApiTablePr.prototype.SetTableInd = function(nValue)
 	{
 		this.TablePr.TableInd = private_Twips2MM(nValue);
 		this.private_OnChange();
+		return true;
 	};
 	/**
 	 * Sets the preferred width to the current table.
@@ -14987,18 +16347,21 @@
 	 * @typeofeditors ["CDE"]
 	 * @param {TableWidth} sType - Type of the width value from one of the available width values types.
 	 * @param {number} [nValue] - The table width value measured in positive integers.
+	 * @returns {boolean}
 	 * @see office-js-api/Examples/{Editor}/ApiTablePr/Methods/SetWidth.js
 	 */
 	ApiTablePr.prototype.SetWidth = function(sType, nValue)
 	{
 		this.TablePr.TableW = private_GetTableMeasure(sType, nValue);
 		this.private_OnChange();
+		return true;
 	};
 	/**
 	 * Specifies the algorithm which will be used to lay out the contents of the current table within the document.
 	 * @memberof ApiTablePr
 	 * @typeofeditors ["CDE"]
 	 * @param {("autofit" | "fixed")} sType - The type of the table layout in the document.
+	 * @returns {boolean}
 	 * @see office-js-api/Examples/{Editor}/ApiTablePr/Methods/SetTableLayout.js
 	 */
 	ApiTablePr.prototype.SetTableLayout = function(sType)
@@ -15009,6 +16372,7 @@
 			this.TablePr.TableLayout = tbllayout_Fixed;
 
 		this.private_OnChange();
+		return true;
 	};
 	/**
 	 * Sets the table title (caption).
@@ -15108,6 +16472,7 @@
 	 * @typeofeditors ["CDE"]
 	 * @param {("auto" | "atLeast")} sHRule - The rule to apply the height value to the current table row or ignore it. Use the <code>"atLeast"</code> value to enable the <code>SetHeight</code> method use.
 	 * @param {twips} [nValue] - The height for the current table row measured in twentieths of a point (1/1440 of an inch). This value will be ignored if <code>sHRule="auto"<code>.
+	 * @returns {boolean}
 	 * @see office-js-api/Examples/{Editor}/ApiTableRowPr/Methods/SetHeight.js
 	 */
 	ApiTableRowPr.prototype.SetHeight = function(sHRule, nValue)
@@ -15116,8 +16481,11 @@
 			this.RowPr.Height = new CTableRowHeight(0, Asc.linerule_Auto);
 		else if ("atLeast" === sHRule)
 			this.RowPr.Height = new CTableRowHeight(private_Twips2MM(nValue), Asc.linerule_AtLeast);
+		else
+			return false;
 
 		this.private_OnChange();
+		return true;
 	};
 	/**
 	 * Specifies that the current table row will be repeated at the top of each new page 
@@ -15127,12 +16495,14 @@
 	 * @memberof ApiTableRowPr
 	 * @typeofeditors ["CDE"]
 	 * @param {boolean} isHeader - The true value means that the current table row will be repeated at the top of each new page.
+	 * @returns {boolean}
 	 * @see office-js-api/Examples/{Editor}/ApiTableRowPr/Methods/SetTableHeader.js
 	 */
 	ApiTableRowPr.prototype.SetTableHeader = function(isHeader)
 	{
 		this.RowPr.TableHeader = private_GetBoolean(isHeader);
 		this.private_OnChange();
+		return true;
 	};
 	/**
 	 * Converts the ApiTableRowPr object into the JSON object.
@@ -15173,12 +16543,14 @@
 	 * @param {byte} g - Green color component value.
 	 * @param {byte} b - Blue color component value.
 	 * @param {boolean} [isAuto=false] - The true value disables the table cell contents shading.
+	 * @returns {boolean}
 	 * @see office-js-api/Examples/{Editor}/ApiTableCellPr/Methods/SetShd.js
 	 */
 	ApiTableCellPr.prototype.SetShd = function(sType, r, g, b, isAuto)
 	{
 		this.CellPr.Shd = private_GetShd(sType, r, g, b, isAuto);
 		this.private_OnChange();
+		return true;
 	};
 	/**
 	 * Specifies an amount of space which will be left between the bottom extent of the cell contents and the border
@@ -15188,6 +16560,7 @@
 	 * @param {?twips} nValue - The value for the amount of space below the bottom extent of the cell measured in twentieths
 	 * of a point (1/1440 of an inch). If this value is <code>null</code>, then default table cell bottom margin will be used, otherwise
 	 * the table cell bottom margin will be overridden with the specified value for the current cell.
+	 * @returns {boolean}
 	 * @see office-js-api/Examples/{Editor}/ApiTableCellPr/Methods/SetCellMarginBottom.js
 	 */
 	ApiTableCellPr.prototype.SetCellMarginBottom = function(nValue)
@@ -15208,6 +16581,7 @@
 		else
 			this.CellPr.TableCellMar.Bottom = private_GetTableMeasure("twips", nValue);
 		this.private_OnChange();
+		return true;
 	};
 	/**
 	 * Specifies an amount of space which will be left between the left extent of the cell contents and 
@@ -15217,6 +16591,7 @@
 	 * @param {?twips} nValue - The value for the amount of space to the left extent of the cell measured in twentieths
 	 * of a point (1/1440 of an inch). If this value is <code>null</code>, then default table cell left margin will be used, otherwise
 	 * the table cell left margin will be overridden with the specified value for the current cell.
+	 * @returns {boolean}
 	 * @see office-js-api/Examples/{Editor}/ApiTableCellPr/Methods/SetCellMarginLeft.js
 	 */
 	ApiTableCellPr.prototype.SetCellMarginLeft = function(nValue)
@@ -15237,6 +16612,7 @@
 		else
 			this.CellPr.TableCellMar.Left = private_GetTableMeasure("twips", nValue);
 		this.private_OnChange();
+		return true;
 	};
 	/**
 	 * Specifies an amount of space which will be left between the right extent of the cell contents and the border of a specific table cell within a table.
@@ -15245,6 +16621,7 @@
 	 * @param {?twips} nValue - The value for the amount of space to the right extent of the cell measured in twentieths
 	 * of a point (1/1440 of an inch). If this value is <code>null</code>, then default table cell right margin will be used, otherwise
 	 * the table cell right margin will be overridden with the specified value for the current cell.
+	 * @returns {boolean}
 	 * @see office-js-api/Examples/{Editor}/ApiTableCellPr/Methods/SetCellMarginRight.js
 	 */
 	ApiTableCellPr.prototype.SetCellMarginRight = function(nValue)
@@ -15265,6 +16642,7 @@
 		else
 			this.CellPr.TableCellMar.Right = private_GetTableMeasure("twips", nValue);
 		this.private_OnChange();
+		return true;
 	};
 	/**
 	 * Specifies an amount of space which will be left between the upper extent of the cell contents
@@ -15274,6 +16652,7 @@
 	 * @param {?twips} nValue - The value for the amount of space above the upper extent of the cell measured in twentieths
 	 * of a point (1/1440 of an inch). If this value is <code>null</code>, then default table cell top margin will be used, otherwise
 	 * the table cell top margin will be overridden with the specified value for the current cell.
+	 * @returns {boolean}
 	 * @see office-js-api/Examples/{Editor}/ApiTableCellPr/Methods/SetCellMarginTop.js
 	 */
 	ApiTableCellPr.prototype.SetCellMarginTop = function(nValue)
@@ -15294,6 +16673,7 @@
 		else
 			this.CellPr.TableCellMar.Top = private_GetTableMeasure("twips", nValue);
 		this.private_OnChange();
+		return true;
 	};
 	/**
 	 * Sets the border which will be displayed at the bottom of the current table cell.
@@ -15305,12 +16685,14 @@
 	 * @param {byte} r - Red color component value.
 	 * @param {byte} g - Green color component value.
 	 * @param {byte} b - Blue color component value.
+	 * @returns {boolean}
 	 * @see office-js-api/Examples/{Editor}/ApiTableCellPr/Methods/SetCellBorderBottom.js
 	 */
 	ApiTableCellPr.prototype.SetCellBorderBottom = function(sType, nSize, nSpace, r, g, b)
 	{
 		this.CellPr.TableCellBorders.Bottom = private_GetTableBorder(sType, nSize, nSpace, r, g, b);
 		this.private_OnChange();
+		return true;
 	};
 	/**
 	 * Sets the border which will be displayed to the left of the current table cell.
@@ -15322,12 +16704,14 @@
 	 * @param {byte} r - Red color component value.
 	 * @param {byte} g - Green color component value.
 	 * @param {byte} b - Blue color component value.
+	 * @returns {boolean}
 	 * @see office-js-api/Examples/{Editor}/ApiTableCellPr/Methods/SetCellBorderLeft.js
 	 */
 	ApiTableCellPr.prototype.SetCellBorderLeft = function(sType, nSize, nSpace, r, g, b)
 	{
 		this.CellPr.TableCellBorders.Left = private_GetTableBorder(sType, nSize, nSpace, r, g, b);
 		this.private_OnChange();
+		return true;
 	};
 	/**
 	 * Sets the border which will be displayed to the right of the current table cell.
@@ -15339,12 +16723,14 @@
 	 * @param {byte} r - Red color component value.
 	 * @param {byte} g - Green color component value.
 	 * @param {byte} b - Blue color component value.
+	 * @returns {boolean}
 	 * @see office-js-api/Examples/{Editor}/ApiTableCellPr/Methods/SetCellBorderRight.js
 	 */
 	ApiTableCellPr.prototype.SetCellBorderRight = function(sType, nSize, nSpace, r, g, b)
 	{
 		this.CellPr.TableCellBorders.Right = private_GetTableBorder(sType, nSize, nSpace, r, g, b);
 		this.private_OnChange();
+		return true;
 	};
 	/**
 	 * Sets the border which will be displayed at the top of the current table cell.
@@ -15356,12 +16742,14 @@
 	 * @param {byte} r - Red color component value.
 	 * @param {byte} g - Green color component value.
 	 * @param {byte} b - Blue color component value.
+	 * @returns {boolean}
 	 * @see office-js-api/Examples/{Editor}/ApiTableCellPr/Methods/SetCellBorderTop.js
 	 */
 	ApiTableCellPr.prototype.SetCellBorderTop = function(sType, nSize, nSpace, r, g, b)
 	{
 		this.CellPr.TableCellBorders.Top = private_GetTableBorder(sType, nSize, nSpace, r, g, b);
 		this.private_OnChange();
+		return true;
 	};
 	/**
 	 * Sets the preferred width to the current table cell.
@@ -15369,18 +16757,21 @@
 	 * @typeofeditors ["CDE"]
 	 * @param {TableWidth} sType - Type of the width value from one of the available width values types.
 	 * @param {number} [nValue] - The table cell width value measured in positive integers.
+	 * @returns {boolean}
 	 * @see office-js-api/Examples/{Editor}/ApiTableCellPr/Methods/SetWidth.js
 	 */
 	ApiTableCellPr.prototype.SetWidth = function(sType, nValue)
 	{
 		this.CellPr.TableCellW = private_GetTableMeasure(sType, nValue);
 		this.private_OnChange();
+		return true;
 	};
 	/**
 	 * Specifies the vertical alignment for the text contents within the current table cell.
 	 * @memberof ApiTableCellPr
 	 * @typeofeditors ["CDE"]
 	 * @param {("top" | "center" | "bottom")} sType - The available types of the vertical alignment for the text contents of the current table cell.
+	 * @returns {boolean}
 	 * @see office-js-api/Examples/{Editor}/ApiTableCellPr/Methods/SetVerticalAlign.js
 	 */
 	ApiTableCellPr.prototype.SetVerticalAlign = function(sType)
@@ -15391,8 +16782,11 @@
 			this.CellPr.VAlign = vertalignjc_Bottom;
 		else if ("center" === sType)
 			this.CellPr.VAlign = vertalignjc_Center;
+		else
+			return false;
 
 		this.private_OnChange();
+		return true;
 	};
 	/**
 	 * Specifies the direction of the text flow for this table cell.
@@ -15401,6 +16795,7 @@
 	 * @param {("lrtb" | "tbrl" | "btlr")} sType - The available types of the text direction in the table cell: <code>"lrtb"</code>
 	 * - text direction left-to-right moving from top to bottom, <code>"tbrl"</code> - text direction top-to-bottom moving from right
 	 * to left, <code>"btlr"</code> - text direction bottom-to-top moving from left to right.
+	 * @returns {boolean}
 	 * @see office-js-api/Examples/{Editor}/ApiTableCellPr/Methods/SetTextDirection.js
 	 */
 	ApiTableCellPr.prototype.SetTextDirection = function(sType)
@@ -15411,8 +16806,11 @@
 			this.CellPr.TextDirection = textdirection_TBRL;
 		else if ("btlr" === sType)
 			this.CellPr.TextDirection = textdirection_BTLR;
+		else
+			return false;
 
 		this.private_OnChange();
+		return true;
 	};
 	/**
 	 * Specifies how the current table cell is laid out when the parent table is displayed in a document. This setting
@@ -15420,12 +16818,14 @@
 	 * @memberof ApiTableCellPr
 	 * @typeofeditors ["CDE"]
 	 * @param {boolean} isNoWrap - The true value means that the current table cell will not be wrapped in the parent table.
+	 * @returns {boolean}
 	 * @see office-js-api/Examples/{Editor}/ApiTableCellPr/Methods/SetNoWrap.js
 	 */
 	ApiTableCellPr.prototype.SetNoWrap = function(isNoWrap)
 	{
 		this.CellPr.NoWrap = private_GetBoolean(isNoWrap);
 		this.private_OnChange();
+		return true;
 	};
 	/**
 	 * Converts the ApiTableCellPr object into the JSON object.
@@ -15576,6 +16976,7 @@
 	 * @typeofeditors ["CDE"]
 	 * @param {EMU} nWidth - The object width measured in English measure units.
 	 * @param {EMU} nHeight - The object height measured in English measure units.
+	 * @returns {boolean}
 	 * @see office-js-api/Examples/{Editor}/ApiDrawing/Methods/SetSize.js
 	 */
 	ApiDrawing.prototype.SetSize = function(nWidth, nHeight)
@@ -15588,6 +16989,7 @@
 			this.Drawing.spPr.xfrm.setExtX(fWidth);
 			this.Drawing.spPr.xfrm.setExtY(fHeight);
 		}
+		return true;
 	};
 	/**
 	 * Sets the wrapping type of the current object (image, shape, chart). One of the following wrapping style types can be set:
@@ -15602,6 +17004,7 @@
 	 * @memberof ApiDrawing
 	 * @typeofeditors ["CDE"]
 	 * @param {"inline" | "square" | "tight" | "through" | "topAndBottom" | "behind" | "inFront"} sType - The wrapping style type available for the object.
+	 * @returns {boolean}
 	 * @see office-js-api/Examples/{Editor}/ApiDrawing/Methods/SetWrappingStyle.js
 	 */
 	ApiDrawing.prototype.SetWrappingStyle = function(sType)
@@ -15651,12 +17054,19 @@
 				oParaDrawing.Set_WrappingType(WRAPPING_TYPE_NONE);
 				oParaDrawing.Set_BehindDoc(false);
 			}
+			else
+				return false;
+
 			oParaDrawing.Check_WrapPolygon();
 			if(this.Drawing.setRecalculateInfo)
 			{
 				this.Drawing.setRecalculateInfo();
 			}
 		}
+		else
+			return false;
+
+		return true;
 	};
 	/**
 	 * Specifies how the floating object will be horizontally aligned.
@@ -15664,6 +17074,7 @@
 	 * @typeofeditors ["CDE"]
 	 * @param {RelFromH} [sRelativeFrom="page"] - The document element which will be taken as a countdown point for the object horizontal alignment.
 	 * @param {("left" | "right" | "center")} [sAlign="left"] - The alignment type which will be used for the object horizontal alignment.
+	 * @returns {boolean}
 	 * @see office-js-api/Examples/{Editor}/ApiDrawing/Methods/SetHorAlign.js
 	 */
 	ApiDrawing.prototype.SetHorAlign = function(sRelativeFrom, sAlign)
@@ -15671,6 +17082,7 @@
 		let nAlign        = private_GetAlignH(sAlign);
 		let nRelativeFrom = private_GetRelativeFromH(sRelativeFrom);
 		this.getParaDrawing().Set_PositionH(nRelativeFrom, true, nAlign, false);
+		return true;
 	};
 	/**
 	 * Specifies how the floating object will be vertically aligned.
@@ -15678,6 +17090,7 @@
 	 * @typeofeditors ["CDE"]
 	 * @param {RelFromV} [sRelativeFrom="page"] - The document element which will be taken as a countdown point for the object vertical alignment.
 	 * @param {("top" | "bottom" | "center")} [sAlign="top"] - The alingment type which will be used for the object vertical alignment.
+	 * @returns {boolean}
 	 * @see office-js-api/Examples/{Editor}/ApiDrawing/Methods/SetVerAlign.js
 	 */
 	ApiDrawing.prototype.SetVerAlign = function(sRelativeFrom, sAlign)
@@ -15685,6 +17098,7 @@
 		let nAlign        = private_GetAlignV(sAlign);
 		let nRelativeFrom = private_GetRelativeFromV(sRelativeFrom);
 		this.getParaDrawing().Set_PositionV(nRelativeFrom, true, nAlign, false);
+		return true;
 	};
 	/**
 	 * Sets the absolute measurement for the horizontal positioning of the floating object.
@@ -15692,6 +17106,7 @@
 	 * @typeofeditors ["CDE"]
 	 * @param {RelFromH} sRelativeFrom - The document element which will be taken as a countdown point for the object horizontal alignment.
 	 * @param {EMU} nDistance - The distance from the right side of the document element to the floating object measured in English measure units.
+	 * @returns {boolean}
 	 * @see office-js-api/Examples/{Editor}/ApiDrawing/Methods/SetHorPosition.js
 	 */
 	ApiDrawing.prototype.SetHorPosition = function(sRelativeFrom, nDistance)
@@ -15699,6 +17114,7 @@
 		let nValue        = private_EMU2MM(nDistance);
 		let nRelativeFrom = private_GetRelativeFromH(sRelativeFrom);
 		this.getParaDrawing().Set_PositionH(nRelativeFrom, false, nValue, false);
+		return true;
 	};
 	/**
 	 * Sets the absolute measurement for the vertical positioning of the floating object.
@@ -15706,6 +17122,7 @@
 	 * @typeofeditors ["CDE"]
 	 * @param {RelFromV} sRelativeFrom - The document element which will be taken as a countdown point for the object vertical alignment.
 	 * @param {EMU} nDistance - The distance from the bottom part of the document element to the floating object measured in English measure units.
+	 * @returns {boolean}
 	 * @see office-js-api/Examples/{Editor}/ApiDrawing/Methods/SetVerPosition.js
 	 */
 	ApiDrawing.prototype.SetVerPosition = function(sRelativeFrom, nDistance)
@@ -15713,6 +17130,7 @@
 		let nValue        = private_EMU2MM(nDistance);
 		let nRelativeFrom = private_GetRelativeFromV(sRelativeFrom);
 		this.getParaDrawing().Set_PositionV(nRelativeFrom, false, nValue, false);
+		return true;
 	};
 	/**
 	 * Specifies the minimum distance which will be maintained between the edges of the current drawing object and any
@@ -15723,11 +17141,13 @@
 	 * @param {EMU} nTop - The distance from the top side of the current object and the preceding text run measured in English measure units.
 	 * @param {EMU} nRight - The distance from the right side of the current object and the subsequent text run measured in English measure units.
 	 * @param {EMU} nBottom - The distance from the bottom side of the current object and the subsequent text run measured in English measure units.
+	 * @returns {boolean}
 	 * @see office-js-api/Examples/{Editor}/ApiDrawing/Methods/SetDistances.js
 	 */
 	ApiDrawing.prototype.SetDistances = function(nLeft, nTop, nRight, nBottom)
 	{
 		this.getParaDrawing().Set_Distance(private_EMU2MM(nLeft), private_EMU2MM(nTop), private_EMU2MM(nRight), private_EMU2MM(nBottom));
+		return true;
 	};
 	/**
 	 * Returns a parent paragraph that contains the graphic object.
@@ -15897,14 +17317,17 @@
 	 * Selects the current graphic object.
 	 * @memberof ApiDrawing
 	 * @typeofeditors ["CDE"]
+	 * @returns {boolean}
 	 * @see office-js-api/Examples/{Editor}/ApiDrawing/Methods/Select.js
 	 */	
 	ApiDrawing.prototype.Select = function()
 	{
 		let oParaDrawing = this.getParaDrawing();
-		if(!oParaDrawing) return;
+		if(!oParaDrawing) return false;
 		let oLogicDocument = private_GetLogicDocument();
 		oLogicDocument.Select_DrawingObject(oParaDrawing.Id);
+
+		return true;
 	};
 	/**
 	 * Inserts a break at the specified location in the main document.
@@ -15945,12 +17368,18 @@
 	 * @memberof ApiDrawing
 	 * @typeofeditors ["CDE"]
 	 * @param {boolean} bFlip - Specifies if the figure will be flipped horizontally or not.
+	 * @returns {boolean}
 	 * @see office-js-api/Examples/{Editor}/ApiDrawing/Methods/SetHorFlip.js
 	 */	
 	ApiDrawing.prototype.SetHorFlip = function(bFlip)
 	{
 		if (this.Drawing.spPr && this.Drawing.spPr.xfrm)
+		{
 			this.Drawing.spPr.xfrm.setFlipH(bFlip);
+			return true;
+		}
+			
+		return false;
 	};
 	/**
 	 * Flips the current drawing vertically.
@@ -16214,9 +17643,10 @@
 	/**
      * Sets the rotation angle to the current drawing object.
      * @memberof ApiDrawing
-     * @param {number} nRotAngle - new drawing rot angle
+     * @param {number} nRotAngle - New drawing rotation angle.
      * @typeofeditors ["CDE"]
      * @returns {boolean}
+	 * @since 9.0.0
      * @see office-js-api/Examples/{Editor}/ApiDrawing/Methods/SetRotation.js
 	 */
 	ApiDrawing.prototype.SetRotation = function(nRotAngle)
@@ -16231,10 +17661,11 @@
 		return true;
 	};
 	/**
-     * Gets the rotation angle of the current drawing object.
+     * Returns the rotation angle of the current drawing object.
      * @memberof ApiDrawing
      * @typeofeditors ["CDE"]
      * @returns {number}
+	 * @since 9.0.0
      * @see office-js-api/Examples/{Editor}/ApiDrawing/Methods/GetRotation.js
 	 */
 	ApiDrawing.prototype.GetRotation = function()
@@ -16441,6 +17872,7 @@
 	 * @memberof ApiShape
 	 * @typeofeditors ["CDE", "CSE"]
 	 * @param {VerticalTextAlign} VerticalAlign - The type of the vertical alignment for the shape inner contents.
+	 * @returns {boolean}
 	 * @see office-js-api/Examples/{Editor}/ApiShape/Methods/SetVerticalTextAlign.js
 	 */
 	ApiShape.prototype.SetVerticalTextAlign = function(VerticalAlign)
@@ -16464,8 +17896,14 @@
 					this.Shape.setVerticalAlign(0);
 					break;
 				}
+				default:
+					return false;
 			}
+
+			return true;
 		}
+
+		return false;
 	};
 	/**
 	 * Sets the text paddings to the current shape.
@@ -16475,6 +17913,7 @@
 	 * @param {?EMU} nTop - Top padding.
 	 * @param {?EMU} nRight - Right padding.
 	 * @param {?EMU} nBottom - Bottom padding.
+	 * @returns {boolean}
 	 * @see office-js-api/Examples/{Editor}/ApiShape/Methods/SetPaddings.js
 	 */
 	ApiShape.prototype.SetPaddings = function(nLeft, nTop, nRight, nBottom)
@@ -16487,7 +17926,11 @@
 				Right: AscFormat.isRealNumber(nRight) ? private_EMU2MM(nRight) : null,
 				Bottom: AscFormat.isRealNumber(nBottom) ? private_EMU2MM(nBottom) : null
 			});
+
+			return true;
 		}
+
+		return false;
 	};
 	/**
 	 * Returns the next inline shape if exists. 
@@ -16584,12 +18027,14 @@
 	 *  @typeofeditors ["CDE", "CSE", "CPE"]
 	 *  @param {string} sTitle - The title which will be displayed for the current chart.
 	 *  @param {pt} nFontSize - The text size value measured in points.
-	 *  @param {?boolean} bIsBold - Specifies if the chart title is written in bold font or not.
+	 *  @param {boolean} bIsBold - Specifies if the chart title is written in bold font or not.
+	 * 	@returns {boolean}
 	 * @see office-js-api/Examples/{Editor}/ApiChart/Methods/SetTitle.js
 	 */
 	ApiChart.prototype.SetTitle = function (sTitle, nFontSize, bIsBold)
 	{
 		AscFormat.builder_SetChartTitle(this.Chart, sTitle, nFontSize, bIsBold);
+		return true;
 	};
 
 	/**
@@ -16598,12 +18043,14 @@
 	 *  @typeofeditors ["CDE", "CSE", "CPE"]
 	 *  @param {string} sTitle - The title which will be displayed for the horizontal axis of the current chart.
 	 *  @param {pt} nFontSize - The text size value measured in points.
-	 *  @param {?boolean} bIsBold - Specifies if the horizontal axis title is written in bold font or not.
+	 *  @param {boolean} bIsBold - Specifies if the horizontal axis title is written in bold font or not.
+	 *	@returns {boolean}
 	 * @see office-js-api/Examples/{Editor}/ApiChart/Methods/SetHorAxisTitle.js
 	 */
 	ApiChart.prototype.SetHorAxisTitle = function (sTitle, nFontSize, bIsBold)
 	{
 		AscFormat.builder_SetChartHorAxisTitle(this.Chart, sTitle, nFontSize, bIsBold);
+		return true;
 	};
 
 	/**
@@ -16612,12 +18059,14 @@
 	 *  @typeofeditors ["CDE", "CSE", "CPE"]
 	 *  @param {string} sTitle - The title which will be displayed for the vertical axis of the current chart.
 	 *  @param {pt} nFontSize - The text size value measured in points.
-	 *  @param {?boolean} bIsBold - Specifies if the vertical axis title is written in bold font or not.
+	 *  @param {boolean} bIsBold - Specifies if the vertical axis title is written in bold font or not.
+	 *	@returns {boolean}
 	 * @see office-js-api/Examples/{Editor}/ApiChart/Methods/SetVerAxisTitle.js
 	 */
 	ApiChart.prototype.SetVerAxisTitle = function (sTitle, nFontSize, bIsBold)
 	{
 		AscFormat.builder_SetChartVertAxisTitle(this.Chart, sTitle, nFontSize, bIsBold);
+		return true;
 	};
 
 	/**
@@ -16625,10 +18074,12 @@
 	 * @memberof ApiChart
 	 * @typeofeditors ["CDE", "CSE", "CPE"]
 	 * @param {boolean} bIsMinMax - The <code>true</code> value will set the normal data direction for the vertical axis (from minimum to maximum).
+	 * @returns {boolean}
 	 * @see office-js-api/Examples/{Editor}/ApiChart/Methods/SetVerAxisOrientation.js
 	 */
 	ApiChart.prototype.SetVerAxisOrientation = function(bIsMinMax){
 		AscFormat.builder_SetChartVertAxisOrientation(this.Chart, bIsMinMax);
+		return true;
 	};
 
 	/**
@@ -16636,10 +18087,12 @@
 	 * @memberof ApiChart
 	 * @typeofeditors ["CDE", "CSE", "CPE"]
 	 * @param {boolean} bIsMinMax - The <code>true</code> value will set the normal data direction for the horizontal axis (from minimum to maximum).
+	 * @returns {boolean}
 	 * @see office-js-api/Examples/{Editor}/ApiChart/Methods/SetHorAxisOrientation.js
 	 */
 	ApiChart.prototype.SetHorAxisOrientation = function(bIsMinMax){
 		AscFormat.builder_SetChartHorAxisOrientation(this.Chart, bIsMinMax);
+		return true;
 	};
 
 	/**
@@ -16647,6 +18100,7 @@
 	 * @memberof ApiChart
 	 * @typeofeditors ["CDE", "CSE", "CPE"]
 	 * @param {"left" | "top" | "right" | "bottom" | "none"} sLegendPos - The position of the chart legend inside the chart window.
+	 * @returns {boolean}
 	 * @see office-js-api/Examples/{Editor}/ApiChart/Methods/SetLegendPos.js
 	 */
 	ApiChart.prototype.SetLegendPos = function(sLegendPos)
@@ -16685,6 +18139,8 @@
 						nLegendPos = Asc.c_oAscChartLegendShowSettings.bottom;
 						break;
 					}
+					default:
+						return false;
 				}
 				if(null !== nLegendPos)
 				{
@@ -16700,7 +18156,11 @@
 					}
 				}
 			}
+
+			return true;
 		}
+
+		return false;
 	};
 
 	/**
@@ -16708,11 +18168,13 @@
 	 * @memberof ApiChart
 	 * @typeofeditors ["CDE", "CSE", "CPE"]
 	 * @param {pt} nFontSize - The text size value measured in points.
+	 * @returns {boolean}
 	 * @see office-js-api/Examples/{Editor}/ApiChart/Methods/SetLegendFontSize.js
 	 */
 	ApiChart.prototype.SetLegendFontSize = function(nFontSize)
 	{
 		AscFormat.builder_SetLegendFontSize(this.Chart, nFontSize);
+		return true;
 	};
 
 	/**
@@ -16723,11 +18185,13 @@
 	 * @param {boolean} bShowCatName - Whether to show or hide the source table row names used for the data which the chart will be build from.
 	 * @param {boolean} bShowVal - Whether to show or hide the chart data values.
 	 * @param {boolean} bShowPercent - Whether to show or hide the percent for the data values (works with stacked chart types).
+	 * @returns {boolean}
 	 * @see office-js-api/Examples/{Editor}/ApiChart/Methods/SetShowDataLabels.js
 	 */
 	ApiChart.prototype.SetShowDataLabels = function(bShowSerName, bShowCatName, bShowVal, bShowPercent)
 	{
 		AscFormat.builder_SetShowDataLabels(this.Chart, bShowSerName, bShowCatName, bShowVal, bShowPercent);
+		return true;
 	};
 
 
@@ -16741,11 +18205,13 @@
 	 * @param {boolean} bShowCatName - Whether to show or hide the source table row names used for the data which the chart will be build from.
 	 * @param {boolean} bShowVal - Whether to show or hide the chart data values.
 	 * @param {boolean} bShowPercent - Whether to show or hide the percent for the data values (works with stacked chart types).
+	 * @returns {boolean}
 	 * @see office-js-api/Examples/{Editor}/ApiChart/Methods/SetShowPointDataLabel.js
 	 */
 	ApiChart.prototype.SetShowPointDataLabel = function(nSeriesIndex, nPointIndex, bShowSerName, bShowCatName, bShowVal, bShowPercent)
 	{
 		AscFormat.builder_SetShowPointDataLabel(this.Chart, nSeriesIndex, nPointIndex, bShowSerName, bShowCatName, bShowVal, bShowPercent);
+		return true;
 	};
 
 	/**
@@ -16753,11 +18219,13 @@
 	 * @memberof ApiChart
 	 * @typeofeditors ["CDE", "CSE", "CPE"]
 	 * @param {TickLabelPosition} sTickLabelPosition - The type for the position of chart vertical tick labels.
+	 * @returns {boolean}
 	 * @see office-js-api/Examples/{Editor}/ApiChart/Methods/SetVertAxisTickLabelPosition.js
 	 */
 	ApiChart.prototype.SetVertAxisTickLabelPosition = function(sTickLabelPosition)
 	{
 		AscFormat.builder_SetChartVertAxisTickLablePosition(this.Chart, sTickLabelPosition);
+		return true;
 	};
 
 	/**
@@ -16765,11 +18233,13 @@
 	 * @memberof ApiChart
 	 * @typeofeditors ["CDE", "CSE", "CPE"]
 	 * @param {TickLabelPosition} sTickLabelPosition - The type for the position of chart horizontal tick labels.
+	 * @returns {boolean}
 	 * @see office-js-api/Examples/{Editor}/ApiChart/Methods/SetHorAxisTickLabelPosition.js
 	 */
 	ApiChart.prototype.SetHorAxisTickLabelPosition = function(sTickLabelPosition)
 	{
 		AscFormat.builder_SetChartHorAxisTickLablePosition(this.Chart, sTickLabelPosition);
+		return true;
 	};
 
 	/**
@@ -16777,10 +18247,12 @@
 	 * @memberof ApiChart
 	 * @typeofeditors ["CDE", "CSE", "CPE"]
 	 * @param {TickMark} sTickMark - The type of tick mark appearance.
+	 * @returns {boolean}
 	 * @see office-js-api/Examples/{Editor}/ApiChart/Methods/SetHorAxisMajorTickMark.js
 	 */
 	ApiChart.prototype.SetHorAxisMajorTickMark = function(sTickMark){
 		AscFormat.builder_SetChartHorAxisMajorTickMark(this.Chart, sTickMark);
+		return true;
 	};
 
 	/**
@@ -16788,10 +18260,12 @@
 	 * @memberof ApiChart
 	 * @typeofeditors ["CDE", "CSE", "CPE"]
 	 * @param {TickMark} sTickMark - The type of tick mark appearance.
+	 * @returns {boolean}
 	 * @see office-js-api/Examples/{Editor}/ApiChart/Methods/SetHorAxisMinorTickMark.js
 	 */
 	ApiChart.prototype.SetHorAxisMinorTickMark = function(sTickMark){
 		AscFormat.builder_SetChartHorAxisMinorTickMark(this.Chart, sTickMark);
+		return true;
 	};
 
 	/**
@@ -16799,11 +18273,13 @@
 	 * @memberof ApiChart
 	 * @typeofeditors ["CDE", "CSE", "CPE"]
 	 * @param {TickMark} sTickMark - The type of tick mark appearance.
+	 * @returns {boolean}
 	 * @see office-js-api/Examples/{Editor}/ApiChart/Methods/SetVertAxisMajorTickMark.js
 	 */
 
 	ApiChart.prototype.SetVertAxisMajorTickMark = function(sTickMark){
 		AscFormat.builder_SetChartVerAxisMajorTickMark(this.Chart, sTickMark);
+		return true;
 	};
 
 	/**
@@ -16811,10 +18287,12 @@
 	 * @memberof ApiChart
 	 * @typeofeditors ["CDE", "CSE", "CPE"]
 	 * @param {TickMark} sTickMark - The type of tick mark appearance.
+	 * @returns {boolean}
 	 * @see office-js-api/Examples/{Editor}/ApiChart/Methods/SetVertAxisMinorTickMark.js
 	 */
 	ApiChart.prototype.SetVertAxisMinorTickMark = function(sTickMark){
 		AscFormat.builder_SetChartVerAxisMinorTickMark(this.Chart, sTickMark);
+		return true;
 	};
 
 	/**
@@ -16822,11 +18300,13 @@
 	 * @memberof ApiChart
 	 * @typeofeditors ["CDE", "CSE", "CPE"]
 	 * @param {?ApiStroke} oStroke - The stroke used to create the element shadow.
+	 * @returns {boolean}
 	 * @see office-js-api/Examples/{Editor}/ApiChart/Methods/SetMajorVerticalGridlines.js
 	 */
 	ApiChart.prototype.SetMajorVerticalGridlines = function(oStroke)
 	{
 		AscFormat.builder_SetVerAxisMajorGridlines(this.Chart, oStroke ?  oStroke.Ln : null);
+		return true;
 	};
 
 	/**
@@ -16834,11 +18314,13 @@
 	 * @memberof ApiChart
 	 * @typeofeditors ["CDE", "CSE", "CPE"]
 	 * @param {?ApiStroke} oStroke - The stroke used to create the element shadow.
+	 * @returns {boolean}
 	 * @see office-js-api/Examples/{Editor}/ApiChart/Methods/SetMinorVerticalGridlines.js
 	 */
 	ApiChart.prototype.SetMinorVerticalGridlines = function(oStroke)
 	{
 		AscFormat.builder_SetVerAxisMinorGridlines(this.Chart, oStroke ?  oStroke.Ln : null);
+		return true;
 	};
 
 
@@ -16847,11 +18329,13 @@
 	 * @memberof ApiChart
 	 * @typeofeditors ["CDE", "CSE", "CPE"]
 	 * @param {?ApiStroke} oStroke - The stroke used to create the element shadow.
+	 * @returns {boolean}
 	 * @see office-js-api/Examples/{Editor}/ApiChart/Methods/SetMajorHorizontalGridlines.js
 	 */
 	ApiChart.prototype.SetMajorHorizontalGridlines = function(oStroke)
 	{
 		AscFormat.builder_SetHorAxisMajorGridlines(this.Chart, oStroke ?  oStroke.Ln : null);
+		return true;
 	};
 
 	/**
@@ -16859,11 +18343,13 @@
 	 * @memberof ApiChart
 	 * @typeofeditors ["CDE", "CSE", "CPE"]
 	 * @param {?ApiStroke} oStroke - The stroke used to create the element shadow.
+	 * @returns {boolean}
 	 * @see office-js-api/Examples/{Editor}/ApiChart/Methods/SetMinorHorizontalGridlines.js
 	 */
 	ApiChart.prototype.SetMinorHorizontalGridlines = function(oStroke)
 	{
 		AscFormat.builder_SetHorAxisMinorGridlines(this.Chart, oStroke ?  oStroke.Ln : null);
+		return true;
 	};
 
 
@@ -16872,10 +18358,12 @@
 	 * @memberof ApiChart
 	 * @typeofeditors ["CDE"]
 	 * @param {pt} nFontSize - The text size value measured in points.
+	 * @returns {boolean}
 	 * @see office-js-api/Examples/{Editor}/ApiChart/Methods/SetHorAxisLablesFontSize.js
 	 */
 	ApiChart.prototype.SetHorAxisLablesFontSize = function(nFontSize){
 		AscFormat.builder_SetHorAxisFontSize(this.Chart, nFontSize);
+		return true;
 	};
 
 	/**
@@ -16883,10 +18371,12 @@
 	 * @memberof ApiChart
 	 * @typeofeditors ["CDE"]
 	 * @param {pt} nFontSize - The text size value measured in points.
+	 * @returns {boolean}
 	 * @see office-js-api/Examples/{Editor}/ApiChart/Methods/SetVertAxisLablesFontSize.js
 	 */
 	ApiChart.prototype.SetVertAxisLablesFontSize = function(nFontSize){
 		AscFormat.builder_SetVerAxisFontSize(this.Chart, nFontSize);
+		return true;
 	};
 
 	/**
@@ -17716,7 +19206,7 @@
 	};
 	
 	/**
-	 * Returns an internal id of the current content control.
+	 * Returns an internal ID of the current content control.
 	 * @memberof ApiInlineLvlSdt
 	 * @typeofeditors ["CDE"]
 	 * @returns {string}
@@ -17732,7 +19222,7 @@
 	 * @memberof ApiInlineLvlSdt
 	 * @typeofeditors ["CDE"]
 	 * @since 8.3.2
-	 * @param {number} id - The numerical id which will be specified to the current content control.
+	 * @param {number} id - The numerical ID which will be specified for the current content control.
 	 * @returns {boolean}
 	 * @see office-js-api/Examples/{Editor}/ApiInlineLvlSdt/Methods/SetId.js
 	 */
@@ -17747,7 +19237,7 @@
 	};
 	
 	/**
-	 * Gets a unique ID for the current content control.
+	 * Returns a unique ID for the current content control.
 	 * @memberof ApiInlineLvlSdt
 	 * @typeofeditors ["CDE"]
 	 * @since 8.3.2
@@ -17767,6 +19257,7 @@
 	 * @memberof ApiInlineLvlSdt
 	 * @typeofeditors ["CDE"]
 	 * @param {"contentLocked" | "sdtContentLocked" | "sdtLocked"} sLockType - The lock type applied to the inline text content control.
+	 * @returns {boolean}
 	 * @see office-js-api/Examples/{Editor}/ApiInlineLvlSdt/Methods/SetLock.js
 	 */
 	ApiInlineLvlSdt.prototype.SetLock = function(sLockType)
@@ -17778,8 +19269,11 @@
 			nLock = c_oAscSdtLockType.SdtContentLocked;
 		else if ("sdtLocked" === sLockType)
 			nLock = c_oAscSdtLockType.SdtLocked;
+		else
+			return false;
 
 		this.Sdt.SetContentControlLock(nLock);
+		return true;
 	};
 
 	/**
@@ -17810,11 +19304,13 @@
 	 * @memberof ApiInlineLvlSdt
 	 * @typeofeditors ["CDE"]
 	 * @param {string} sTag - The tag which will be added to the current inline text content control.
+	 * @returns {boolean}
 	 * @see office-js-api/Examples/{Editor}/ApiInlineLvlSdt/Methods/SetTag.js
 	 */
 	ApiInlineLvlSdt.prototype.SetTag = function(sTag)
 	{
 		this.Sdt.SetTag(sTag);
+		return true;
 	};
 
 	/**
@@ -17834,11 +19330,13 @@
 	 * @memberof ApiInlineLvlSdt
 	 * @typeofeditors ["CDE"]
 	 * @param {string} sLabel - The label which will be added to the current inline text content control. Can be a positive or negative integer from <b>-2147483647</b> to <b>2147483647</b>.
+	 * @returns {boolean}
 	 * @see office-js-api/Examples/{Editor}/ApiInlineLvlSdt/Methods/SetLabel.js
 	 */
 	ApiInlineLvlSdt.prototype.SetLabel = function(sLabel)
 	{
 		this.Sdt.SetLabel(sLabel);
+		return true;
 	};
 
 	/**
@@ -17858,11 +19356,13 @@
 	 * @memberof ApiInlineLvlSdt
 	 * @typeofeditors ["CDE"]
 	 * @param {string} sAlias - The alias which will be added to the current inline text content control.
+	 * @returns {boolean}
 	 * @see office-js-api/Examples/{Editor}/ApiInlineLvlSdt/Methods/SetAlias.js
 	 */
 	ApiInlineLvlSdt.prototype.SetAlias = function(sAlias)
 	{
 		this.Sdt.SetAlias(sAlias);
+		return true;
 	};
 
 	/**
@@ -18191,7 +19691,12 @@
 	 */
 	ApiInlineLvlSdt.prototype.GetRange = function(Start, End)
 	{
-		return new ApiRange(this.Sdt, Start, End);
+		let oRange = new ApiRange(this.Sdt, Start, End);
+		if (oRange.isEmpty) {
+			return null;
+		}
+
+		return oRange;
 	};
 
 	/**
@@ -18280,9 +19785,9 @@
 	 * <note>Please note that this inline content control must be in the document.</note>
 	 * @memberof ApiInlineLvlSdt
 	 * @typeofeditors ["CDE"]
-	 * @param {string} sText - The comment text (required).
-	 * @param {string} sAuthor - The author's name (optional).
-	 * @param {string} sUserId - The user ID of the comment author (optional).
+	 * @param {string} sText - The comment text.
+	 * @param {string} [sAuthor] - The author's name.
+	 * @param {string} [sUserId] - The user ID of the comment author.
 	 * @returns {ApiComment?} - Returns null if the comment was not added.
 	 * @see office-js-api/Examples/{Editor}/ApiInlineLvlSdt/Methods/AddComment.js
 	 */
@@ -18317,16 +19822,18 @@
 	 * @param {boolean?} [isAfter=true] - Specifies whether a cursor will be placed before (false) or after (true) the current content control.
 	 * @memberof ApiInlineLvlSdt
 	 * @typeofeditors ["CDE"]
+	 * @returns {boolean}
 	 * @since 8.1.0
 	 * @see office-js-api/Examples/{Editor}/ApiInlineLvlSdt/Methods/MoveCursorOutside.js
 	 */
 	ApiInlineLvlSdt.prototype.MoveCursorOutside = function(isAfter)
 	{
 		this.Sdt.MoveCursorOutsideForm(false === isAfter);
+		return true;
 	};
 
 	/**
-	 * Returns a list of values of the combo box / dropdown list content control.
+	 * Returns a list of values of the combo box / drop-down list content control.
 	 * @memberof ApiInlineLvlSdt
 	 * @typeofeditors ["CDE"]
 	 * @returns {ApiContentControlList}
@@ -18358,7 +19865,7 @@
 		return true;
 	};
 	/**
-	 * Gets the border color of the current content control.
+	 * Returns the border color of the current content control.
 	 * @memberof ApiInlineLvlSdt
 	 * @typeofeditors ["CDE"]
 	 * @since 8.3.2
@@ -18397,7 +19904,7 @@
 	};
 	
 	/**
-	 * Gets the background color of the current content control.
+	 * Returns the background color of the current content control.
 	 * @memberof ApiInlineLvlSdt
 	 * @typeofeditors ["CDE"]
 	 * @since 8.3.2
@@ -18416,6 +19923,458 @@
 			"b" : color.b,
 			"a" : color.a
 		};
+	};
+
+	/**
+	 * Selects the current content control.
+	 * @memberof ApiInlineLvlSdt
+	 * @typeofeditors ["CDE"]
+	 * @since 9.0.0
+	 * @returns {boolean}
+	 * @see office-js-api/Examples/{Editor}/ApiInlineLvlSdt/Methods/Select.js
+	 */
+	ApiInlineLvlSdt.prototype.Select = function()
+	{
+		var Document = private_GetLogicDocument();
+
+		this.Sdt.SelectContentControl();
+		Document.UpdateSelection();
+		return true;
+	};
+
+	/**
+	 * Sets the data binding for the current content control.
+	 * @memberof ApiInlineLvlSdt
+	 * @typeofeditors ["CDE"]
+	 * @since 9.0.0
+	 * @param {XmlMapping | null} xmlMapping - The data binding to associate with the content control.
+	 * @returns {boolean}
+	 * @see office-js-api/Examples/{Editor}/ApiInlineLvlSdt/Methods/SetDataBinding.js
+	 */
+	ApiInlineLvlSdt.prototype.SetDataBinding = function(xmlMapping)
+	{
+		if (!xmlMapping)
+		{
+			this.Sdt.setDataBinding();
+			return true;
+		}
+		
+		let prefix = xmlMapping["prefixMapping"];
+		let itemId = xmlMapping["storeItemID"];
+		let xPath  = xmlMapping["xpath"];
+		
+		this.Sdt.setDataBinding(new AscWord.DataBinding(prefix, itemId, xPath));
+		this.Sdt.checkDataBinding();
+		return true;
+	};
+	
+	/**
+	 * Retrieves the data binding of the content control.
+	 * @memberof ApiInlineLvlSdt
+	 * @typeofeditors ["CDE"]
+	 * @since 9.0.0
+	 * @returns {?XmlMapping} Returns the data binding of the content control if it exists, otherwise `null`.
+	 * @see office-js-api/Examples/{Editor}/ApiInlineLvlSdt/Methods/GetDataBinding.js
+	 */
+	ApiInlineLvlSdt.prototype.GetDataBinding = function()
+	{
+		let dataBinding = this.Sdt.getDataBinding();
+		if (!dataBinding)
+			return null;
+		
+		return {
+			"prefixMapping" : dataBinding.prefixMappings,
+			"xpath"         : dataBinding.xpath,
+			"storeItemID"   : dataBinding.storeItemID
+		};
+	};
+	
+	/**
+	 * Updates the content control using the value from the XML mapping.
+	 * @memberof ApiInlineLvlSdt
+	 * @typeofeditors ["CDE"]
+	 * @since 9.0.0
+	 * @returns {boolean} Returns `true` if the update was successful, otherwise `false`.
+	 * @see office-js-api/Examples/{Editor}/ApiInlineLvlSdt/Methods/UpdateFromXmlMapping.js
+	 */
+	ApiInlineLvlSdt.prototype.UpdateFromXmlMapping = function()
+	{
+		return this.Sdt.checkDataBinding();
+	};
+	
+	/**
+	 * Returns the content control data for the XML mapping.
+	 * @memberof ApiInlineLvlSdt
+	 * @typeofeditors ["CDE"]
+	 * @since 9.0.0
+	 * @returns {string} The string data representing the contents of the current content control.
+	 * @see office-js-api/Examples/{Editor}/ApiInlineLvlSdt/Methods/GetDataForXmlMapping.js
+	 */
+	ApiInlineLvlSdt.prototype.GetDataForXmlMapping = function()
+	{
+		let logicDocument = this.Sdt.GetLogicDocument();
+		let xmlManager = logicDocument ? logicDocument.getCustomXmlManager() : null;
+		return xmlManager ? xmlManager.GetDataFromContentControl(this.Sdt) : "";
+	};
+	
+	/**
+	 * Checks if the content control is a checkbox.
+	 * @memberof ApiInlineLvlSdt
+	 * @typeofeditors ["CDE"]
+	 * @since 9.0.0
+	 * @returns {boolean} Returns `true` if the content control is a checkbox, otherwise `false`.
+	 * @see office-js-api/Examples/{Editor}/ApiInlineLvlSdt/Methods/IsCheckBox.js
+	 */
+	ApiInlineLvlSdt.prototype.IsCheckBox = function()
+	{
+		return this.Sdt.IsCheckBox();
+	};
+
+	/**
+	 * Sets the checkbox value for the content control.
+	 * This method updates the checkbox state of the content control to either checked or unchecked.
+	 * @memberof ApiInlineLvlSdt
+	 * @typeofeditors ["CDE"]
+	 * @since 9.0.0
+	 * @param {boolean} isChecked - The state to set for the checkbox. `true` for checked, `false` for unchecked.
+	 * @returns {boolean} Returns `true` if the checkbox value was successfully set, `false` if the content control is not a checkbox.
+	 * @see office-js-api/Examples/{Editor}/ApiInlineLvlSdt/Methods/SetCheckBoxChecked.js
+	 */
+	ApiInlineLvlSdt.prototype.SetCheckBoxChecked = function(isChecked)
+	{
+		if (this.Sdt.IsCheckBox())
+		{
+			this.Sdt.SetCheckBoxChecked(isChecked);
+			return true;
+		}
+		return false;
+	};
+	
+	/**
+	 * Determines whether a checkbox content control is currently checked or unchecked.
+	 *
+	 * Throws: Error if the content control is not a checkbox.
+	 *
+	 * @memberof ApiInlineLvlSdt
+	 * @typeofeditors ["CDE"]
+	 * @since 9.0.0
+	 * @returns {boolean} Returns `true` if the checkbox is checked, `false` if the checkbox is unchecked.
+	 * @see office-js-api/Examples/{Editor}/ApiInlineLvlSdt/Methods/IsCheckBoxChecked.js
+	 */
+	ApiInlineLvlSdt.prototype.IsCheckBoxChecked = function()
+	{
+		if (!this.Sdt || !this.Sdt.IsCheckBox())
+			throwException(new Error("Content control must be a checkbox"));
+		
+		return this.Sdt.IsCheckBoxChecked();
+	};
+
+	/**
+	 * Checks whether the content control is a picture control.
+	 * This method verifies if the content control is specifically a picture control.
+	 * @memberof ApiInlineLvlSdt
+	 * @typeofeditors ["CDE"]
+	 * @since 9.0.0
+	 * @returns {boolean} Returns `true` if the content control is a picture, otherwise `false`.
+	 * @see office-js-api/Examples/{Editor}/ApiInlineLvlSdt/Methods/IsPicture.js
+	 */
+	ApiInlineLvlSdt.prototype.IsPicture = function()
+	{
+		return this.Sdt.IsPicture();
+	};
+
+	/**
+	 * Sets the size for the picture in a content control.
+	 * This method adjusts the width and height of the image if the content control is a picture.
+	 * @memberof ApiInlineLvlSdt
+	 * @typeofeditors ["CDE"]
+	 * @since 9.0.0
+	 * @param {EMU} width - The desired image width .
+	 * @param {EMU} height - The desired image height.
+	 * @returns {boolean} Returns `true` if the size was successfully set, or `false` if the content control is not a picture.
+	 * @see office-js-api/Examples/{Editor}/ApiInlineLvlSdt/Methods/SetPictureSize.js
+	 */
+	ApiInlineLvlSdt.prototype.SetPictureSize = function(width, height)
+	{
+		if (!this.Sdt.IsPicture())
+			return false;
+
+		var paraDrawing;
+		var allDrawings = this.Sdt.GetAllDrawingObjects();
+		for (var nDrawing = 0; nDrawing < allDrawings.length; nDrawing++)
+		{
+			if (allDrawings[nDrawing].IsPicture())
+			{
+				paraDrawing = allDrawings[nDrawing];
+				break;
+			}
+		}
+
+		var nW = private_EMU2MM(width);
+		var nH = private_EMU2MM(height);
+		paraDrawing.setExtent(nW, nH);
+		return true;
+	};
+
+	/**
+	 * Sets the content (image) for the picture content control.
+	 * This method updates the picture inside a content control by setting an image from a provided URL.
+	 * The URL should be an internet link to the image.
+	 * @memberof ApiInlineLvlSdt
+	 * @typeofeditors ["CDE"]
+	 * @since 9.0.0
+	 * @param {string} imageUrl - The URL of the image to be used for the content control.
+	 * Currently, only internet URLs are supported.
+	 * @returns {boolean} Returns `true` if the image was successfully set, otherwise `false`.
+	 * @see office-js-api/Examples/{Editor}/ApiInlineLvlSdt/Methods/SetPicture.js
+	 */
+	ApiInlineLvlSdt.prototype.SetPicture = function(imageUrl)
+	{
+		if (!this.Sdt.IsPicture())
+			return false;
+
+		var oImg, paraDrawing;
+		var allDrawings = this.Sdt.GetAllDrawingObjects();
+		for (var nDrawing = 0; nDrawing < allDrawings.length; nDrawing++)
+		{
+			if (allDrawings[nDrawing].IsPicture())
+			{
+				oImg = allDrawings[nDrawing].GraphicObj;
+				paraDrawing = allDrawings[nDrawing];
+				break;
+			}
+		}
+
+		if (oImg)
+		{
+			let spPr = oImg.spPr;
+			if (!spPr)
+			{
+				spPr = new AscFormat.CSpPr();
+				oImg.setSpPr(spPr);
+				spPr.setParent(oImg);
+			}
+
+			oImg.setBlipFill(AscFormat.CreateBlipFillRasterImageId(imageUrl));
+
+			let paragraph   = this.Sdt.GetParagraph();
+			let parentShape = paragraph && paragraph.GetParent() ? paragraph.GetParent().Is_DrawingShape(true) : null;
+			if (parentShape && parentShape.recalculate)
+				parentShape.recalculate();
+
+			this.Sdt.SetShowingPlcHdr(false);
+			return true;
+		}
+
+		return false;
+	};
+
+	/**
+	 * Checks whether the content control is a drop-down list.
+	 * @memberof ApiInlineLvlSdt
+	 * @typeofeditors ["CDE"]
+	 * @since 9.0.0
+	 * @returns {boolean} Returns `true` if the content control is a drop-down list, otherwise `false`.
+	 * @see office-js-api/Examples/{Editor}/ApiInlineLvlSdt/Methods/IsDropDownList.js
+	 */
+	ApiInlineLvlSdt.prototype.IsDropDownList = function()
+	{
+		return this.Sdt.IsDropDownList();
+	};
+
+	/**
+	 * Checks whether the content control is a combo box list.
+	 * @memberof ApiInlineLvlSdt
+	 * @typeofeditors ["CDE"]
+	 * @since 9.0.0
+	 * @returns {boolean} Returns `true` if the content control is a combo box list, otherwise `false`.
+	 * @see office-js-api/Examples/{Editor}/ApiInlineLvlSdt/Methods/IsComboBox.js
+	 */
+	ApiInlineLvlSdt.prototype.IsComboBox = function()
+	{
+		return this.Sdt.IsComboBox();
+	};
+
+	/**
+	 * Sets the selected item for a combo box list or drop-down list.
+	 * @memberof ApiInlineLvlSdt
+	 * @typeofeditors ["CDE"]
+	 * @since 9.0.0
+	 * @param {string} name - The name of the item to be selected in the list.
+	 * @returns {boolean} Returns `true` if the item was successfully selected, otherwise `false`.
+	 * @see office-js-api/Examples/{Editor}/ApiInlineLvlSdt/Methods/SelectListItem.js
+	 */
+	ApiInlineLvlSdt.prototype.SelectListItem = function(name)
+	{
+		if (this.Sdt.IsDropDownList() || this.Sdt.IsComboBox())
+			this.Sdt.SelectListItem(name);
+	};
+
+	/**
+	 * Adds an item to a combo box list or drop-down list.
+	 * @memberof ApiInlineLvlSdt
+	 * @typeofeditors ["CDE"]
+	 * @since 9.0.0
+	 * @param {string} name - The name of the item to add to the list.
+	 * @param {string} value - The value of the item to add to the list.
+	 * @param {number} [pos] - The optional position at which to insert the new item in the list.
+	 * @returns {boolean} Returns `true` if the item was successfully added, otherwise `false`.
+	 * @see office-js-api/Examples/{Editor}/ApiInlineLvlSdt/Methods/AddListItem.js
+	 */
+	ApiInlineLvlSdt.prototype.AddListItem = function(name, value, pos)
+	{
+		if (!(this.Sdt.IsDropDownList() || this.Sdt.IsComboBox()))
+			return false;
+
+		let oList;
+		if (this.IsComboBox())
+			oList = this.Sdt.Pr.ComboBox;
+		else if (this.IsDropDownList())
+			oList = this.Sdt.Pr.DropDown;
+
+		if (oList)
+			return oList.AddItem(name, value, pos);
+	};
+
+	/**
+	 * Removes an item from a combo box list or drop-down list.
+	 * @memberof ApiInlineLvlSdt
+	 * @typeofeditors ["CDE"]
+	 * @since 9.0.0
+	 * @param {string} value - The value of the item to remove from the list.
+	 * @returns {boolean} Returns `true` if the item was successfully removed, otherwise `false`.
+	 * @see office-js-api/Examples/{Editor}/ApiInlineLvlSdt/Methods/RemoveListItem.js
+	 */
+	ApiInlineLvlSdt.prototype.RemoveListItem = function(value)
+	{
+		let oList;
+		if (this.IsComboBox())
+			oList = this.Sdt.Pr.ComboBox;
+		else if (this.IsDropDownList())
+			oList = this.Sdt.Pr.DropDown;
+
+		if (oList)
+		{
+			let index = oList.GetIndex(value);
+			oList.RemoveItem(index);
+			return true
+		}
+
+		return false;
+	};
+
+	/**
+	 * Checks whether the content control is a datepicker.
+	 * @memberof ApiInlineLvlSdt
+	 * @typeofeditors ["CDE"]
+	 * @since 9.0.0
+	 * @returns {boolean} Returns `true` if the content control is a datepicker, otherwise `false`.
+	 * @see office-js-api/Examples/{Editor}/ApiInlineLvlSdt/Methods/IsDatePicker.js
+	 */
+	ApiInlineLvlSdt.prototype.IsDatePicker = function()
+	{
+		return this.Sdt.IsDatePicker();
+	};
+
+	/**
+	 * Sets the value for the datepicker content control.
+	 * @memberof ApiInlineLvlSdt
+	 * @typeofeditors ["CDE"]
+	 * @since 9.0.0
+	 * @param {Date} date - The date value to set for the datepicker.
+	 * @returns {boolean} Returns `true` if the date was successfully set, otherwise `false`.
+	 * @see office-js-api/Examples/{Editor}/ApiInlineLvlSdt/Methods/SetDate.js
+	 */
+	ApiInlineLvlSdt.prototype.SetDate = function(date)
+	{
+		if (this.Sdt.Pr.Date)
+		{
+			let dateTimePr = this.Sdt.Pr.Date.Copy();
+			dateTimePr.SetFullDate(date);
+			this.Sdt.ApplyDatePickerPr(dateTimePr, true);
+			return true;
+		}
+
+		return false;
+	};
+	
+	/**
+	 * Retrieves the selected date value from a date picker content control and returns it as a Date object.
+	 *
+	 * Throws: Error if the content control is not a date picker.
+	 *
+	 * @memberof ApiInlineLvlSdt
+	 * @typeofeditors ["CDE"]
+	 * @since 9.0.0
+	 * @returns {Date} Date object representing the selected date in the date picker control.
+	 * @see office-js-api/Examples/{Editor}/ApiInlineLvlSdt/Methods/GetDate.js
+	 */
+	ApiInlineLvlSdt.prototype.GetDate = function()
+	{
+		if (!this.Sdt || !this.Sdt.IsDatePicker())
+			throwException(new Error("Content control must be a date picker"));
+		
+		let fullDate = this.Sdt.GetDatePickerPr().GetFullDate();
+		return new Date(fullDate);
+	};
+
+	/**
+	 * Sets the date format for the datepicker content control.
+	 * This method allows setting the format in which the date should be displayed in the datepicker content control.
+	 * The format string should be specified using common date format patterns (e.g., "mm.dd.yyyy").
+	 * @memberof ApiInlineLvlSdt
+	 * @typeofeditors ["CDE"]
+	 * @since 9.0.0
+	 * @param {string} dateFormat - The desired date format (e.g., "mm.dd.yyyy").
+	 * @returns {boolean} Returns `true` if the date format was successfully set, otherwise `false`.
+	 * @see office-js-api/Examples/{Editor}/ApiInlineLvlSdt/Methods/SetDateFormat.js
+	 */
+	ApiInlineLvlSdt.prototype.SetDateFormat = function(dateFormat)
+	{
+		if (this.Sdt.Pr.Date)
+		{
+			let dateTimePr = this.Sdt.Pr.Date.Copy();
+			dateTimePr.SetDateFormat(dateFormat);
+			this.Sdt.ApplyDatePickerPr(dateTimePr, true);
+			return true;
+		}
+		return false;
+	};
+	
+	/**
+	 * Sets the visualization type of the content control.
+	 * @memberof ApiInlineLvlSdt
+	 * @typeofeditors ["CDE"]
+	 * @since 9.0.0
+	 * @param {"boundingBox"|"hidden"} type - The desired visualization type.
+	 * @see office-js-api/Examples/{Editor}/ApiInlineLvlSdt/Methods/SetAppearance.js
+	 */
+	ApiInlineLvlSdt.prototype.SetAppearance = function(type)
+	{
+		type = GetStringParameter(type, "boundingBox");
+		this.Sdt.SetAppearance();
+		
+		if (type === "hidden")
+			this.Sdt.SetAppearance(Asc.c_oAscSdtAppearance.Hidden);
+		else
+			this.Sdt.SetAppearance(Asc.c_oAscSdtAppearance.Frame);
+	};
+	
+	/**
+	 * Returns the visualization type of the content control.
+	 * @memberof ApiInlineLvlSdt
+	 * @typeofeditors ["CDE"]
+	 * @since 9.0.0
+	 * @returns {"boundingBox"|"hidden"} type - The visualization type of the content control.
+	 * @see office-js-api/Examples/{Editor}/ApiInlineLvlSdt/Methods/GetAppearance.js
+	 */
+	ApiInlineLvlSdt.prototype.GetAppearance = function()
+	{
+		let type = this.Sdt.GetAppearance();
+		if (Asc.c_oAscSdtAppearance.Hidden === type)
+			return "hidden";
+		
+		return "boundingBox";
 	};
 
 	//------------------------------------------------------------------------------------------------------------------
@@ -18437,7 +20396,7 @@
 	};
 
 	/**
-	 * Returns a collection of items (the ApiContentControlListEntry objects) of the combo box / dropdown list content control.
+	 * Returns a collection of items (the ApiContentControlListEntry objects) of the combo box / drop-down list content control.
 	 * @memberof ApiContentControlList
 	 * @typeofeditors ["CDE"]
 	 * @returns {ApiContentControlListEntry[]}
@@ -18457,7 +20416,7 @@
 	};
 
 	/**
-	 * Returns a number of items of the combo box / dropdown list content control.
+	 * Returns a number of items of the combo box / drop-down list content control.
 	 * @memberof ApiContentControlList
 	 * @typeofeditors ["CDE"]
 	 * @returns {number}
@@ -18469,7 +20428,7 @@
 	};
 
 	/**
-	 * Returns a parent of the combo box / dropdown list content control.
+	 * Returns a parent of the combo box / drop-down list content control.
 	 * @memberof ApiContentControlList
 	 * @typeofeditors ["CDE"]
 	 * @returns {ApiInlineLvlSdt | ApiBlockLvlSdt}
@@ -18481,11 +20440,11 @@
 	};
 
 	/**
-	 * Adds a new value to the combo box / dropdown list content control.
+	 * Adds a new value to the combo box / drop-down list content control.
 	 * @memberof ApiContentControlList
 	 * @param {string} sText - The display text for the list item.
 	 * @param {string} sValue - The list item value. By default is equal to sText parameter
-	 * @param {number} [nIndex=this.GetElementsCount()] - A position where a new value will be added.
+	 * @param {number} [nIndex=-1] - A position where a new value will be added. If nIndex=-1 add to the end.
 	 * @typeofeditors ["CDE"]
 	 * @returns {boolean}
 	 * @see office-js-api/Examples/{Editor}/ApiContentControlList/Methods/Add.js
@@ -18512,9 +20471,10 @@
 	};
 
 	/**
-	 * Clears a list of values of the combo box / dropdown list content control.
+	 * Clears a list of values of the combo box / drop-down list content control.
 	 * @memberof ApiContentControlList
 	 * @typeofeditors ["CDE"]
+	 * @returns {boolean}
 	 * @see office-js-api/Examples/{Editor}/ApiContentControlList/Methods/Clear.js
 	 */
 	ApiContentControlList.prototype.Clear = function()
@@ -18523,10 +20483,11 @@
 		listPr.Clear();
 		this.SetListPr(listPr)
 		this.Sdt.SelectListItem("");
+		return true;
 	};
 
 	/**
-	 * Returns an item of the combo box / dropdown list content control by the position specified in the request.
+	 * Returns an item of the combo box / drop-down list content control by the position specified in the request.
 	 * @memberof ApiContentControlList
 	 * @param {number} nIndex - Item position.
 	 * @typeofeditors ["CDE"]
@@ -18565,7 +20526,7 @@
 	};
 
 	/**
-	 * Returns a parent of the content control list item in the combo box / dropdown list content control.
+	 * Returns a parent of the content control list item in the combo box / drop-down list content control.
 	 * @memberof ApiContentControlListEntry
 	 * @typeofeditors ["CDE"]
 	 * @returns {ApiContentControlList}
@@ -18580,7 +20541,7 @@
 	};
 
 	/**
-	 * Selects the list entry in the combo box / dropdown list content control and sets the text of the content control to the selected item value.
+	 * Selects the list entry in the combo box / drop-down list content control and sets the text of the content control to the selected item value.
 	 * @memberof ApiContentControlListEntry
 	 * @typeofeditors ["CDE"]
 	 * @returns {boolean}
@@ -18596,7 +20557,7 @@
 	};
 
 	/**
-	 * Moves the current item in the parent combo box / dropdown list content control up one element.
+	 * Moves the current item in the parent combo box / drop-down list content control up one element.
 	 * @memberof ApiContentControlListEntry
 	 * @typeofeditors ["CDE"]
 	 * @returns {boolean}
@@ -18612,7 +20573,7 @@
 	};
 
 	/**
-	 * Moves the current item in the parent combo box / dropdown list content control down one element, so that it is after the item that originally followed it.
+	 * Moves the current item in the parent combo box / drop-down list content control down one element, so that it is after the item that originally followed it.
 	 * @memberof ApiContentControlListEntry
 	 * @typeofeditors ["CDE"]
 	 * @returns {boolean}
@@ -18629,7 +20590,7 @@
 	};
 
 	/**
-	 * Returns an index of the content control list item in the combo box / dropdown list content control.
+	 * Returns an index of the content control list item in the combo box / drop-down list content control.
 	 * @memberof ApiContentControlListEntry
 	 * @typeofeditors ["CDE"]
 	 * @returns {number}
@@ -18642,7 +20603,7 @@
 	};
 
 	/**
-	 * Sets an index to the content control list item in the combo box / dropdown list content control.
+	 * Sets an index to the content control list item in the combo box / drop-down list content control.
 	 * @memberof ApiContentControlListEntry
 	 * @param {number} nIndex - An index of the content control list item.
 	 * @typeofeditors ["CDE"]
@@ -18666,7 +20627,7 @@
 	};
 
 	/**
-	 * Deletes the specified item in the combo box / dropdown list content control.
+	 * Deletes the specified item in the combo box / drop-down list content control.
 	 * @memberof ApiContentControlListEntry
 	 * @typeofeditors ["CDE"]
 	 * @returns {boolean}
@@ -18696,7 +20657,7 @@
 	};
 
 	/**
-	 * Returns a String that represents the display text of a list item for the combo box / dropdown list content control.
+	 * Returns a String that represents the display text of a list item for the combo box / drop-down list content control.
 	 * @memberof ApiContentControlListEntry
 	 * @typeofeditors ["CDE"]
 	 * @returns {string}
@@ -18708,7 +20669,7 @@
 	};
 
 	/**
-	 * Sets a String that represents the display text of a list item for the combo box / dropdown list content control.
+	 * Sets a String that represents the display text of a list item for the combo box / drop-down list content control.
 	 * @memberof ApiContentControlListEntry
 	 * @typeofeditors ["CDE"]
 	 * @param {string} sText - The display text of a list item.
@@ -18736,7 +20697,7 @@
 	};
 
 	/**
-	 * Returns a String that represents the value of a list item for the combo box / dropdown list content control.
+	 * Returns a String that represents the value of a list item for the combo box / drop-down list content control.
 	 * @memberof ApiContentControlListEntry
 	 * @typeofeditors ["CDE"]
 	 * @returns {string}
@@ -18748,7 +20709,7 @@
 	};
 
 	/**
-	 * Sets a String that represents the value of a list item for the combo box / dropdown list content control.
+	 * Sets a String that represents the value of a list item for the combo box / drop-down list content control.
 	 * @memberof ApiContentControlListEntry
 	 * @typeofeditors ["CDE"]
 	 * @param {string} sValue - The value of a list item.
@@ -18809,16 +20770,17 @@
 	
 	/**
 	 * Specifies a unique ID for the current content control.
+	 * @method
 	 * @memberof ApiBlockLvlSdt
 	 * @typeofeditors ["CDE"]
 	 * @since 8.3.2
-	 * @param {number} id - The numerical id which will be specified to the current content control.
+	 * @param {number} id - The numerical ID which will be specified for the current content control.
 	 * @see office-js-api/Examples/{Editor}/ApiBlockLvlSdt/Methods/SetId.js
 	 */
 	ApiBlockLvlSdt.prototype.SetId = ApiInlineLvlSdt.prototype.SetId;
 	
 	/**
-	 * Gets a unique ID for the current content control.
+	 * Returns a unique ID for the current content control.
 	 * @memberof ApiBlockLvlSdt
 	 * @typeofeditors ["CDE"]
 	 * @since 8.3.2
@@ -18837,6 +20799,7 @@
 	 * @memberof ApiBlockLvlSdt
 	 * @typeofeditors ["CDE"]
 	 * @param {"contentLocked" | "sdtContentLocked" | "sdtLocked"} lockType - The type of the lock applied to the block text content control.
+	 * @returns {boolean}
 	 * @see office-js-api/Examples/{Editor}/ApiBlockLvlSdt/Methods/SetLock.js
 	 */
 	ApiBlockLvlSdt.prototype.SetLock = function(lockType)
@@ -18848,8 +20811,11 @@
 			nLock = c_oAscSdtLockType.SdtContentLocked;
 		else if ("sdtLocked" === lockType)
 			nLock = c_oAscSdtLockType.SdtLocked;
+		else
+			return false;
 
 		this.Sdt.SetContentControlLock(nLock);
+		return true;
 	};
 
 	/**
@@ -18880,11 +20846,13 @@
 	 * @memberof ApiBlockLvlSdt
 	 * @typeofeditors ["CDE"]
 	 * @param {string} tag - The tag which will be added to the current container.
+	 * @returns {boolean}
 	 * @see office-js-api/Examples/{Editor}/ApiBlockLvlSdt/Methods/SetTag.js
 	 */
 	ApiBlockLvlSdt.prototype.SetTag = function(tag)
 	{
 		this.Sdt.SetTag(tag);
+		return true;
 	};
 
 	/**
@@ -18904,11 +20872,13 @@
 	 * @memberof ApiBlockLvlSdt
 	 * @typeofeditors ["CDE"]
 	 * @param {string} sLabel - The label which will be added to the current container. Can be a positive or negative integer from <b>-2147483647</b> to <b>2147483647</b>.
+	 * @returns {boolean}
 	 * @see office-js-api/Examples/{Editor}/ApiBlockLvlSdt/Methods/SetLabel.js
 	 */
 	ApiBlockLvlSdt.prototype.SetLabel = function(label)
 	{
 		this.Sdt.SetLabel(label);
+		return true;
 	};
 
 	/**
@@ -18922,17 +20892,154 @@
 	{
 		return this.Sdt.GetLabel();
 	};
+	
+	/**
+	 * Sets the data binding for the content control.
+	 * @memberof ApiBlockLvlSdt
+	 * @typeofeditors ["CDE"]
+	 * @since 9.0.0
+	 * @param {XmlMapping | null} xmlMapping - The data binding to associate with the content control.
+	 * @returns {boolean}
+	 * @see office-js-api/Examples/{Editor}/ApiBlockLvlSdt/Methods/SetDataBinding.js
+	 */
+	ApiBlockLvlSdt.prototype.SetDataBinding = function(xmlMapping)
+	{
+		if (!xmlMapping)
+		{
+			this.Sdt.setDataBinding();
+			return true;
+		}
+		
+		let prefix = xmlMapping["prefixMapping"];
+		let itemId = xmlMapping["storeItemID"];
+		let xPath  = xmlMapping["xpath"];
+		
+		this.Sdt.setDataBinding(new AscWord.DataBinding(prefix, itemId, xPath));
+		this.Sdt.checkDataBinding();
+		return true;
+	};
 
+	/**
+	 * Sets the content (image) for the picture content control.
+	 * This method updates the picture inside a content control by setting an image from a provided URL.
+	 * The URL should be an internet link to the image.
+	 * @memberof ApiBlockLvlSdt
+	 * @typeofeditors ["CDE"]
+	 * @since 9.0.0
+	 * @param {string} imageUrl - The URL of the image to be used for the content control.
+	 * Currently, only internet URLs are supported.
+	 * @returns {boolean} Returns `true` if the image was successfully set, otherwise `false`.
+	 * @see office-js-api/Examples/{Editor}/ApiBlockLvlSdt/Methods/SetPicture.js
+	 */
+	ApiBlockLvlSdt.prototype.SetPicture = function(imageUrl)
+	{
+		if (!this.Sdt.IsPicture())
+			return false;
+
+		var oImg, paraDrawing;
+		var allDrawings = this.Sdt.GetAllDrawingObjects();
+		for (var nDrawing = 0; nDrawing < allDrawings.length; nDrawing++)
+		{
+			if (allDrawings[nDrawing].IsPicture())
+			{
+				oImg = allDrawings[nDrawing].GraphicObj;
+				paraDrawing = allDrawings[nDrawing];
+				break;
+			}
+		}
+
+		if (oImg)
+		{
+			let spPr = oImg.spPr;
+			if (!spPr)
+			{
+				spPr = new AscFormat.CSpPr();
+				oImg.setSpPr(spPr);
+				spPr.setParent(oImg);
+			}
+
+			oImg.setBlipFill(AscFormat.CreateBlipFillRasterImageId(imageUrl));
+
+			let paragraph   = this.Sdt.GetParagraph();
+			let parentShape = paragraph && paragraph.GetParent() ? paragraph.GetParent().Is_DrawingShape(true) : null;
+			if (parentShape && parentShape.recalculate)
+				parentShape.recalculate();
+
+			this.Sdt.SetShowingPlcHdr(false);
+			return true;
+		}
+
+		return false;
+	};
+
+	/**
+	 * Checks whether the content control is a picture control.
+	 * This method verifies if the content control is specifically a picture control.
+	 * @memberof ApiBlockLvlSdt
+	 * @typeofeditors ["CDE"]
+	 * @since 9.0.0
+	 * @returns {boolean} Returns `true` if the content control is a picture, otherwise `false`.
+	 * @see office-js-api/Examples/{Editor}/ApiBlockLvlSdt/Methods/IsPicture.js
+	 */
+	ApiBlockLvlSdt.prototype.IsPicture = function()
+	{
+		return this.Sdt.IsPicture();
+	};
+	
+	/**
+	 * Retrieves the data binding of the content control.
+	 * @memberof ApiBlockLvlSdt
+	 * @typeofeditors ["CDE"]
+	 * @since 9.0.0
+	 * @returns {?XmlMapping} Returns the data binding of the content control if it exists, otherwise `null`.
+	 */
+	ApiBlockLvlSdt.prototype.GetDataBinding = function()
+	{
+		let dataBinding = this.Sdt.getDataBinding();
+		if (!dataBinding)
+			return null;
+		
+		return {
+			"prefixMapping" : dataBinding.prefixMappings,
+			"xpath"         : dataBinding.xpath,
+			"storeItemID"   : dataBinding.storeItemID
+		};
+	};
+	
+	/**
+	 * Updates the content control using the value from the XML mapping.
+	 * @method
+	 * @memberof ApiBlockLvlSdt
+	 * @typeofeditors ["CDE"]
+	 * @since 9.0.0
+	 * @returns {boolean} Returns `true` if the update was successful, otherwise `false`.
+	 * @see office-js-api/Examples/{Editor}/ApiBlockLvlSdt/Methods/UpdateFromXmlMapping.js
+	 */
+	ApiBlockLvlSdt.prototype.UpdateFromXmlMapping = ApiInlineLvlSdt.prototype.UpdateFromXmlMapping;
+	
+	/**
+	 * Returns the content control data for the XML mapping.
+	 * @method
+	 * @memberof ApiBlockLvlSdt
+	 * @typeofeditors ["CDE"]
+	 * @since 9.0.0
+	 * @returns {string} The string data representing the contents of the current content control.
+	 * @see office-js-api/Examples/{Editor}/ApiBlockLvlSdt/Methods/GetDataForXmlMapping.js
+	 */
+	ApiBlockLvlSdt.prototype.GetDataForXmlMapping = ApiInlineLvlSdt.prototype.GetDataForXmlMapping;
+	
 	/**
 	 * Sets the alias attribute to the current container.
 	 * @memberof ApiBlockLvlSdt
 	 * @typeofeditors ["CDE"]
 	 * @param {string} alias - The alias which will be added to the current container.
+	 * @returns {boolean}
 	 * @see office-js-api/Examples/{Editor}/ApiBlockLvlSdt/Methods/SetAlias.js
 	 */
 	ApiBlockLvlSdt.prototype.SetAlias = function(alias)
 	{
 		this.Sdt.SetAlias(alias);
+		return true;
 	};
 
 	/**
@@ -19076,6 +21183,7 @@
 	 * @memberof ApiBlockLvlSdt
 	 * @typeofeditors ["CDE"]
 	 * @param {ApiTextPr} textPr - The properties that will be set to the content of the content control.
+	 * @returns {boolean}
 	 * @see office-js-api/Examples/{Editor}/ApiBlockLvlSdt/Methods/SetTextPr.js
 	 */
 	ApiBlockLvlSdt.prototype.SetTextPr = function(textPr)
@@ -19084,6 +21192,7 @@
 		this.Sdt.Content.SetApplyToAll(true);
 		this.Sdt.Add(ParaTextPr);
 		this.Sdt.Content.SetApplyToAll(false);
+		return true;
 	};
 
 	/**
@@ -19266,7 +21375,12 @@
 	 */
 	ApiBlockLvlSdt.prototype.GetRange = function(start, end)
 	{
-		return new ApiRange(this.Sdt, start, end);
+		let oRange = new ApiRange(this.Sdt, start, end);
+		if (oRange.isEmpty) {
+			return null;
+		}
+
+		return oRange;
 	};
 	
 	/**
@@ -19322,6 +21436,7 @@
 	 * Selects the current content control.
 	 * @memberof ApiBlockLvlSdt
 	 * @typeofeditors ["CDE"]
+	 * @returns {boolean}
 	 * @see office-js-api/Examples/{Editor}/ApiBlockLvlSdt/Methods/Select.js
 	 */
 	ApiBlockLvlSdt.prototype.Select = function()
@@ -19330,6 +21445,7 @@
 
 		this.Sdt.SelectContentControl();
 		Document.UpdateSelection();
+		return true;
 	};
 
 	/**
@@ -19410,9 +21526,9 @@
 	 * <note>Please note that the current block content control must be in the document.</note>
 	 * @memberof ApiBlockLvlSdt
 	 * @typeofeditors ["CDE"]
-	 * @param {string} text - The comment text (required).
-	 * @param {string} author - The author's name (optional).
-	 * @param {string} userId - The user ID of the comment author (optional).
+	 * @param {string} text - The comment text.
+	 * @param {string} [author] - The author's name.
+	 * @param {string} [userId] - The user ID of the comment author.
 	 * @returns {?ApiComment} - Returns null if the comment was not added.
 	 * @see office-js-api/Examples/{Editor}/ApiBlockLvlSdt/Methods/AddComment.js
 	 */
@@ -19539,7 +21655,7 @@
 	};
 	
 	/**
-	 * Returns a list of values of the combo box / dropdown list content control.
+	 * Returns a list of values of the combo box / drop-down list content control.
 	 * @memberof ApiBlockLvlSdt
 	 * @typeofeditors ["CDE"]
 	 * @returns {ApiContentControlList}
@@ -19558,12 +21674,14 @@
 	 * @param {boolean?} [isAfter=true] - Specifies whether a cursor will be placed before (false) or after (true) the current content control.
 	 * @memberof ApiBlockLvlSdt
 	 * @typeofeditors ["CDE"]
+	 * @returns {boolean}
 	 * @since 8.1.0
 	 * @see office-js-api/Examples/{Editor}/ApiBlockLvlSdt/Methods/MoveCursorOutside.js
 	 */
 	ApiBlockLvlSdt.prototype.MoveCursorOutside = function(isAfter)
 	{
 		this.Sdt.MoveCursorOutsideForm(false === isAfter);
+		return true;
 	};
 
 	/**
@@ -19587,6 +21705,7 @@
 	
 	/**
 	 * Sets the border color to the current content control.
+	 * @method
 	 * @memberof ApiBlockLvlSdt
 	 * @param {byte} r - Red color component value.
 	 * @param {byte} g - Green color component value.
@@ -19600,7 +21719,8 @@
 	ApiBlockLvlSdt.prototype.SetBorderColor = ApiInlineLvlSdt.prototype.SetBorderColor;
 	
 	/**
-	 * Gets the border color of the current content control.
+	 * Returns the border color of the current content control.
+	 * @method
 	 * @memberof ApiBlockLvlSdt
 	 * @typeofeditors ["CDE"]
 	 * @since 8.3.2
@@ -19612,6 +21732,7 @@
 	/**
 	 * Sets the background color to the current content control.
 	 * @memberof ApiBlockLvlSdt
+	 * @method
 	 * @param {byte} r - Red color component value.
 	 * @param {byte} g - Green color component value.
 	 * @param {byte} b - Blue color component value.
@@ -19623,14 +21744,39 @@
 	ApiBlockLvlSdt.prototype.SetBackgroundColor = ApiInlineLvlSdt.prototype.SetBackgroundColor;
 	
 	/**
-	 * Gets the background color of the current content control.
+	 * Returns the background color of the current content control.
 	 * @memberof ApiBlockLvlSdt
+	 * @method
 	 * @typeofeditors ["CDE"]
 	 * @since 8.3.2
 	 * @returns {null | {r:byte, g:byte, b:byte, a:byte}}
 	 * @see office-js-api/Examples/{Editor}/ApiBlockLvlSdt/Methods/GetBackgroundColor.js
 	 */
 	ApiBlockLvlSdt.prototype.GetBackgroundColor = ApiInlineLvlSdt.prototype.GetBackgroundColor;
+	
+	/**
+	 * Sets the visualization of the content control.
+	 *
+	 * @method
+	 * @memberof ApiBlockLvlSdt
+	 * @typeofeditors ["CDE"]
+	 * @since 9.0.0
+	 * @param {"boundingBox"|"hidden"} type - The desired type of visualization.
+	 * @see office-js-api/Examples/{Editor}/ApiBlockLvlSdt/Methods/SetAppearance.js
+	 */
+	ApiBlockLvlSdt.prototype.SetAppearance = ApiInlineLvlSdt.prototype.SetAppearance;
+	
+	/**
+	 * Gets the visualization of the content control.
+	 *
+	 * @method
+	 * @memberof ApiBlockLvlSdt
+	 * @typeofeditors ["CDE"]
+	 * @since 9.0.0
+	 * @returns {"boundingBox"|"hidden"} type - The type of visualization.
+	 * @see office-js-api/Examples/{Editor}/ApiBlockLvlSdt/Methods/GetAppearance.js
+	 */
+	ApiBlockLvlSdt.prototype.GetAppearance = ApiInlineLvlSdt.prototype.GetAppearance;
 	
 	//------------------------------------------------------------------------------------------------------------------
 	//
@@ -19647,6 +21793,19 @@
 	 */
 	ApiFormBase.prototype.GetClassType = function()
 	{
+		if (this instanceof ApiTextForm)
+			return "textForm";
+		else if (this instanceof ApiComboBoxForm)
+			return "comboBoxForm";
+		else if (this instanceof ApiDateForm)
+			return "dateForm";
+		else if (this instanceof ApiCheckBoxForm)
+			return "checkBoxForm";
+		else if (this instanceof ApiPictureForm)
+			return "pictureForm";
+		else if (this instanceof ApiComplexForm)
+			return "complexForm";
+		
 		return "form";
 	};
 	/**
@@ -19672,6 +21831,8 @@
 			return "pictureForm";
 		if (this.Sdt.IsDatePicker())
 			return "dateForm";
+		if (this.Sdt.IsComplexForm())
+			return "complexForm";
 	};
 	/**
 	 * Returns the current form key.
@@ -19925,7 +22086,6 @@
 	};
 	/**
 	 * Returns the text from the current form.
-	 *Returns the value as a string if possible for the given form type*
 	 * @memberof ApiFormBase
 	 * @typeofeditors ["CDE", "CFE"]
 	 * @returns {string}
@@ -19939,12 +22099,14 @@
 	 * Clears the current form.
 	 * @memberof ApiFormBase
 	 * @typeofeditors ["CDE", "CFE"]
+	 * @returns {boolean}
 	 * @see office-js-api/Examples/{Editor}/ApiFormBase/Methods/Clear.js
 	 */
 	ApiFormBase.prototype.Clear = function()
 	{
 		return executeNoFormLockCheck(function() {
 			this.Sdt.ClearContentControlExt();
+			return true;
 		}, this);
 	};
 	/**
@@ -19990,19 +22152,17 @@
 	 *Used if possible for this type of form*
 	 * @memberof ApiFormBase
 	 * @typeofeditors ["CDE", "CFE"]
-	 * @param {ApiTextPr} oTextPr - The text properties that will be set to the current form.
+	 * @param {ApiTextPr} textPr - The text properties that will be set to the current form.
 	 * @return {boolean}  
 	 * @see office-js-api/Examples/{Editor}/ApiFormBase/Methods/SetTextPr.js
 	 */
-	ApiFormBase.prototype.SetTextPr = function(oTextPr)
+	ApiFormBase.prototype.SetTextPr = function(textPr)
 	{
-		if (oTextPr && oTextPr.GetClassType && oTextPr.GetClassType() === "textPr")
-		{
-			this.Sdt.Apply_TextPr(oTextPr.TextPr);
-			return true;
-		}
-
-		return false;
+		if (!textPr || !(textPr instanceof ApiTextPr))
+			throwException("The textPr parameter must be an instance of ApiTextPr");
+		
+		this.Sdt.Apply_TextPr(textPr.TextPr, undefined, true);
+		return true;
 	};
 	/**
 	 * Returns the text properties from the current form.
@@ -20021,12 +22181,14 @@
 	 * @param {boolean?} [isAfter=true] - Specifies whether a cursor will be placed before (false) or after (true) the current form.
 	 * @memberof ApiFormBase
 	 * @typeofeditors ["CDE", "CFE"]
+	 * @returns {boolean}
 	 * @since 8.1.0
 	 * @see office-js-api/Examples/{Editor}/ApiFormBase/Methods/MoveCursorOutside.js
 	 */
 	ApiFormBase.prototype.MoveCursorOutside = function(isAfter)
 	{
 		this.Sdt.MoveCursorOutsideForm(false === isAfter);
+		return true;
 	};
 	/**
 	 * Copies the current form (copies with the shape if it exists).
@@ -20069,6 +22231,59 @@
 	
 			return new this.constructor(oSdt);
 		}, this);
+	};
+	/**
+	 * Returns the tag attribute for the current form.
+	 * @memberof ApiFormBase
+	 * @typeofeditors ["CDE", "CFE"]
+	 * @since 9.0.0
+	 * @returns {string}
+	 * @see office-js-api/Examples/{Editor}/ApiFormBase/Methods/GetTag.js
+	 */
+	ApiFormBase.prototype.GetTag = function()
+	{
+		return this.Sdt.GetTag();
+	};
+	/**
+	 * Sets the tag attribute to the current form.
+	 * @memberof ApiFormBase
+	 * @typeofeditors ["CDE", "CFE"]
+	 * @since 9.0.0
+	 * @param {string} tag - The tag which will be added to the current container.
+	 * @returns {boolean}
+	 * @see office-js-api/Examples/{Editor}/ApiFormBase/Methods/SetTag.js
+	 */
+	ApiFormBase.prototype.SetTag = function(tag)
+	{
+		this.Sdt.SetTag(tag);
+		return true;
+	};
+	
+	/**
+	 * Returns the role of the current form.
+	 * @memberof ApiFormBase
+	 * @typeofeditors ["CDE", "CFE"]
+	 * @since 9.0.0
+	 * @returns {string}
+	 * @see office-js-api/Examples/{Editor}/ApiFormBase/Methods/GetRole.js
+	 */
+	ApiFormBase.prototype.GetRole = function()
+	{
+		return this.Sdt.GetFormRole();
+	};
+	/**
+	 * Sets the role to the current form.
+	 * @memberof ApiFormBase
+	 * @typeofeditors ["CDE", "CFE"]
+	 * @since 9.0.0
+	 * @param {string} role - The role which will be attached to the current form.
+	 * @returns {boolean}
+	 * @see office-js-api/Examples/{Editor}/ApiFormBase/Methods/SetRole.js
+	 */
+	ApiFormBase.prototype.SetRole = function(role)
+	{
+		this.Sdt.SetFormRole(role);
+		return true;
 	};
 
 	//------------------------------------------------------------------------------------------------------------------
@@ -20667,7 +22882,7 @@
 		}, this);
 	};
 	/**
-	 * Checks if the combo box text can be edited. If it is not editable, then this form is a dropdown list.
+	 * Checks if the combo box text can be edited. If it is not editable, then this form is a drop-down list.
 	 * @memberof ApiComboBoxForm
 	 * @typeofeditors ["CDE", "CFE"]
 	 * @returns {boolean}
@@ -20742,6 +22957,7 @@
 	 * @memberof ApiCheckBoxForm
 	 * @param {string} sKey - Radio group key.
 	 * @typeofeditors ["CDE", "CFE"]
+	 * @returns {boolean}
 	 * @see office-js-api/Examples/{Editor}/ApiCheckBoxForm/Methods/SetRadioGroup.js
 	 */
 	ApiCheckBoxForm.prototype.SetRadioGroup = function(sKey)
@@ -20749,15 +22965,16 @@
 		return executeNoFormLockCheck(function(){
 			let oPr = this.Sdt.GetCheckBoxPr();
 			if (!oPr)
-				return;
+				return false;
 			
 			oPr = oPr.Copy();
 			oPr.SetGroupKey(sKey);
 			this.Sdt.SetCheckBoxPr(oPr);
+			return true;
 		}, this);
 	};
 	/**
-	 * Get the choice name for the current radio button.
+	 * Returns the choice name of the current radio button.
 	 * @memberof ApiCheckBoxForm
 	 * @typeofeditors ["CDE", "CFE"]
 	 * @since 8.3.2
@@ -20772,9 +22989,9 @@
 			return "";
 	};
 	/**
-	 * Set the choice name for the current radio button.
+	 * Sets the choice name for the current radio button.
 	 * @memberof ApiCheckBoxForm
-	 * @param {string} choiceName - Radio button choice name.
+	 * @param {string} choiceName - The radio button choice name.
 	 * @typeofeditors ["CDE", "CFE"]
 	 * @since 8.3.2
 	 * @returns {boolean}
@@ -20917,7 +23134,153 @@
 			return true;
 		}, this);
 	};
+	
+	/**
+	 * Sets the date to the current form.
+	 * @memberof ApiDateForm
+	 * @typeofeditors ["CDE", "CFE"]
+	 * @param {Date | string} date - The date object or the date in the string format.
+	 * @returns {boolean}
+	 * @since 9.0.0
+	 * @see office-js-api/Examples/{Editor}/ApiDateForm/Methods/SetDate.js
+	 */
+	ApiDateForm.prototype.SetDate = function(date)
+	{
+		return executeNoFormLockCheck(function(){
+			if (undefined !== date && typeof(date) === "string")
+			{
+				try
+				{
+					date = new Date(date);
+				}
+				catch (err)
+				{
+					date = new Date();
+				}
+			}
+			
+			if (!(date instanceof Date))
+				return false;
+			
+			let oNewDatePr = this.Sdt.GetDatePickerPr().Copy();
+			oNewDatePr.SetFullDate(date);
+			
+			this.Sdt.ApplyDatePickerPr(oNewDatePr, true);
+			return true;
+		}, this);
+	};
+	
+	/**
+	 * Returns the date of the current form.
+	 * @memberof ApiDateForm
+	 * @typeofeditors ["CDE", "CFE"]
+	 * @returns {Date} - The date object.
+	 * @since 9.0.0
+	 * @see office-js-api/Examples/{Editor}/ApiDateForm/Methods/GetDate.js
+	 */
+	ApiDateForm.prototype.GetDate = function()
+	{
+		let fullDate = this.Sdt.GetDatePickerPr().GetFullDate();
+		return new Date(fullDate);
+	};
 
+	//------------------------------------------------------------------------------------------------------------------
+	//
+	// ApiComplexForm
+	//
+	//------------------------------------------------------------------------------------------------------------------
+
+	/**
+	 * Appends the text content of the given form to the end of the current complex form.
+	 * @memberof ApiComplexForm
+	 * @param value {string | ApiDateForm | ApiPictureForm | ApiCheckBoxForm | ApiComboBoxForm | ApiTextForm} - The text or the form to add.
+	 * @typeofeditors ["CDE", "CFE"]
+	 * @returns {boolean}
+	 * @since 9.0.0
+	 * @see office-js-api/Examples/{Editor}/ApiComplexForm/Methods/Add.js
+	 */
+	ApiComplexForm.prototype.Add = function(value)
+	{
+		if (!value)
+			return false;
+		
+		return executeNoFormLockCheck(function(){
+			if (value instanceof ApiDateForm
+				|| value instanceof ApiPictureForm
+				|| value instanceof ApiCheckBoxForm
+				|| value instanceof ApiComboBoxForm
+				|| value instanceof ApiTextForm)
+			{
+				if (value.Sdt.IsUseInDocument())
+					return false;
+				
+				if (this.Sdt.IsPlaceHolder())
+					this.Sdt.private_ReplacePlaceHolderWithContent();
+				
+				this.Sdt.Add_ToContent(this.Sdt.Content.length, value.Sdt);
+			}
+			else if (typeof(value) === "string")
+			{
+				if (this.Sdt.IsPlaceHolder())
+					this.Sdt.private_ReplacePlaceHolderWithContent();
+				
+				let lastElement = this.Sdt.Content[this.Sdt.Content.length - 1];
+				if (lastElement instanceof AscWord.Run)
+				{
+					lastElement.AddText(value);
+				}
+				else
+				{
+					let run = new AscWord.Run();
+					run.AddText(value);
+					this.Sdt.Add_ToContent(this.Sdt.Content.length, run);
+				}
+			}
+
+			this.OnChangeValue();
+			return true;
+		}, this);
+	};
+	/**
+	 * Returns an ordered list of subforms.
+	 * @memberof ApiComplexForm
+	 * @typeofeditors ["CDE", "CFE"]
+	 * @returns {ApiForm[]}
+	 * @since 9.0.0
+	 * @see office-js-api/Examples/{Editor}/ApiComplexForm/Methods/GetSubForms.js
+	 */
+	ApiComplexForm.prototype.GetSubForms = function()
+	{
+		let forms = this.Sdt.GetAllSubForms();
+		let result = [];
+		for (let i = 0; i < forms.length; ++i)
+		{
+			let apiForm = ToApiForm(forms[i]);
+			if (apiForm)
+				result.push(apiForm);
+		}
+		return result;
+	};
+	/**
+	 * Clears all content from the current complex form, resetting it to its placeholder state.
+	 * @memberof ApiComplexForm
+	 * @typeofeditors ["CDE", "CFE"]
+	 * @returns {boolean}
+	 * @since 9.0.0
+	 * @see office-js-api/Examples/{Editor}/ApiComplexForm/Methods/ClearContent.js
+	 */
+	ApiComplexForm.prototype.ClearContent = function()
+	{
+		return executeNoFormLockCheck(function(){
+			if (this.Sdt.IsPlaceHolder())
+				return false;
+			this.Sdt.ClearContentControl();
+			this.Sdt.ReplaceContentWithPlaceHolder();
+			this.OnChangeValue();
+			return true;
+		}, this);
+	};
+	
 	/**
 	 * Converts the ApiBlockLvlSdt object into the JSON object.
 	 * @memberof ApiBlockLvlSdt
@@ -20945,6 +23308,7 @@
 	 * @param {string[]} textStrings - An array of replacement strings.
 	 * @param {string} [tab="\t"] - A character which is used to specify the tab in the source text.
 	 * @param {string} [newLine="\r\n"] - A character which is used to specify the line break character in the source text.
+	 * @returns {boolean}
 	 * @see office-js-api/Examples/{Editor}/Api/Methods/ReplaceTextSmart.js
 	 */
 	Api.prototype.ReplaceTextSmart = function(textStrings, tab, newLine)
@@ -20956,8 +23320,14 @@
 		var textDelta        = null;
 		var arrSelectedParas = null;
 
+		let isTrackRevisions = null;
+
 		function GetRunInfo(oRun)
 		{
+			if (isTrackRevisions && !oRun.CanDeleteInReviewMode() && reviewtype_Remove === oRun.GetReviewType()) {
+				return;
+			}
+
 			var StartPos = 0;
 			var EndPos   = 0;
 			var Item;
@@ -21142,32 +23512,63 @@
 
 		function DelInsertChars()
 		{
-			for (var nChange = textDelta.length - 1; nChange >= 0; nChange--)
+			for (let nChange = textDelta.length - 1; nChange >= 0; nChange--)
 			{
-				var oChange = textDelta[nChange];
-				var DelCount = oChange.deleteCount;
-				var infoToAdd = null;
-				for (var nInfo = 0; nInfo < allRunsInfo.length; nInfo++)
+				let oChange = textDelta[nChange];
+				let DelCount = oChange.deleteCount;
+				let oRunInfoToAdd = null;
+
+				for (let nInfo = 0; nInfo < allRunsInfo.length; nInfo++)
 				{
-					var oInfo = allRunsInfo[nInfo];
-					if (oChange.pos >= oInfo.GlobStartPos || oChange.pos + DelCount > oInfo.GlobStartPos)
+					let oRunInfo = Object.assign({}, allRunsInfo[nInfo]);
+					
+					let oDeleteReviewRun = null;
+					let oInsertReviewRun = null;
+
+					if (oChange.pos >= oRunInfo.GlobStartPos || oChange.pos + DelCount > oRunInfo.GlobStartPos)
 					{
-						var nPosToDel   = Math.max(0, oChange.pos - oInfo.GlobStartPos + oInfo.StartPos);
-						var nPosToAdd   = nPosToDel
-						var nCharsToDel = Math.min(oChange.deleteCount, oInfo.StringCount);
+						let nPosToDel   = Math.max(0, oChange.pos - oRunInfo.GlobStartPos + oRunInfo.StartPos);
+						let nPosToAdd   = nPosToDel
+						let nCharsToDel = Math.min(oChange.deleteCount, oRunInfo.StringCount);
 						
-						if ((nPosToDel >= oInfo.StartPos + oInfo.StringCount && nCharsToDel !== 0) || (nCharsToDel === 0 && oChange.deleteCount !== 0)
-							|| nPosToAdd > oInfo.StartPos + oInfo.StringCount)
+						if ((nPosToDel >= oRunInfo.StartPos + oRunInfo.StringCount && nCharsToDel !== 0) || (nCharsToDel === 0 && oChange.deleteCount !== 0)
+							|| nPosToAdd > oRunInfo.StartPos + oRunInfo.StringCount)
 							continue;
 
-						for (var nChar = 0; nChar < nCharsToDel; nChar++)
+						for (let nChar = 0; nChar < nCharsToDel; nChar++)
 						{
-							if (!oInfo.Run.Content[nPosToDel])
+							if (!oRunInfo.Run.Content[nPosToDel])
 								break;
 								
-							if (para_Text === oInfo.Run.Content[nPosToDel].Type || para_Space === oInfo.Run.Content[nPosToDel].Type || para_Tab === oInfo.Run.Content[nPosToDel].Type || para_NewLine === oInfo.Run.Content[nPosToDel].Type)
+							if ([para_Text, para_Space, para_Tab, para_NewLine].includes(oRunInfo.Run.Content[nPosToDel].Type))
 							{
-								oInfo.Run.RemoveFromContent(nPosToDel, 1);
+								if (isTrackRevisions) {
+									if (!oRunInfo.Run.CanDeleteInReviewMode()) {
+										if (null == oDeleteReviewRun) {
+											let oPara = oRunInfo.Run.Paragraph;
+
+											// split cur run
+											let nCurRunReviewType = oRunInfo.Run.GetReviewType();
+											let oCurReviewInfo = oRunInfo.Run.GetReviewInfo();
+											let nCurRunIdx = oPara.Content.indexOf(oRunInfo.Run);
+											oRunInfo.Run = oRunInfo.Run.Split_Run(nPosToDel);
+											oRunInfo.Run.SetReviewTypeWithInfo(nCurRunReviewType, oCurReviewInfo);
+											oPara.AddToContent(nCurRunIdx + 1, oRunInfo.Run);
+											nPosToDel = 0;
+
+											// create del review run
+											oDeleteReviewRun = new ParaRun(oRunInfo.Run.Paragraph, false);
+											oDeleteReviewRun.Set_Pr(oRunInfo.Run.Pr.Copy(true));
+											oDeleteReviewRun.SetReviewType(reviewtype_Remove);
+											oPara.AddToContent(nCurRunIdx + 1, oDeleteReviewRun);
+										}
+	
+										oDeleteReviewRun.AddToContentToEnd(oRunInfo.Run.Content[nPosToDel].Copy());
+									}
+								}
+								
+								oRunInfo.Run.RemoveFromContent(nPosToDel, 1);
+
 								nChar--;
 								oChange.deleteCount--;
 								nCharsToDel--;
@@ -21184,17 +23585,30 @@
 
 						if (oChange.deleteCount !== 0)
 						{
-							infoToAdd = 
+							oRunInfoToAdd = 
 							{
-								Run: oInfo.Run,
+								Run: oRunInfo.Run,
 								Pos: nPosToAdd
 							};
 							continue;
 						}
 						
-						for (nChar = 0; nChar < oChange.insert.length; nChar++)
+						let oRunToAdd = oRunInfo.Run.Content.length === 0 && oRunInfoToAdd ? oRunInfoToAdd.Run : oRunInfo.Run;
+						nPosToAdd = oRunInfo.Run.Content.length === 0 && oRunInfoToAdd ? oRunInfoToAdd.Pos : nPosToAdd;
+
+						// creting review add run
+						if (oDeleteReviewRun) {
+							let oPara = oDeleteReviewRun.Paragraph;
+							oRunToAdd = new ParaRun(oPara, false);
+							oRunToAdd.Set_Pr(oDeleteReviewRun.Pr.Copy(true));
+							oRunToAdd.SetReviewType(reviewtype_Add);
+							oPara.AddToContent(oPara.Content.indexOf(oDeleteReviewRun) + 1, oRunToAdd);
+							nPosToAdd = 0;
+						}
+
+						for (let nChar = 0; nChar < oChange.insert.length; nChar++)
 						{
-							var itemText = null;
+							let itemText = null;
 							if (oChange.insert[nChar] === 160)
 								oChange.insert[nChar] = 32;
 
@@ -21205,14 +23619,7 @@
 							else
 								itemText = new AscWord.CRunText(oChange.insert[nChar]);
 
-							itemText.Parent = oInfo.Run.GetParagraph();
-							if (oInfo.Run.Content.length === 0 && infoToAdd)
-							{
-								infoToAdd.Run.AddToContent(infoToAdd.Pos, itemText);
-								infoToAdd.Pos++;
-							}
-							else
-								oInfo.Run.AddToContent(nPosToAdd, itemText);
+							oRunToAdd.AddToContent(nPosToAdd, itemText);
 
 							oChange.insert.shift();
 							nChar--;
@@ -21272,7 +23679,7 @@
 				if (arrSelectedParas[0] && arrSelectedParas[0].Parent)
 					arrSelectedParas[0].Parent.RemoveSelection();
 				Asc.editor.wb.recalculateDrawingObjects();
-				return;
+				return true;
 			}
 
 			if (oWorksheet.worksheet.getSheetProtection()) {
@@ -21326,11 +23733,12 @@
 		}
 		else 
 		{
-			var oDocument = this.GetDocument();
+			let oDocument = this.GetDocument();
+			isTrackRevisions = oDocument && oDocument.IsTrackRevisions();
 			arrSelectedParas = oDocument.Document.GetSelectedParagraphs();
 			if(arrSelectedParas.length <= 0 )
 			{
-				return;
+				return false;
 			}
 			ReplaceInParas(arrSelectedParas);
 			
@@ -21344,7 +23752,7 @@
 			var nIndexToPaste = arrSelectedParas[arrSelectedParas.length - 1].Index + 1;
 			var isPres        = !arrSelectedParas[0].bFromDocument;
 			if (!oParaParent)
-				return;
+				return true;
 
 			for (var nPara = arrSelectedParas.length; nPara < textStrings.length; nPara++)
 			{
@@ -21357,6 +23765,8 @@
 				nIndexToPaste++;
 			}
 		}
+
+		return true;
 	};
 	Api.prototype.CoAuthoringChatSendMessage = function(message)
 	{
@@ -21540,7 +23950,7 @@
 	/**
 	 * Returns the user ID of the comment author.
 	 * @memberof ApiComment
-	 * @typeofeditors ["CDE"]
+	 * @typeofeditors ["CDE", "CPE"]
 	 * @returns {string}
 	 * @see office-js-api/Examples/{Editor}/ApiComment/Methods/GetUserId.js
 	 */
@@ -21698,7 +24108,7 @@
 	 * @param {String} sText - The comment reply text (required).
 	 * @param {String} sAuthorName - The name of the comment reply author (optional).
 	 * @param {String} sUserId - The user ID of the comment reply author (optional).
-	 * @param {Number} [nPos=this.GetRepliesCount()] - The comment reply position.
+	 * @param {Number} [nPos=-1] - The comment reply position. If nPos=-1 add to the end.
 	 * @returns {ApiComment?} - this
 	 * @see office-js-api/Examples/{Editor}/ApiComment/Methods/AddReply.js
 	 */
@@ -21866,6 +24276,7 @@
 	 * @memberof ApiWatermarkSettings
 	 * @typeofeditors ["CDE"]
 	 * @param {WatermarkType} sType - The watermark type.
+	 * @returns {boolean}
 	 * @see office-js-api/Examples/{Editor}/ApiWatermarkSettings/Methods/SetType.js
 	 */
 	ApiWatermarkSettings.prototype.SetType = function (sType)
@@ -21884,6 +24295,7 @@
 			nType = Asc.c_oAscWatermarkType.None;
 		}
 		this.Settings.put_Type(nType);
+		return true;
 	};
 
 	/**
@@ -21912,11 +24324,13 @@
 	 * @memberof ApiWatermarkSettings
 	 * @typeofeditors ["CDE"]
 	 * @param {string} sText - The watermark text.
+	 * @returns {boolean}
 	 * @see office-js-api/Examples/{Editor}/ApiWatermarkSettings/Methods/SetText.js
 	 */
 	ApiWatermarkSettings.prototype.SetText = function (sText)
 	{
 		this.Settings.put_Text(sText);
+		return true;
 	};
 
 	/**
@@ -21936,11 +24350,13 @@
 	 * @memberof ApiWatermarkSettings
 	 * @typeofeditors ["CDE"]
 	 * @param {ApiTextPr} oTextPr - The watermark text properties.
+	 * @returns {boolean}
 	 * @see office-js-api/Examples/{Editor}/ApiWatermarkSettings/Methods/SetTextPr.js
 	 */
 	ApiWatermarkSettings.prototype.SetTextPr = function (oTextPr)
 	{
 		this.Settings.put_TextPr(new Asc.CTextProp(oTextPr.TextPr));
+		return true;
 	};
 
 	/**
@@ -21970,12 +24386,14 @@
 	 * @memberof ApiWatermarkSettings
 	 * @typeofeditors ["CDE"]
 	 * @param {number} nOpacity - The watermark opacity. This value must be from 0 to 255.
+	 * @returns {boolean}
 	 * @see office-js-api/Examples/{Editor}/ApiWatermarkSettings/Methods/SetOpacity.js
 	 */
 	ApiWatermarkSettings.prototype.SetOpacity = function (nOpacity)
 	{
 		let nOpacityVal = Math.min(255, Math.max(0, nOpacity));
 		this.Settings.put_Opacity(nOpacityVal);
+		return true;
 	};
 
 	/**
@@ -21997,6 +24415,7 @@
 	 * @memberof ApiWatermarkSettings
 	 * @typeofeditors ["CDE"]
 	 * @param {WatermarkDirection} sDirection - The watermark direction.
+	 * @returns {boolean}
 	 * @see office-js-api/Examples/{Editor}/ApiWatermarkSettings/Methods/SetDirection.js
 	 */
 	ApiWatermarkSettings.prototype.SetDirection = function (sDirection)
@@ -22028,7 +24447,11 @@
 				this.Settings.put_Angle(-90);
 				break;
 			}
+			default:
+				return false;
 		}
+
+		return true;
 	};
 	/**
 	 * Returns the direction of the watermark in the document.
@@ -22060,11 +24483,13 @@
 	 * @memberof ApiWatermarkSettings
 	 * @typeofeditors ["CDE"]
 	 * @param {string} sURL - The watermark image URL.
+	 * @returns {boolean}
 	 * @see office-js-api/Examples/{Editor}/ApiWatermarkSettings/Methods/SetImageURL.js
 	 */
 	ApiWatermarkSettings.prototype.SetImageURL = function (sURL)
 	{
 		this.Settings.put_ImageUrl2(sURL);
+		return true;
 	};
 
 	/**
@@ -22109,11 +24534,13 @@
 	 * @typeofeditors ["CDE"]
 	 * @param {EMU} nWidth - The watermark image width.
 	 * @param {EMU} nHeight - The watermark image height.
+	 * @returns {boolean}
 	 * @see office-js-api/Examples/{Editor}/ApiWatermarkSettings/Methods/SetImageSize.js
 	 */
 	ApiWatermarkSettings.prototype.SetImageSize = function (nWidth, nHeight)
 	{
 		this.Settings.put_ImageSize(nWidth, nHeight);
+		return true;
 	};
 
 	/**
@@ -22308,47 +24735,505 @@
 		return true;
 	};
 
+	//------------------------------------------------------------------------------------------------------------------
+	//
+	// ApiCore
+	//
+	//------------------------------------------------------------------------------------------------------------------
+
+	/**
+	 * Returns a type of the ApiCore class.
+	 * @memberof ApiCore
+	 * @typeofeditors ["CDE", "CSE", "CPE"]
+	 * @returns {"core"}
+	 * @since 9.0.0
+	 * @see office-js-api/Examples/{Editor}/ApiCore/Methods/GetClassType.js
+	 */
+	ApiCore.prototype.GetClassType = function () {
+		return "core";
+	};
+
+	/**
+	 * Sets the document category.
+	 * @memberof ApiCore
+	 * @typeofeditors ["CDE", "CSE", "CPE"]
+	 * @param {string} sCategory - The document category.
+	 * @since 9.0.0
+	 * @see office-js-api/Examples/{Editor}/ApiCore/Methods/SetCategory.js
+	 */
+	ApiCore.prototype.SetCategory = function (sCategory) {
+		this.Core.setCategory(sCategory);
+	};
+
+	/**
+	 * Returns the document category.
+	 * @memberof ApiCore
+	 * @typeofeditors ["CDE", "CSE", "CPE"]
+	 * @returns {string} - The document category.
+	 * @since 9.0.0
+	 * @see office-js-api/Examples/{Editor}/ApiCore/Methods/GetCategory.js
+	 */
+	ApiCore.prototype.GetCategory = function () {
+		return this.Core.asc_getCategory();
+	};
+
+	/**
+	 * Sets the document content status.
+	 * @memberof ApiCore
+	 * @typeofeditors ["CDE", "CSE", "CPE"]
+	 * @param {string} sStatus - The document content status.
+	 * @since 9.0.0
+	 * @see office-js-api/Examples/{Editor}/ApiCore/Methods/SetContentStatus.js
+	 */
+	ApiCore.prototype.SetContentStatus = function (sStatus) {
+		this.Core.setContentStatus(sStatus);
+	};
+
+	/**
+	 * Returns the document content status.
+	 * @memberof ApiCore
+	 * @typeofeditors ["CDE", "CSE", "CPE"]
+	 * @returns {string} - The document content status.
+	 * @since 9.0.0
+	 * @see office-js-api/Examples/{Editor}/ApiCore/Methods/GetContentStatus.js
+	 */
+	ApiCore.prototype.GetContentStatus = function () {
+		return this.Core.asc_getContentStatus();
+	};
+
+	/**
+	 * Sets the document creation date.
+	 * @memberof ApiCore
+	 * @typeofeditors ["CDE", "CSE", "CPE"]
+	 * @param {Date} oCreated - The document creation date.
+	 * @since 9.0.0
+	 * @see office-js-api/Examples/{Editor}/ApiCore/Methods/SetCreated.js
+	 */
+	ApiCore.prototype.SetCreated = function (oCreated) {
+		this.Core.setCreated(oCreated);
+	};
+
+	/**
+	 * Returns the document creation date.
+	 * @memberof ApiCore
+	 * @typeofeditors ["CDE", "CSE", "CPE"]
+	 * @returns {Date}- The document creation date.
+	 * @since 9.0.0
+	 * @see office-js-api/Examples/{Editor}/ApiCore/Methods/GetCreated.js
+	 */
+	ApiCore.prototype.GetCreated = function () {
+		return this.Core.asc_getCreated();
+	};
+
+	/**
+	 * Sets the document author.
+	 * @memberof ApiCore
+	 * @typeofeditors ["CDE", "CSE", "CPE"]
+	 * @param {string} sCreator - The document author.
+	 * @since 9.0.0
+	 * @see office-js-api/Examples/{Editor}/ApiCore/Methods/SetCreator.js
+	 */
+	ApiCore.prototype.SetCreator = function (sCreator) {
+		this.Core.setCreator(sCreator);
+	};
+
+	/**
+	 * Returns the document author.
+	 * @memberof ApiCore
+	 * @typeofeditors ["CDE", "CSE", "CPE"]
+	 * @returns {string} - The document author.
+	 * @since 9.0.0
+	 * @see office-js-api/Examples/{Editor}/ApiCore/Methods/GetCreator.js
+	 */
+	ApiCore.prototype.GetCreator = function () {
+		return this.Core.asc_getCreator();
+	};
+
+	/**
+	 * Sets the document description.
+	 * @memberof ApiCore
+	 * @typeofeditors ["CDE", "CSE", "CPE"]
+	 * @param {string} sDescription - The document description.
+	 * @since 9.0.0
+	 * @see office-js-api/Examples/{Editor}/ApiCore/Methods/SetDescription.js
+	 */
+	ApiCore.prototype.SetDescription = function (sDescription) {
+		this.Core.setDescription(sDescription);
+	};
+
+	/**
+	 * Returns the document description.
+	 * @memberof ApiCore
+	 * @typeofeditors ["CDE", "CSE", "CPE"]
+	 * @returns {string} - The document description.
+	 * @since 9.0.0
+	 * @see office-js-api/Examples/{Editor}/ApiCore/Methods/GetDescription.js
+	 */
+	ApiCore.prototype.GetDescription = function () {
+		return this.Core.asc_getDescription();
+	};
+
+	/**
+	 * Sets the document identifier.
+	 * @memberof ApiCore
+	 * @typeofeditors ["CDE", "CSE", "CPE"]
+	 * @param {string} sIdentifier - The document identifier.
+	 * @since 9.0.0
+	 * @see office-js-api/Examples/{Editor}/ApiCore/Methods/SetIdentifier.js
+	 */
+	ApiCore.prototype.SetIdentifier = function (sIdentifier) {
+		this.Core.setIdentifier(sIdentifier);
+	};
+
+	/**
+	 * Returns the document identifier.
+	 * @memberof ApiCore
+	 * @typeofeditors ["CDE", "CSE", "CPE"]
+	 * @returns {string} - The document identifier.
+	 * @since 9.0.0
+	 * @see office-js-api/Examples/{Editor}/ApiCore/Methods/GetIdentifier.js
+	 */
+	ApiCore.prototype.GetIdentifier = function () {
+		return this.Core.asc_getIdentifier();
+	};
+
+	/**
+	 * Sets the document keywords.
+	 * @memberof ApiCore
+	 * @typeofeditors ["CDE", "CSE", "CPE"]
+	 * @param {string} sKeywords - The document keywords in the string format.
+	 * @since 9.0.0
+	 * @see office-js-api/Examples/{Editor}/ApiCore/Methods/SetKeywords.js
+	 *
+	 */
+	ApiCore.prototype.SetKeywords = function (sKeywords) {
+		this.Core.setKeywords(sKeywords);
+	};
+
+	/**
+	 * Returns the document keywords.
+	 * @memberof ApiCore
+	 * @typeofeditors ["CDE", "CSE", "CPE"]
+	 * @returns {string} - The document keywords in the string format.
+	 * @since 9.0.0
+	 * @see office-js-api/Examples/{Editor}/ApiCore/Methods/GetKeywords.js
+	 */
+	ApiCore.prototype.GetKeywords = function () {
+		return this.Core.asc_getKeywords();
+	};
+
+	/**
+	 * Sets the document language.
+	 * @memberof ApiCore
+	 * @typeofeditors ["CDE", "CSE", "CPE"]
+	 * @param {string} sLanguage - The document language.
+	 * @since 9.0.0
+	 * @see office-js-api/Examples/{Editor}/ApiCore/Methods/SetLanguage.js
+	 */
+	ApiCore.prototype.SetLanguage = function (sLanguage) {
+		this.Core.setLanguage(sLanguage);
+	};
+
+	/**
+	 * Returns the document language.
+	 * @memberof ApiCore
+	 * @typeofeditors ["CDE", "CSE", "CPE"]
+	 * @returns {string} - The document language.
+	 * @since 9.0.0
+	 * @see office-js-api/Examples/{Editor}/ApiCore/Methods/GetLanguage.js
+	 */
+	ApiCore.prototype.GetLanguage = function () {
+		return this.Core.asc_getLanguage();
+	};
+
+	/**
+	 * Sets the name of the user who last modified the document.
+	 * @memberof ApiCore
+	 * @typeofeditors ["CDE", "CSE", "CPE"]
+	 * @param {string} sLastModifiedBy - The name of the user who last modified the document.
+	 * @since 9.0.0
+	 * @see office-js-api/Examples/{Editor}/ApiCore/Methods/SetLastModifiedBy.js
+	 */
+	ApiCore.prototype.SetLastModifiedBy = function (sLastModifiedBy) {
+		this.Core.setLastModifiedBy(sLastModifiedBy);
+	};
+
+	/**
+	 * Returns the name of the user who last modified the document.
+	 * @memberof ApiCore
+	 * @typeofeditors ["CDE", "CSE", "CPE"]
+	 * @returns {string} - The name of the user who last modified the document.
+	 * @since 9.0.0
+	 * @see office-js-api/Examples/{Editor}/ApiCore/Methods/GetLastModifiedBy.js
+	 */
+	ApiCore.prototype.GetLastModifiedBy = function () {
+		return this.Core.asc_getLastModifiedBy();
+	};
+
+	/**
+	 * Sets the date when the document was last printed.
+	 * @memberof ApiCore
+	 * @typeofeditors ["CDE", "CSE", "CPE"]
+	 * @param {Date} oLastPrinted - The date when the document was last printed.
+	 * @since 9.0.0
+	 * @see office-js-api/Examples/{Editor}/ApiCore/Methods/SetLastPrinted.js
+	 */
+	ApiCore.prototype.SetLastPrinted = function (oLastPrinted) {
+		this.Core.setLastPrinted(oLastPrinted);
+	};
+
+	/**
+	 * Returns the date when the document was last printed.
+	 * @memberof ApiCore
+	 * @typeofeditors ["CDE", "CSE", "CPE"]
+	 * @returns {Date} - The date when the document was last printed.
+	 * @since 9.0.0
+	 * @see office-js-api/Examples/{Editor}/ApiCore/Methods/GetLastPrinted.js
+	 */
+	ApiCore.prototype.GetLastPrinted = function () {
+		return this.Core.asc_getLastPrinted();
+	};
+
+	/**
+	 * Sets the date when the document was last modified.
+	 * @memberof ApiCore
+	 * @typeofeditors ["CDE", "CSE", "CPE"]
+	 * @param {Date} oModified - The date when the document was last modified.
+	 * @since 9.0.0
+	 * @see office-js-api/Examples/{Editor}/ApiCore/Methods/SetModified.js
+	 */
+	ApiCore.prototype.SetModified = function (oModified) {
+		this.Core.setModified(oModified);
+	};
+
+	/**
+	 * Returns the date when the document was last modified.
+	 * @memberof ApiCore
+	 * @typeofeditors ["CDE", "CSE", "CPE"]
+	 * @returns {Date} - The date when the document was last modified.
+	 * @since 9.0.0
+	 * @see office-js-api/Examples/{Editor}/ApiCore/Methods/GetModified.js
+	 */
+	ApiCore.prototype.GetModified = function () {
+		return this.Core.asc_getModified();
+	};
+
+	/**
+	 * Sets the document revision.
+	 * @memberof ApiCore
+	 * @typeofeditors ["CDE", "CSE", "CPE"]
+	 * @param {string} sRevision - The document revision.
+	 * @since 9.0.0
+	 * @see office-js-api/Examples/{Editor}/ApiCore/Methods/SetRevision.js
+	 */
+	ApiCore.prototype.SetRevision = function (sRevision) {
+		this.Core.setRevision(sRevision);
+	};
+
+	/**
+	 * Returns the document revision.
+	 * @memberof ApiCore
+	 * @typeofeditors ["CDE", "CSE", "CPE"]
+	 * @returns {string} - The document revision.
+	 * @since 9.0.0
+	 * @see office-js-api/Examples/{Editor}/ApiCore/Methods/GetRevision.js
+	 */
+	ApiCore.prototype.GetRevision = function () {
+		return this.Core.asc_getRevision();
+	};
+
+	/**
+	 * Sets the document subject.
+	 * @memberof ApiCore
+	 * @typeofeditors ["CDE", "CSE", "CPE"]
+	 * @param {string} sSubject - The document subject.
+	 * @since 9.0.0
+	 * @see office-js-api/Examples/{Editor}/ApiCore/Methods/SetSubject.js
+	 */
+	ApiCore.prototype.SetSubject = function (sSubject) {
+		this.Core.setSubject(sSubject);
+	};
+
+	/**
+	 * Returns the document subject.
+	 * @memberof ApiCore
+	 * @typeofeditors ["CDE", "CSE", "CPE"]
+	 * @returns {string} - The document subject.
+	 * @since 9.0.0
+	 * @see office-js-api/Examples/{Editor}/ApiCore/Methods/GetSubject.js
+	 */
+	ApiCore.prototype.GetSubject = function () {
+		return this.Core.asc_getSubject();
+	};
+
+	/**
+	 * Sets the document title.
+	 * @memberof ApiCore
+	 * @typeofeditors ["CDE", "CSE", "CPE"]
+	 * @param {string} sTitle - The document title.
+	 * @since 9.0.0
+	 * @see office-js-api/Examples/{Editor}/ApiCore/Methods/SetTitle.js
+	 */
+	ApiCore.prototype.SetTitle = function (sTitle) {
+		this.Core.setTitle(sTitle);
+	};
+
+	/**
+	 * Returns the document title.
+	 * @memberof ApiCore
+	 * @typeofeditors ["CDE", "CSE", "CPE"]
+	 * @returns {string} - The document title.
+	 * @since 9.0.0
+	 * @see office-js-api/Examples/{Editor}/ApiCore/Methods/GetTitle.js
+	 */
+	ApiCore.prototype.GetTitle = function () {
+		return this.Core.asc_getTitle();
+	};
+
+	/**
+	 * Sets the document version.
+	 * @memberof ApiCore
+	 * @typeofeditors ["CDE", "CSE", "CPE"]
+	 * @param {string} sVersion - The document version.
+	 * @since 9.0.0
+	 * @see office-js-api/Examples/{Editor}/ApiCore/Methods/SetVersion.js
+	 */
+	ApiCore.prototype.SetVersion = function (sVersion) {
+		this.Core.setVersion(sVersion);
+	};
+
+	/**
+	 * Returns the document version.
+	 * @memberof ApiCore
+	 * @typeofeditors ["CDE", "CSE", "CPE"]
+	 * @returns {string} - The document version.
+	 * @since 9.0.0
+	 * @see office-js-api/Examples/{Editor}/ApiCore/Methods/GetVersion.js
+	 */
+	ApiCore.prototype.GetVersion = function () {
+		return this.Core.asc_getVersion();
+	};
+
+	//------------------------------------------------------------------------------------------------------------------
+	//
+	// ApiCustomProperties
+	//
+	//------------------------------------------------------------------------------------------------------------------
+
+	/**
+	 * Returns a type of the ApiCustomProperties class.
+	 * @memberof ApiCustomProperties
+	 * @typeofeditors ["CDE", "CSE", "CPE"]
+	 * @returns {"customProperties"}
+	 * @since 9.0.0
+	 * @see office-js-api/Examples/{Editor}/ApiCustomProperties/Methods/GetClassType.js
+	 */
+	ApiCustomProperties.prototype.GetClassType = function () {
+		return 'customProperties';
+	};
+
+	/**
+	 * Adds a custom property to the document with automatic type detection.
+	 * @memberof ApiCustomProperties
+	 * @typeofeditors ["CDE", "CSE", "CPE"]
+	 * @param {string} name - The custom property name.
+	 * @param {string | number | boolean | Date} value - The custom property value.
+	 * @returns {boolean} - Returns false if the type is unsupported.
+	 * @since 9.0.0
+	 * @see office-js-api/Examples/{Editor}/ApiCustomProperties/Methods/Add.js
+	 */
+	ApiCustomProperties.prototype.Add = function (name, value) {
+		if (typeof value === 'string') {
+			this.CustomProperties.AddProperty(name, AscCommon.c_oVariantTypes.vtLpwstr, value);
+			return true;
+		}
+
+		if (typeof value === 'boolean') {
+			this.CustomProperties.AddProperty(name, AscCommon.c_oVariantTypes.vtBool, value);
+			return true;
+		}
+
+		if (typeof value === 'number') {
+			const type = Number.isInteger(value)
+				? AscCommon.c_oVariantTypes.vtI4
+				: AscCommon.c_oVariantTypes.vtR8;
+			this.CustomProperties.AddProperty(name, type, value);
+			return true;
+		}
+
+		if (value instanceof Date && !isNaN(value.getTime())) {
+			this.CustomProperties.AddProperty(name, AscCommon.c_oVariantTypes.vtFiletime, value);
+			return true;
+		}
+
+		return false;
+	};
+
+	/**
+	 * Returns the value of a custom property by its name.
+	 * @memberof ApiCustomProperties
+	 * @typeofeditors ["CDE", "CSE", "CPE"]
+	 * @param {string} name - The custom property name.
+	 * @returns {string | number | Date | boolean | null} - The value of the custom property or null if the property does not exist.
+	 * @since 9.0.0
+	 * @see office-js-api/Examples/{Editor}/ApiCustomProperties/Methods/Get.js
+	 */
+	ApiCustomProperties.prototype.Get = function (name) {
+		let property = null;
+		this.CustomProperties.getAllProperties().forEach(function (prop) {
+			if (prop.asc_getName() === name) {
+				property = prop;
+			}
+		});
+		return property ? property.asc_getValue() : null;
+	};
 
 	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	// Export
 	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-	Api.prototype["GetDocument"]                     = Api.prototype.GetDocument;
-	Api.prototype["CreateParagraph"]                 = Api.prototype.CreateParagraph;
-	Api.prototype["CreateTable"]                     = Api.prototype.CreateTable;
-	Api.prototype["AddComment"]                      = Api.prototype.AddComment;
-	Api.prototype["CreateRun"]                       = Api.prototype.CreateRun;
-	Api.prototype["CreateHyperlink"]                 = Api.prototype.CreateHyperlink;
-	Api.prototype["CreateImage"]                     = Api.prototype.CreateImage;
-	Api.prototype["CreateShape"]                     = Api.prototype.CreateShape;
-	Api.prototype["CreateGroup"]                     = Api.prototype.CreateGroup;
-	Api.prototype["CreateChart"]                     = Api.prototype.CreateChart;
-	Api.prototype["CreateRGBColor"]                  = Api.prototype.CreateRGBColor;
-	Api.prototype["CreateSchemeColor"]               = Api.prototype.CreateSchemeColor;
-	Api.prototype["CreatePresetColor"]               = Api.prototype.CreatePresetColor;
-	Api.prototype["CreateSolidFill"]                 = Api.prototype.CreateSolidFill;
-	Api.prototype["CreateLinearGradientFill"]        = Api.prototype.CreateLinearGradientFill;
-	Api.prototype["CreateRadialGradientFill"]        = Api.prototype.CreateRadialGradientFill;
-	Api.prototype["CreatePatternFill"]               = Api.prototype.CreatePatternFill;
-	Api.prototype["CreateBlipFill"]                  = Api.prototype.CreateBlipFill;
-	Api.prototype["CreateNoFill"]                    = Api.prototype.CreateNoFill;
-	Api.prototype["CreateStroke"]                    = Api.prototype.CreateStroke;
-	Api.prototype["CreateGradientStop"]              = Api.prototype.CreateGradientStop;
-	Api.prototype["CreateBullet"]                    = Api.prototype.CreateBullet;
-	Api.prototype["CreateNumbering"]                 = Api.prototype.CreateNumbering;
-	Api.prototype["CreateInlineLvlSdt"]              = Api.prototype.CreateInlineLvlSdt;
-	Api.prototype["CreateBlockLvlSdt"]               = Api.prototype.CreateBlockLvlSdt;
-	Api.prototype["Save"]               			 = Api.prototype.Save;
-	Api.prototype["LoadMailMergeData"]               = Api.prototype.LoadMailMergeData;
-	Api.prototype["GetMailMergeTemplateDocContent"]  = Api.prototype.GetMailMergeTemplateDocContent;
-	Api.prototype["GetMailMergeReceptionsCount"]     = Api.prototype.GetMailMergeReceptionsCount;
-	Api.prototype["ReplaceDocumentContent"]          = Api.prototype.ReplaceDocumentContent;
-	Api.prototype["MailMerge"]                       = Api.prototype.MailMerge;
-	Api.prototype["ReplaceTextSmart"]				 = Api.prototype.ReplaceTextSmart;
-	Api.prototype["CoAuthoringChatSendMessage"]		 = Api.prototype.CoAuthoringChatSendMessage;
-	Api.prototype["CreateTextPr"]		             = Api.prototype.CreateTextPr;
-	Api.prototype["CreateWordArt"]		             = Api.prototype.CreateWordArt;
-	Api.prototype["CreateOleObject"]		         = Api.prototype.CreateOleObject;
-	Api.prototype["GetFullName"]		             = Api.prototype.GetFullName;
+	Api.prototype["GetDocument"]                      = Api.prototype.GetDocument;
+	Api.prototype["CreateParagraph"]                  = Api.prototype.CreateParagraph;
+	Api.prototype["CreateTable"]                      = Api.prototype.CreateTable;
+	Api.prototype["AddComment"]                       = Api.prototype.AddComment;
+	Api.prototype["CreateRun"]                        = Api.prototype.CreateRun;
+	Api.prototype["CreateHyperlink"]                  = Api.prototype.CreateHyperlink;
+	Api.prototype["CreateImage"]                      = Api.prototype.CreateImage;
+	Api.prototype["CreateShape"]                      = Api.prototype.CreateShape;
+	Api.prototype["CreateGroup"]                      = Api.prototype.CreateGroup;
+	Api.prototype["CreateChart"]                      = Api.prototype.CreateChart;
+	Api.prototype["CreateRGBColor"]                   = Api.prototype.CreateRGBColor;
+	Api.prototype["CreateSchemeColor"]                = Api.prototype.CreateSchemeColor;
+	Api.prototype["CreatePresetColor"]                = Api.prototype.CreatePresetColor;
+	Api.prototype["CreateSolidFill"]                  = Api.prototype.CreateSolidFill;
+	Api.prototype["CreateLinearGradientFill"]         = Api.prototype.CreateLinearGradientFill;
+	Api.prototype["CreateRadialGradientFill"]         = Api.prototype.CreateRadialGradientFill;
+	Api.prototype["CreatePatternFill"]                = Api.prototype.CreatePatternFill;
+	Api.prototype["CreateBlipFill"]                   = Api.prototype.CreateBlipFill;
+	Api.prototype["CreateNoFill"]                     = Api.prototype.CreateNoFill;
+	Api.prototype["CreateStroke"]                     = Api.prototype.CreateStroke;
+	Api.prototype["CreateGradientStop"]               = Api.prototype.CreateGradientStop;
+	Api.prototype["CreateBullet"]                     = Api.prototype.CreateBullet;
+	Api.prototype["CreateNumbering"]                  = Api.prototype.CreateNumbering;
+	Api.prototype["CreateInlineLvlSdt"]               = Api.prototype.CreateInlineLvlSdt;
+	Api.prototype["CreateBlockLvlSdt"]                = Api.prototype.CreateBlockLvlSdt;
+	Api.prototype["Save"]                             = Api.prototype.Save;
+	Api.prototype["LoadMailMergeData"]                = Api.prototype.LoadMailMergeData;
+	Api.prototype["GetMailMergeTemplateDocContent"]   = Api.prototype.GetMailMergeTemplateDocContent;
+	Api.prototype["GetMailMergeReceptionsCount"]      = Api.prototype.GetMailMergeReceptionsCount;
+	Api.prototype["ReplaceDocumentContent"]           = Api.prototype.ReplaceDocumentContent;
+	Api.prototype["MailMerge"]                        = Api.prototype.MailMerge;
+	Api.prototype["ReplaceTextSmart"]                 = Api.prototype.ReplaceTextSmart;
+	Api.prototype["CoAuthoringChatSendMessage"]       = Api.prototype.CoAuthoringChatSendMessage;
+	Api.prototype["CreateTextPr"]                     = Api.prototype.CreateTextPr;
+	Api.prototype["CreateWordArt"]                    = Api.prototype.CreateWordArt;
+	Api.prototype["CreateOleObject"]                  = Api.prototype.CreateOleObject;
+	Api.prototype["GetFullName"]                      = Api.prototype.GetFullName;
+	Api.prototype["CreateCheckBoxContentControl"]     = Api.prototype.CreateCheckBoxContentControl;
+	Api.prototype["CreatePictureContentControl"]      = Api.prototype.CreatePictureContentControl;
+	Api.prototype["CreateComboBoxContentControl"]     = Api.prototype.CreateComboBoxContentControl;
+	Api.prototype["CreateDropDownListContentControl"] = Api.prototype.CreateDropDownListContentControl;
+	Api.prototype["CreateDatePickerContentControl"]   = Api.prototype.CreateDatePickerContentControl;
+
 
 	Api.prototype["ConvertDocument"]		         = Api.prototype.ConvertDocument;
 	Api.prototype["FromJSON"]		                 = Api.prototype.FromJSON;
@@ -22358,25 +25243,28 @@
 	Api.prototype["Mm2Px"]                           = Mm2Px;
 
 	ApiUnsupported.prototype["GetClassType"]         = ApiUnsupported.prototype.GetClassType;
-
-	ApiDocumentContent.prototype["GetClassType"]         = ApiDocumentContent.prototype.GetClassType;
-	ApiDocumentContent.prototype["GetElementsCount"]     = ApiDocumentContent.prototype.GetElementsCount;
-	ApiDocumentContent.prototype["GetElement"]           = ApiDocumentContent.prototype.GetElement;
-	ApiDocumentContent.prototype["AddElement"]           = ApiDocumentContent.prototype.AddElement;
-	ApiDocumentContent.prototype["Push"]                 = ApiDocumentContent.prototype.Push;
-	ApiDocumentContent.prototype["RemoveAllElements"]    = ApiDocumentContent.prototype.RemoveAllElements;
-	ApiDocumentContent.prototype["RemoveElement"]        = ApiDocumentContent.prototype.RemoveElement;
-	ApiDocumentContent.prototype["GetRange"]             = ApiDocumentContent.prototype.GetRange;
-	ApiDocumentContent.prototype["ToJSON"]               = ApiDocumentContent.prototype.ToJSON;
-	ApiDocumentContent.prototype["GetContent"]           = ApiDocumentContent.prototype.GetContent;
-	ApiDocumentContent.prototype["GetAllDrawingObjects"] = ApiDocumentContent.prototype.GetAllDrawingObjects;
-	ApiDocumentContent.prototype["GetAllShapes"]         = ApiDocumentContent.prototype.GetAllShapes;
-	ApiDocumentContent.prototype["GetAllImages"]         = ApiDocumentContent.prototype.GetAllImages;
-	ApiDocumentContent.prototype["GetAllCharts"]         = ApiDocumentContent.prototype.GetAllCharts;
-	ApiDocumentContent.prototype["GetAllOleObjects"]     = ApiDocumentContent.prototype.GetAllOleObjects;
-	ApiDocumentContent.prototype["GetAllParagraphs"]     = ApiDocumentContent.prototype.GetAllParagraphs;
-	ApiDocumentContent.prototype["GetAllTables"]         = ApiDocumentContent.prototype.GetAllTables;
-	ApiDocumentContent.prototype["GetText"]         	 = ApiDocumentContent.prototype.GetText;
+	
+	ApiDocumentContent.prototype["GetClassType"]             = ApiDocumentContent.prototype.GetClassType;
+	ApiDocumentContent.prototype["GetElementsCount"]         = ApiDocumentContent.prototype.GetElementsCount;
+	ApiDocumentContent.prototype["GetElement"]               = ApiDocumentContent.prototype.GetElement;
+	ApiDocumentContent.prototype["AddElement"]               = ApiDocumentContent.prototype.AddElement;
+	ApiDocumentContent.prototype["Push"]                     = ApiDocumentContent.prototype.Push;
+	ApiDocumentContent.prototype["RemoveAllElements"]        = ApiDocumentContent.prototype.RemoveAllElements;
+	ApiDocumentContent.prototype["RemoveElement"]            = ApiDocumentContent.prototype.RemoveElement;
+	ApiDocumentContent.prototype["GetRange"]                 = ApiDocumentContent.prototype.GetRange;
+	ApiDocumentContent.prototype["ToJSON"]                   = ApiDocumentContent.prototype.ToJSON;
+	ApiDocumentContent.prototype["GetContent"]               = ApiDocumentContent.prototype.GetContent;
+	ApiDocumentContent.prototype["GetAllDrawingObjects"]     = ApiDocumentContent.prototype.GetAllDrawingObjects;
+	ApiDocumentContent.prototype["GetAllShapes"]             = ApiDocumentContent.prototype.GetAllShapes;
+	ApiDocumentContent.prototype["GetAllImages"]             = ApiDocumentContent.prototype.GetAllImages;
+	ApiDocumentContent.prototype["GetAllCharts"]             = ApiDocumentContent.prototype.GetAllCharts;
+	ApiDocumentContent.prototype["GetAllOleObjects"]         = ApiDocumentContent.prototype.GetAllOleObjects;
+	ApiDocumentContent.prototype["GetAllParagraphs"]         = ApiDocumentContent.prototype.GetAllParagraphs;
+	ApiDocumentContent.prototype["GetAllTables"]             = ApiDocumentContent.prototype.GetAllTables;
+	ApiDocumentContent.prototype["GetText"]                  = ApiDocumentContent.prototype.GetText;
+	ApiDocumentContent.prototype["GetCurrentParagraph"]      = ApiDocumentContent.prototype.GetCurrentParagraph;
+	ApiDocumentContent.prototype["GetCurrentRun"]            = ApiDocumentContent.prototype.GetCurrentRun;
+	ApiDocumentContent.prototype["GetCurrentContentControl"] = ApiDocumentContent.prototype.GetCurrentContentControl;
 
 	ApiRange.prototype["GetClassType"]               = ApiRange.prototype.GetClassType;
 	ApiRange.prototype["GetParagraph"]               = ApiRange.prototype.GetParagraph;
@@ -22416,88 +25304,103 @@
 	ApiRange.prototype["SetEndPos"]                  = ApiRange.prototype.SetEndPos;
 	ApiRange.prototype["GetStartPos"]                = ApiRange.prototype.GetStartPos;
 	ApiRange.prototype["GetEndPos"]                  = ApiRange.prototype.GetEndPos;
+	ApiRange.prototype["MoveCursorToPos"]            = ApiRange.prototype.MoveCursorToPos;
+	ApiRange.prototype["AddField"]                   = ApiRange.prototype.AddField;
 	
-	ApiDocument.prototype["GetClassType"]                = ApiDocument.prototype.GetClassType;
-	ApiDocument.prototype["CreateNewHistoryPoint"]       = ApiDocument.prototype.CreateNewHistoryPoint;
-	ApiDocument.prototype["GetDefaultTextPr"]            = ApiDocument.prototype.GetDefaultTextPr;
-	ApiDocument.prototype["GetDefaultParaPr"]            = ApiDocument.prototype.GetDefaultParaPr;
-	ApiDocument.prototype["GetStyle"]                    = ApiDocument.prototype.GetStyle;
-	ApiDocument.prototype["CreateStyle"]                 = ApiDocument.prototype.CreateStyle;
-	ApiDocument.prototype["GetDefaultStyle"]             = ApiDocument.prototype.GetDefaultStyle;
-	ApiDocument.prototype["GetFinalSection"]             = ApiDocument.prototype.GetFinalSection;
-	ApiDocument.prototype["CreateSection"]               = ApiDocument.prototype.CreateSection;
-	ApiDocument.prototype["SetEvenAndOddHdrFtr"]         = ApiDocument.prototype.SetEvenAndOddHdrFtr;
-	ApiDocument.prototype["CreateNumbering"]             = ApiDocument.prototype.CreateNumbering;
-	ApiDocument.prototype["InsertContent"]               = ApiDocument.prototype.InsertContent;
-	ApiDocument.prototype["GetCommentsReport"]           = ApiDocument.prototype.GetCommentsReport;
-	ApiDocument.prototype["GetReviewReport"]             = ApiDocument.prototype.GetReviewReport;
-	ApiDocument.prototype["InsertWatermark"]             = ApiDocument.prototype.InsertWatermark;
-	ApiDocument.prototype["GetWatermarkSettings"]        = ApiDocument.prototype.GetWatermarkSettings;
-	ApiDocument.prototype["SetWatermarkSettings"]        = ApiDocument.prototype.SetWatermarkSettings;
-	ApiDocument.prototype["RemoveWatermark"]             = ApiDocument.prototype.RemoveWatermark;
-	ApiDocument.prototype["SearchAndReplace"]            = ApiDocument.prototype.SearchAndReplace;
-	ApiDocument.prototype["GetAllContentControls"]       = ApiDocument.prototype.GetAllContentControls;
-	ApiDocument.prototype["GetTagsOfAllContentControls"] = ApiDocument.prototype.GetTagsOfAllContentControls;
-	ApiDocument.prototype["GetTagsOfAllForms"]           = ApiDocument.prototype.GetTagsOfAllForms;
-	ApiDocument.prototype["GetContentControlsByTag"]     = ApiDocument.prototype.GetContentControlsByTag;
-	ApiDocument.prototype["GetFormsByTag"]               = ApiDocument.prototype.GetFormsByTag;
-	ApiDocument.prototype["GetFormsData"]                = ApiDocument.prototype.GetFormsData;
-	ApiDocument.prototype["SetFormsData"]                = ApiDocument.prototype.SetFormsData;
-	ApiDocument.prototype["SetTrackRevisions"]           = ApiDocument.prototype.SetTrackRevisions;
-	ApiDocument.prototype["IsTrackRevisions"]            = ApiDocument.prototype.IsTrackRevisions;
-	ApiDocument.prototype["GetRange"]                    = ApiDocument.prototype.GetRange;
-	ApiDocument.prototype["GetRangeBySelect"]            = ApiDocument.prototype.GetRangeBySelect;
-	ApiDocument.prototype["Last"]                        = ApiDocument.prototype.Last;
-	ApiDocument.prototype["Push"]                        = ApiDocument.prototype.Push;
-	ApiDocument.prototype["DeleteBookmark"]              = ApiDocument.prototype.DeleteBookmark;
-	ApiDocument.prototype["GetBookmarkRange"]            = ApiDocument.prototype.GetBookmarkRange;
-	ApiDocument.prototype["GetSections"]                 = ApiDocument.prototype.GetSections;
-	ApiDocument.prototype["GetAllTablesOnPage"]          = ApiDocument.prototype.GetAllTablesOnPage;
-	ApiDocument.prototype["AddDrawingToPage"]            = ApiDocument.prototype.AddDrawingToPage;
-	ApiDocument.prototype["RemoveSelection"]             = ApiDocument.prototype.RemoveSelection;
-	ApiDocument.prototype["Search"]                      = ApiDocument.prototype.Search;
-	ApiDocument.prototype["ToMarkdown"]                  = ApiDocument.prototype.ToMarkdown;
-	ApiDocument.prototype["ToHtml"]                      = ApiDocument.prototype.ToHtml;
-	ApiDocument.prototype["GetAllNumberedParagraphs"]    = ApiDocument.prototype.GetAllNumberedParagraphs;
-	ApiDocument.prototype["GetAllHeadingParagraphs"]     = ApiDocument.prototype.GetAllHeadingParagraphs;
-	ApiDocument.prototype["GetFootnotesFirstParagraphs"] = ApiDocument.prototype.GetFootnotesFirstParagraphs;
-	ApiDocument.prototype["GetEndNotesFirstParagraphs"]  = ApiDocument.prototype.GetEndNotesFirstParagraphs;
-	ApiDocument.prototype["GetAllCaptionParagraphs"]     = ApiDocument.prototype.GetAllCaptionParagraphs;
-	ApiDocument.prototype["GetAllBookmarksNames"]        = ApiDocument.prototype.GetAllBookmarksNames;
-	ApiDocument.prototype["GetBookmark"]        		 = ApiDocument.prototype.GetBookmark;
-	ApiDocument.prototype["AddFootnote"]                 = ApiDocument.prototype.AddFootnote;
-	ApiDocument.prototype["AddEndnote"]                  = ApiDocument.prototype.AddEndnote;
-	ApiDocument.prototype["SetControlsHighlight"]        = ApiDocument.prototype.SetControlsHighlight;
-	ApiDocument.prototype["GetAllComments"]              = ApiDocument.prototype.GetAllComments;
-	ApiDocument.prototype["GetCommentById"]              = ApiDocument.prototype.GetCommentById;
-	ApiDocument.prototype["GetStatistics"]               = ApiDocument.prototype.GetStatistics;
-	ApiDocument.prototype["GetPageCount"]                = ApiDocument.prototype.GetPageCount;
-	ApiDocument.prototype["GetCurrentPage"]              = ApiDocument.prototype.GetCurrentPage;
-	ApiDocument.prototype["GetCurrentVisiblePages"]      = ApiDocument.prototype.GetCurrentVisiblePages;
-	ApiDocument.prototype["GetAllStyles"]                = ApiDocument.prototype.GetAllStyles;
-	ApiDocument.prototype["GetDocumentInfo"]             = ApiDocument.prototype.GetDocumentInfo;
-	ApiDocument.prototype["GetSelectedDrawings"]         = ApiDocument.prototype.GetSelectedDrawings;
-	ApiDocument.prototype["ReplaceCurrentImage"]         = ApiDocument.prototype.ReplaceCurrentImage;
-	ApiDocument.prototype["ReplaceDrawing"]              = ApiDocument.prototype.ReplaceDrawing;
-	ApiDocument.prototype["AcceptAllRevisionChanges"]    = ApiDocument.prototype.AcceptAllRevisionChanges;
-	ApiDocument.prototype["RejectAllRevisionChanges"]    = ApiDocument.prototype.RejectAllRevisionChanges;
-	ApiDocument.prototype["ToJSON"]                      = ApiDocument.prototype.ToJSON;
-	ApiDocument.prototype["UpdateAllTOC"]                = ApiDocument.prototype.UpdateAllTOC;
-	ApiDocument.prototype["UpdateAllTOF"]                = ApiDocument.prototype.UpdateAllTOF;
-	ApiDocument.prototype["UpdateAllFields"]             = ApiDocument.prototype.UpdateAllFields;
-	ApiDocument.prototype["AddTableOfContents"]          = ApiDocument.prototype.AddTableOfContents;
-	ApiDocument.prototype["AddTableOfFigures"]           = ApiDocument.prototype.AddTableOfFigures;
-	ApiDocument.prototype["GetAllForms"]                 = ApiDocument.prototype.GetAllForms;
-	ApiDocument.prototype["ClearAllFields"]              = ApiDocument.prototype.ClearAllFields;
-	ApiDocument.prototype["SetFormsHighlight"]           = ApiDocument.prototype.SetFormsHighlight;
-	ApiDocument.prototype["GetCurrentWord"]              = ApiDocument.prototype.GetCurrentWord;
-	ApiDocument.prototype["ReplaceCurrentWord"]          = ApiDocument.prototype.ReplaceCurrentWord;
-	ApiDocument.prototype["SelectCurrentWord"]           = ApiDocument.prototype.SelectCurrentWord;
-	ApiDocument.prototype["AddComment"]                  = ApiDocument.prototype.AddComment;
-	ApiDocument.prototype["GetCurrentSentence"]          = ApiDocument.prototype.GetCurrentSentence;
-	ApiDocument.prototype["ReplaceCurrentSentence"]      = ApiDocument.prototype.ReplaceCurrentSentence;
-	ApiDocument.prototype["AddMathEquation"]             = ApiDocument.prototype.AddMathEquation;
-	ApiDocument.prototype["GroupDrawings"]             	 = ApiDocument.prototype.GroupDrawings;
+	ApiDocument.prototype["GetClassType"]                  = ApiDocument.prototype.GetClassType;
+	ApiDocument.prototype["CreateNewHistoryPoint"]         = ApiDocument.prototype.CreateNewHistoryPoint;
+	ApiDocument.prototype["GetDefaultTextPr"]              = ApiDocument.prototype.GetDefaultTextPr;
+	ApiDocument.prototype["GetDefaultParaPr"]              = ApiDocument.prototype.GetDefaultParaPr;
+	ApiDocument.prototype["GetStyle"]                      = ApiDocument.prototype.GetStyle;
+	ApiDocument.prototype["CreateStyle"]                   = ApiDocument.prototype.CreateStyle;
+	ApiDocument.prototype["GetDefaultStyle"]               = ApiDocument.prototype.GetDefaultStyle;
+	ApiDocument.prototype["GetFinalSection"]               = ApiDocument.prototype.GetFinalSection;
+	ApiDocument.prototype["CreateSection"]                 = ApiDocument.prototype.CreateSection;
+	ApiDocument.prototype["SetEvenAndOddHdrFtr"]           = ApiDocument.prototype.SetEvenAndOddHdrFtr;
+	ApiDocument.prototype["CreateNumbering"]               = ApiDocument.prototype.CreateNumbering;
+	ApiDocument.prototype["InsertContent"]                 = ApiDocument.prototype.InsertContent;
+	ApiDocument.prototype["GetCommentsReport"]             = ApiDocument.prototype.GetCommentsReport;
+	ApiDocument.prototype["GetReviewReport"]               = ApiDocument.prototype.GetReviewReport;
+	ApiDocument.prototype["InsertWatermark"]               = ApiDocument.prototype.InsertWatermark;
+	ApiDocument.prototype["GetWatermarkSettings"]          = ApiDocument.prototype.GetWatermarkSettings;
+	ApiDocument.prototype["SetWatermarkSettings"]          = ApiDocument.prototype.SetWatermarkSettings;
+	ApiDocument.prototype["RemoveWatermark"]               = ApiDocument.prototype.RemoveWatermark;
+	ApiDocument.prototype["SearchAndReplace"]              = ApiDocument.prototype.SearchAndReplace;
+	ApiDocument.prototype["GetAllContentControls"]         = ApiDocument.prototype.GetAllContentControls;
+	ApiDocument.prototype["GetTagsOfAllContentControls"]   = ApiDocument.prototype.GetTagsOfAllContentControls;
+	ApiDocument.prototype["GetTagsOfAllForms"]             = ApiDocument.prototype.GetTagsOfAllForms;
+	ApiDocument.prototype["GetContentControlsByTag"]       = ApiDocument.prototype.GetContentControlsByTag;
+	ApiDocument.prototype["GetFormsByTag"]                 = ApiDocument.prototype.GetFormsByTag;
+	ApiDocument.prototype["GetFormsByRole"]                = ApiDocument.prototype.GetFormsByRole;
+	ApiDocument.prototype["GetFormsByKey"]                 = ApiDocument.prototype.GetFormsByKey;
+	ApiDocument.prototype["GetFormKeysByRole"]             = ApiDocument.prototype.GetFormKeysByRole;
+	ApiDocument.prototype["GetFormValueByKey"]             = ApiDocument.prototype.GetFormValueByKey;
+	ApiDocument.prototype["GetFormsData"]                  = ApiDocument.prototype.GetFormsData;
+	ApiDocument.prototype["SetFormsData"]                  = ApiDocument.prototype.SetFormsData;
+	ApiDocument.prototype["SetTrackRevisions"]             = ApiDocument.prototype.SetTrackRevisions;
+	ApiDocument.prototype["IsTrackRevisions"]              = ApiDocument.prototype.IsTrackRevisions;
+	ApiDocument.prototype["GetRange"]                      = ApiDocument.prototype.GetRange;
+	ApiDocument.prototype["GetRangeBySelect"]              = ApiDocument.prototype.GetRangeBySelect;
+	ApiDocument.prototype["Last"]                          = ApiDocument.prototype.Last;
+	ApiDocument.prototype["Push"]                          = ApiDocument.prototype.Push;
+	ApiDocument.prototype["DeleteBookmark"]                = ApiDocument.prototype.DeleteBookmark;
+	ApiDocument.prototype["GetBookmarkRange"]              = ApiDocument.prototype.GetBookmarkRange;
+	ApiDocument.prototype["GetSections"]                   = ApiDocument.prototype.GetSections;
+	ApiDocument.prototype["GetAllTablesOnPage"]            = ApiDocument.prototype.GetAllTablesOnPage;
+	ApiDocument.prototype["AddDrawingToPage"]              = ApiDocument.prototype.AddDrawingToPage;
+	ApiDocument.prototype["RemoveSelection"]               = ApiDocument.prototype.RemoveSelection;
+	ApiDocument.prototype["Search"]                        = ApiDocument.prototype.Search;
+	ApiDocument.prototype["ToMarkdown"]                    = ApiDocument.prototype.ToMarkdown;
+	ApiDocument.prototype["ToHtml"]                        = ApiDocument.prototype.ToHtml;
+	ApiDocument.prototype["GetAllNumberedParagraphs"]      = ApiDocument.prototype.GetAllNumberedParagraphs;
+	ApiDocument.prototype["GetAllHeadingParagraphs"]       = ApiDocument.prototype.GetAllHeadingParagraphs;
+	ApiDocument.prototype["GetFootnotesFirstParagraphs"]   = ApiDocument.prototype.GetFootnotesFirstParagraphs;
+	ApiDocument.prototype["GetEndNotesFirstParagraphs"]    = ApiDocument.prototype.GetEndNotesFirstParagraphs;
+	ApiDocument.prototype["GetAllCaptionParagraphs"]       = ApiDocument.prototype.GetAllCaptionParagraphs;
+	ApiDocument.prototype["GetAllBookmarksNames"]          = ApiDocument.prototype.GetAllBookmarksNames;
+	ApiDocument.prototype["GetBookmark"]                   = ApiDocument.prototype.GetBookmark;
+	ApiDocument.prototype["AddFootnote"]                   = ApiDocument.prototype.AddFootnote;
+	ApiDocument.prototype["AddEndnote"]                    = ApiDocument.prototype.AddEndnote;
+	ApiDocument.prototype["SetControlsHighlight"]          = ApiDocument.prototype.SetControlsHighlight;
+	ApiDocument.prototype["GetAllComments"]                = ApiDocument.prototype.GetAllComments;
+	ApiDocument.prototype["GetCommentById"]                = ApiDocument.prototype.GetCommentById;
+	ApiDocument.prototype["GetStatistics"]                 = ApiDocument.prototype.GetStatistics;
+	ApiDocument.prototype["GetPageCount"]                  = ApiDocument.prototype.GetPageCount;
+	ApiDocument.prototype["GetCurrentPage"]                = ApiDocument.prototype.GetCurrentPage;
+	ApiDocument.prototype["GetCurrentVisiblePages"]        = ApiDocument.prototype.GetCurrentVisiblePages;
+	ApiDocument.prototype["GetAllStyles"]                  = ApiDocument.prototype.GetAllStyles;
+	ApiDocument.prototype["GetDocumentInfo"]               = ApiDocument.prototype.GetDocumentInfo;
+	ApiDocument.prototype["GetSelectedDrawings"]           = ApiDocument.prototype.GetSelectedDrawings;
+	ApiDocument.prototype["ReplaceCurrentImage"]           = ApiDocument.prototype.ReplaceCurrentImage;
+	ApiDocument.prototype["ReplaceDrawing"]                = ApiDocument.prototype.ReplaceDrawing;
+	ApiDocument.prototype["AcceptAllRevisionChanges"]      = ApiDocument.prototype.AcceptAllRevisionChanges;
+	ApiDocument.prototype["RejectAllRevisionChanges"]      = ApiDocument.prototype.RejectAllRevisionChanges;
+	ApiDocument.prototype["ToJSON"]                        = ApiDocument.prototype.ToJSON;
+	ApiDocument.prototype["UpdateAllTOC"]                  = ApiDocument.prototype.UpdateAllTOC;
+	ApiDocument.prototype["UpdateAllTOF"]                  = ApiDocument.prototype.UpdateAllTOF;
+	ApiDocument.prototype["UpdateAllFields"]               = ApiDocument.prototype.UpdateAllFields;
+	ApiDocument.prototype["AddTableOfContents"]            = ApiDocument.prototype.AddTableOfContents;
+	ApiDocument.prototype["AddTableOfFigures"]             = ApiDocument.prototype.AddTableOfFigures;
+	ApiDocument.prototype["GetAllForms"]                   = ApiDocument.prototype.GetAllForms;
+	ApiDocument.prototype["ClearAllFields"]                = ApiDocument.prototype.ClearAllFields;
+	ApiDocument.prototype["SetFormsHighlight"]             = ApiDocument.prototype.SetFormsHighlight;
+	ApiDocument.prototype["GetCurrentWord"]                = ApiDocument.prototype.GetCurrentWord;
+	ApiDocument.prototype["ReplaceCurrentWord"]            = ApiDocument.prototype.ReplaceCurrentWord;
+	ApiDocument.prototype["SelectCurrentWord"]             = ApiDocument.prototype.SelectCurrentWord;
+	ApiDocument.prototype["AddComment"]                    = ApiDocument.prototype.AddComment;
+	ApiDocument.prototype["GetCurrentSentence"]            = ApiDocument.prototype.GetCurrentSentence;
+	ApiDocument.prototype["ReplaceCurrentSentence"]        = ApiDocument.prototype.ReplaceCurrentSentence;
+	ApiDocument.prototype["AddMathEquation"]               = ApiDocument.prototype.AddMathEquation;
+	ApiDocument.prototype["GroupDrawings"]                 = ApiDocument.prototype.GroupDrawings;
+	ApiDocument.prototype["MoveCursorToPos"]               = ApiDocument.prototype.MoveCursorToPos;
+	ApiDocument.prototype["AddCheckBoxContentControl"]     = ApiDocument.prototype.AddCheckBoxContentControl;
+	ApiDocument.prototype["AddComboBoxContentControl"]     = ApiDocument.prototype.AddComboBoxContentControl;
+	ApiDocument.prototype["AddDatePickerContentControl"]   = ApiDocument.prototype.AddDatePickerContentControl;
+	ApiDocument.prototype["AddDropDownListContentControl"] = ApiDocument.prototype.AddDropDownListContentControl;
+	ApiDocument.prototype["AddPictureContentControl"]      = ApiDocument.prototype.AddPictureContentControl;
+	ApiDocument.prototype["GetCustomXmlParts"]             = ApiDocument.prototype.GetCustomXmlParts;
+	ApiDocument.prototype["GetCore"]                     = ApiDocument.prototype.GetCore;
+	ApiDocument.prototype["GetCustomProperties"]         = ApiDocument.prototype.GetCustomProperties;
 
 	ApiParagraph.prototype["GetClassType"]           = ApiParagraph.prototype.GetClassType;
 	ApiParagraph.prototype["AddText"]                = ApiParagraph.prototype.AddText;
@@ -22594,6 +25497,7 @@
 	ApiRun.prototype["GetParentContentControl"]      = ApiRun.prototype.GetParentContentControl;
 	ApiRun.prototype["GetParentTable"]               = ApiRun.prototype.GetParentTable;
 	ApiRun.prototype["GetParentTableCell"]           = ApiRun.prototype.GetParentTableCell;
+	ApiRun.prototype["GetParentParagraph"]           = ApiRun.prototype.GetParentParagraph;
 	ApiRun.prototype["SetTextPr"]                    = ApiRun.prototype.SetTextPr;
 	ApiRun.prototype["SetBold"]                      = ApiRun.prototype.SetBold;
 	ApiRun.prototype["SetCaps"]                      = ApiRun.prototype.SetCaps;
@@ -22852,6 +25756,7 @@
 	ApiTablePr.prototype["SetTableBorderRight"]      = ApiTablePr.prototype.SetTableBorderRight;
 	ApiTablePr.prototype["SetTableBorderInsideH"]    = ApiTablePr.prototype.SetTableBorderInsideH;
 	ApiTablePr.prototype["SetTableBorderInsideV"]    = ApiTablePr.prototype.SetTableBorderInsideV;
+	ApiTablePr.prototype["SetTableBorderAll"]    	 = ApiTablePr.prototype.SetTableBorderAll;
 	ApiTablePr.prototype["SetTableCellMarginBottom"] = ApiTablePr.prototype.SetTableCellMarginBottom;
 	ApiTablePr.prototype["SetTableCellMarginLeft"]   = ApiTablePr.prototype.SetTableCellMarginLeft;
 	ApiTablePr.prototype["SetTableCellMarginRight"]  = ApiTablePr.prototype.SetTableCellMarginRight;
@@ -23059,7 +25964,6 @@
 	ApiInlineLvlSdt.prototype["ToJSON"]                 = ApiInlineLvlSdt.prototype.ToJSON;
 	ApiInlineLvlSdt.prototype["AddComment"]             = ApiInlineLvlSdt.prototype.AddComment;
 	ApiInlineLvlSdt.prototype["MoveCursorOutside"]      = ApiInlineLvlSdt.prototype.MoveCursorOutside;
-	
 	ApiInlineLvlSdt.prototype["GetPlaceholderText"]     = ApiInlineLvlSdt.prototype.GetPlaceholderText;
 	ApiInlineLvlSdt.prototype["SetPlaceholderText"]     = ApiInlineLvlSdt.prototype.SetPlaceholderText;
 	ApiInlineLvlSdt.prototype["IsForm"]                 = ApiInlineLvlSdt.prototype.IsForm;
@@ -23069,6 +25973,28 @@
 	ApiInlineLvlSdt.prototype["GetBorderColor"]         = ApiInlineLvlSdt.prototype.GetBorderColor;
 	ApiInlineLvlSdt.prototype["SetBackgroundColor"]     = ApiInlineLvlSdt.prototype.SetBackgroundColor;
 	ApiInlineLvlSdt.prototype["GetBackgroundColor"]     = ApiInlineLvlSdt.prototype.GetBackgroundColor;
+	ApiInlineLvlSdt.prototype["GetDataBinding"]         = ApiInlineLvlSdt.prototype.GetDataBinding;
+	ApiInlineLvlSdt.prototype["SetDataBinding"]         = ApiInlineLvlSdt.prototype.SetDataBinding;
+	ApiInlineLvlSdt.prototype["UpdateFromXmlMapping"]   = ApiInlineLvlSdt.prototype.UpdateFromXmlMapping;
+	ApiInlineLvlSdt.prototype["GetDataForXmlMapping"]   = ApiInlineLvlSdt.prototype.GetDataForXmlMapping;
+	ApiInlineLvlSdt.prototype["AddListItem"]            = ApiInlineLvlSdt.prototype.AddListItem;
+	ApiInlineLvlSdt.prototype["SelectListItem"]         = ApiInlineLvlSdt.prototype.SelectListItem;
+	ApiInlineLvlSdt.prototype["IsCheckBox"]             = ApiInlineLvlSdt.prototype.IsCheckBox;
+	ApiInlineLvlSdt.prototype["IsComboBox"]             = ApiInlineLvlSdt.prototype.IsComboBox;
+	ApiInlineLvlSdt.prototype["IsDropDownList"]         = ApiInlineLvlSdt.prototype.IsDropDownList;
+	ApiInlineLvlSdt.prototype["IsPicture"]              = ApiInlineLvlSdt.prototype.IsPicture;
+	ApiInlineLvlSdt.prototype["IsDatePicker"]           = ApiInlineLvlSdt.prototype.IsDatePicker;
+	ApiInlineLvlSdt.prototype["RemoveListItem"]         = ApiInlineLvlSdt.prototype.RemoveListItem;
+	ApiInlineLvlSdt.prototype["Select"]                 = ApiInlineLvlSdt.prototype.Select;
+	ApiInlineLvlSdt.prototype["SetCheckBoxChecked"]     = ApiInlineLvlSdt.prototype.SetCheckBoxChecked;
+	ApiInlineLvlSdt.prototype["IsCheckBoxChecked"]      = ApiInlineLvlSdt.prototype.IsCheckBoxChecked;
+	ApiInlineLvlSdt.prototype["SetDate"]                = ApiInlineLvlSdt.prototype.SetDate;
+	ApiInlineLvlSdt.prototype["GetDate"]                = ApiInlineLvlSdt.prototype.GetDate;
+	ApiInlineLvlSdt.prototype["SetDateFormat"]          = ApiInlineLvlSdt.prototype.SetDateFormat;
+	ApiInlineLvlSdt.prototype["SetPicture"]             = ApiInlineLvlSdt.prototype.SetPicture;
+	ApiInlineLvlSdt.prototype["SetPictureSize"]         = ApiInlineLvlSdt.prototype.SetPictureSize;
+	ApiInlineLvlSdt.prototype["SetAppearance"]          = ApiInlineLvlSdt.prototype.SetAppearance;
+	ApiInlineLvlSdt.prototype["GetAppearance"]          = ApiInlineLvlSdt.prototype.GetAppearance;
 
 	ApiContentControlList.prototype["GetClassType"]		= ApiContentControlList.prototype.GetClassType;
 	ApiContentControlList.prototype["GetAllItems"]		= ApiContentControlList.prototype.GetAllItems;
@@ -23134,27 +26060,38 @@
 	ApiBlockLvlSdt.prototype["GetBorderColor"]          = ApiBlockLvlSdt.prototype.GetBorderColor;
 	ApiBlockLvlSdt.prototype["SetBackgroundColor"]      = ApiBlockLvlSdt.prototype.SetBackgroundColor;
 	ApiBlockLvlSdt.prototype["GetBackgroundColor"]      = ApiBlockLvlSdt.prototype.GetBackgroundColor;
-
-	ApiFormBase.prototype["GetClassType"]        = ApiFormBase.prototype.GetClassType;
-	ApiFormBase.prototype["GetFormType"]         = ApiFormBase.prototype.GetFormType;
-	ApiFormBase.prototype["GetFormKey"]          = ApiFormBase.prototype.GetFormKey;
-	ApiFormBase.prototype["SetFormKey"]          = ApiFormBase.prototype.SetFormKey;
-	ApiFormBase.prototype["GetTipText"]          = ApiFormBase.prototype.GetTipText;
-	ApiFormBase.prototype["SetTipText"]          = ApiFormBase.prototype.SetTipText;
-	ApiFormBase.prototype["IsRequired"]          = ApiFormBase.prototype.IsRequired;
-	ApiFormBase.prototype["SetRequired"]         = ApiFormBase.prototype.SetRequired;
-	ApiFormBase.prototype["IsFixed"]             = ApiFormBase.prototype.IsFixed;
-	ApiFormBase.prototype["ToFixed"]             = ApiFormBase.prototype.ToFixed;
-	ApiFormBase.prototype["ToInline"]            = ApiFormBase.prototype.ToInline;
-	ApiFormBase.prototype["SetBorderColor"]      = ApiFormBase.prototype.SetBorderColor;
-	ApiFormBase.prototype["SetBackgroundColor"]  = ApiFormBase.prototype.SetBackgroundColor;
-	ApiFormBase.prototype["GetText"]             = ApiFormBase.prototype.GetText;
-	ApiFormBase.prototype["Clear"]               = ApiFormBase.prototype.Clear;
-	ApiFormBase.prototype["GetWrapperShape"]     = ApiFormBase.prototype.GetWrapperShape;
-	ApiFormBase.prototype["SetPlaceholderText"]  = ApiFormBase.prototype.SetPlaceholderText;
-	ApiFormBase.prototype["SetTextPr"]           = ApiFormBase.prototype.SetTextPr;
-	ApiFormBase.prototype["GetTextPr"]           = ApiFormBase.prototype.GetTextPr;
-	ApiFormBase.prototype["MoveCursorOutside"]   = ApiFormBase.prototype.MoveCursorOutside;
+	ApiBlockLvlSdt.prototype["GetDataBinding"]          = ApiBlockLvlSdt.prototype.GetDataBinding;
+	ApiBlockLvlSdt.prototype["SetDataBinding"]          = ApiBlockLvlSdt.prototype.SetDataBinding;
+	ApiBlockLvlSdt.prototype["UpdateFromXmlMapping"]    = ApiBlockLvlSdt.prototype.UpdateFromXmlMapping;
+	ApiBlockLvlSdt.prototype["GetDataForXmlMapping"]    = ApiBlockLvlSdt.prototype.GetDataForXmlMapping;
+	ApiBlockLvlSdt.prototype["SetAppearance"]           = ApiBlockLvlSdt.prototype.SetAppearance;
+	ApiBlockLvlSdt.prototype["GetAppearance"]           = ApiBlockLvlSdt.prototype.GetAppearance;
+	
+	
+	ApiFormBase.prototype["GetClassType"]       = ApiFormBase.prototype.GetClassType;
+	ApiFormBase.prototype["GetFormType"]        = ApiFormBase.prototype.GetFormType;
+	ApiFormBase.prototype["GetFormKey"]         = ApiFormBase.prototype.GetFormKey;
+	ApiFormBase.prototype["SetFormKey"]         = ApiFormBase.prototype.SetFormKey;
+	ApiFormBase.prototype["GetTipText"]         = ApiFormBase.prototype.GetTipText;
+	ApiFormBase.prototype["SetTipText"]         = ApiFormBase.prototype.SetTipText;
+	ApiFormBase.prototype["IsRequired"]         = ApiFormBase.prototype.IsRequired;
+	ApiFormBase.prototype["SetRequired"]        = ApiFormBase.prototype.SetRequired;
+	ApiFormBase.prototype["IsFixed"]            = ApiFormBase.prototype.IsFixed;
+	ApiFormBase.prototype["ToFixed"]            = ApiFormBase.prototype.ToFixed;
+	ApiFormBase.prototype["ToInline"]           = ApiFormBase.prototype.ToInline;
+	ApiFormBase.prototype["SetBorderColor"]     = ApiFormBase.prototype.SetBorderColor;
+	ApiFormBase.prototype["SetBackgroundColor"] = ApiFormBase.prototype.SetBackgroundColor;
+	ApiFormBase.prototype["GetText"]            = ApiFormBase.prototype.GetText;
+	ApiFormBase.prototype["Clear"]              = ApiFormBase.prototype.Clear;
+	ApiFormBase.prototype["GetWrapperShape"]    = ApiFormBase.prototype.GetWrapperShape;
+	ApiFormBase.prototype["SetPlaceholderText"] = ApiFormBase.prototype.SetPlaceholderText;
+	ApiFormBase.prototype["SetTextPr"]          = ApiFormBase.prototype.SetTextPr;
+	ApiFormBase.prototype["GetTextPr"]          = ApiFormBase.prototype.GetTextPr;
+	ApiFormBase.prototype["MoveCursorOutside"]  = ApiFormBase.prototype.MoveCursorOutside;
+	ApiFormBase.prototype["GetTag"]             = ApiFormBase.prototype.GetTag;
+	ApiFormBase.prototype["SetTag"]             = ApiFormBase.prototype.SetTag;
+	ApiFormBase.prototype["GetRole"]            = ApiFormBase.prototype.GetRole;
+	ApiFormBase.prototype["SetRole"]            = ApiFormBase.prototype.SetRole;
 
 	ApiTextForm.prototype["IsAutoFit"]           = ApiTextForm.prototype.IsAutoFit;
 	ApiTextForm.prototype["SetAutoFit"]          = ApiTextForm.prototype.SetAutoFit;
@@ -23186,7 +26123,14 @@
 	ApiDateForm.prototype["SetLanguage"] = ApiDateForm.prototype.SetLanguage;
 	ApiDateForm.prototype["GetTime"]     = ApiDateForm.prototype.GetTime;
 	ApiDateForm.prototype["SetTime"]     = ApiDateForm.prototype.SetTime;
+	ApiDateForm.prototype["SetDate"]     = ApiDateForm.prototype.SetDate;
+	ApiDateForm.prototype["GetDate"]     = ApiDateForm.prototype.GetDate;
 	ApiDateForm.prototype["Copy"]        = ApiDateForm.prototype.Copy;
+	
+	ApiComplexForm.prototype["Add"]          = ApiComplexForm.prototype.Add;
+	ApiComplexForm.prototype["GetSubForms"]  = ApiComplexForm.prototype.GetSubForms;
+	ApiComplexForm.prototype["ClearContent"] = ApiComplexForm.prototype.ClearContent;
+	ApiComplexForm.prototype["Copy"]         = ApiComplexForm.prototype.Copy;
 
 	ApiComboBoxForm.prototype["GetListValues"]       = ApiComboBoxForm.prototype.GetListValues;
 	ApiComboBoxForm.prototype["SetListValues"]       = ApiComboBoxForm.prototype.SetListValues;
@@ -23266,47 +26210,123 @@
 	ApiChartSeries.prototype["GetClassType"]      =  ApiChartSeries.prototype.GetClassType;
 	ApiChartSeries.prototype["ChangeChartType"]   =  ApiChartSeries.prototype.ChangeChartType;
 	ApiChartSeries.prototype["GetChartType"]      =  ApiChartSeries.prototype.GetChartType;
+	
+	ApiCustomXmlParts.prototype["Add"]            = ApiCustomXmlParts.prototype.Add;
+	ApiCustomXmlParts.prototype["GetById"]        = ApiCustomXmlParts.prototype.GetById;
+	ApiCustomXmlParts.prototype["GetByNamespace"] = ApiCustomXmlParts.prototype.GetByNamespace;
+	ApiCustomXmlParts.prototype["GetAll"]         = ApiCustomXmlParts.prototype.GetAll;
+	ApiCustomXmlParts.prototype["GetCount"]       = ApiCustomXmlParts.prototype.GetCount;
+	ApiCustomXmlParts.prototype["GetClassType"]   = ApiCustomXmlParts.prototype.GetClassType;
 
+	ApiCustomXmlPart.prototype["Delete"]			= ApiCustomXmlPart.prototype.Delete;
+	ApiCustomXmlPart.prototype["DeleteAttribute"]	= ApiCustomXmlPart.prototype.DeleteAttribute;
+	ApiCustomXmlPart.prototype["DeleteElement"]		= ApiCustomXmlPart.prototype.DeleteElement;
+	ApiCustomXmlPart.prototype["GetNodes"]			= ApiCustomXmlPart.prototype.GetNodes;
+	ApiCustomXmlPart.prototype["GetXml"]			= ApiCustomXmlPart.prototype.GetXml;
+	ApiCustomXmlPart.prototype["InsertAttribute"]	= ApiCustomXmlPart.prototype.InsertAttribute;
+	ApiCustomXmlPart.prototype["InsertElement"]		= ApiCustomXmlPart.prototype.InsertElement;
+	ApiCustomXmlPart.prototype["UpdateAttribute"]	= ApiCustomXmlPart.prototype.UpdateAttribute;
+	ApiCustomXmlPart.prototype["UpdateElement"]		= ApiCustomXmlPart.prototype.UpdateElement;
+	ApiCustomXmlPart.prototype["GetClassType"]		= ApiCustomXmlPart.prototype.GetClassType;
+	ApiCustomXmlPart.prototype["GetId"]				= ApiCustomXmlPart.prototype.GetId;
+	ApiCustomXmlPart.prototype["GetAttribute"]		= ApiCustomXmlPart.prototype.GetAttribute;
+	
+	ApiCustomXmlNode.prototype["Add"]             = ApiCustomXmlNode.prototype.Add;
+	ApiCustomXmlNode.prototype["Delete"]          = ApiCustomXmlNode.prototype.Delete;
+	ApiCustomXmlNode.prototype["GetNodeName"]     = ApiCustomXmlNode.prototype.GetNodeName;
+	ApiCustomXmlNode.prototype["DeleteAttribute"] = ApiCustomXmlNode.prototype.DeleteAttribute;
+	ApiCustomXmlNode.prototype["GetAttribute"]    = ApiCustomXmlNode.prototype.GetAttribute;
+	ApiCustomXmlNode.prototype["GetAttributes"]   = ApiCustomXmlNode.prototype.GetAttributes;
+	ApiCustomXmlNode.prototype["GetNodes"]        = ApiCustomXmlNode.prototype.GetNodes;
+	ApiCustomXmlNode.prototype["GetNodeValue"]    = ApiCustomXmlNode.prototype.GetNodeValue;
+	ApiCustomXmlNode.prototype["GetParent"]       = ApiCustomXmlNode.prototype.GetParent;
+	ApiCustomXmlNode.prototype["GetText"]         = ApiCustomXmlNode.prototype.GetText;
+	ApiCustomXmlNode.prototype["GetXml"]          = ApiCustomXmlNode.prototype.GetXml;
+	ApiCustomXmlNode.prototype["GetXPath"]        = ApiCustomXmlNode.prototype.GetXPath;
+	ApiCustomXmlNode.prototype["SetAttribute"]    = ApiCustomXmlNode.prototype.SetAttribute;
+	ApiCustomXmlNode.prototype["SetNodeValue"]    = ApiCustomXmlNode.prototype.SetNodeValue;
+	ApiCustomXmlNode.prototype["SetText"]         = ApiCustomXmlNode.prototype.SetText;
+	ApiCustomXmlNode.prototype["SetXml"]          = ApiCustomXmlNode.prototype.SetXml;
+	ApiCustomXmlNode.prototype["UpdateAttribute"] = ApiCustomXmlNode.prototype.UpdateAttribute;
+	ApiCustomXmlNode.prototype["GetClassType"]    = ApiCustomXmlNode.prototype.GetClassType;
+
+	ApiCore.prototype["GetClassType"] = ApiCore.prototype.GetClassType;
+	ApiCore.prototype["SetCategory"] = ApiCore.prototype.SetCategory;
+	ApiCore.prototype["GetCategory"] = ApiCore.prototype.GetCategory;
+	ApiCore.prototype["SetContentStatus"] = ApiCore.prototype.SetContentStatus;
+	ApiCore.prototype["GetContentStatus"] = ApiCore.prototype.GetContentStatus;
+	ApiCore.prototype["SetCreated"] = ApiCore.prototype.SetCreated;
+	ApiCore.prototype["GetCreated"] = ApiCore.prototype.GetCreated;
+	ApiCore.prototype["SetCreator"] = ApiCore.prototype.SetCreator;
+	ApiCore.prototype["GetCreator"] = ApiCore.prototype.GetCreator;
+	ApiCore.prototype["SetDescription"] = ApiCore.prototype.SetDescription;
+	ApiCore.prototype["GetDescription"] = ApiCore.prototype.GetDescription;
+	ApiCore.prototype["SetIdentifier"] = ApiCore.prototype.SetIdentifier;
+	ApiCore.prototype["GetIdentifier"] = ApiCore.prototype.GetIdentifier;
+	ApiCore.prototype["SetKeywords"] = ApiCore.prototype.SetKeywords;
+	ApiCore.prototype["GetKeywords"] = ApiCore.prototype.GetKeywords;
+	ApiCore.prototype["SetLanguage"] = ApiCore.prototype.SetLanguage;
+	ApiCore.prototype["GetLanguage"] = ApiCore.prototype.GetLanguage;
+	ApiCore.prototype["SetLastModifiedBy"] = ApiCore.prototype.SetLastModifiedBy;
+	ApiCore.prototype["GetLastModifiedBy"] = ApiCore.prototype.GetLastModifiedBy;
+	ApiCore.prototype["SetLastPrinted"] = ApiCore.prototype.SetLastPrinted;
+	ApiCore.prototype["GetLastPrinted"] = ApiCore.prototype.GetLastPrinted;
+	ApiCore.prototype["SetModified"] = ApiCore.prototype.SetModified;
+	ApiCore.prototype["GetModified"] = ApiCore.prototype.GetModified;
+	ApiCore.prototype["SetRevision"] = ApiCore.prototype.SetRevision;
+	ApiCore.prototype["GetRevision"] = ApiCore.prototype.GetRevision;
+	ApiCore.prototype["SetSubject"] = ApiCore.prototype.SetSubject;
+	ApiCore.prototype["GetSubject"] = ApiCore.prototype.GetSubject;
+	ApiCore.prototype["SetTitle"] = ApiCore.prototype.SetTitle;
+	ApiCore.prototype["GetTitle"] = ApiCore.prototype.GetTitle;
+	ApiCore.prototype["SetVersion"] = ApiCore.prototype.SetVersion;
+	ApiCore.prototype["GetVersion"] = ApiCore.prototype.GetVersion;
+
+	ApiCustomProperties.prototype["GetClassType"] = ApiCustomProperties.prototype.GetClassType;
+	ApiCustomProperties.prototype["Add"] = ApiCustomProperties.prototype.Add;
+	ApiCustomProperties.prototype["Get"] = ApiCustomProperties.prototype.Get;
 
 	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	// Export for internal usage
 	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-	window['AscBuilder'] = window['AscBuilder'] || {};
-	window['AscBuilder'].Api                = Api;
-	window['AscBuilder'].ApiDocumentContent = ApiDocumentContent;
-	window['AscBuilder'].ApiRange           = ApiRange;
-	window['AscBuilder'].ApiDocument        = ApiDocument;
-	window['AscBuilder'].ApiParagraph       = ApiParagraph;
-	window['AscBuilder'].ApiRun             = ApiRun;
-	window['AscBuilder'].ApiHyperlink       = ApiHyperlink;
-	window['AscBuilder'].ApiSection         = ApiSection;
-	window['AscBuilder'].ApiTable           = ApiTable;
-	window['AscBuilder'].ApiTableRow        = ApiTableRow;
-	window['AscBuilder'].ApiTableCell       = ApiTableCell;
-	window['AscBuilder'].ApiStyle           = ApiStyle;
-	window['AscBuilder'].ApiNumbering       = ApiNumbering;
-	window['AscBuilder'].ApiNumberingLevel  = ApiNumberingLevel;
-	window['AscBuilder'].ApiTextPr          = ApiTextPr;
-	window['AscBuilder'].ApiParaPr          = ApiParaPr;
-	window['AscBuilder'].ApiTablePr         = ApiTablePr;
-	window['AscBuilder'].ApiTableRowPr      = ApiTableRowPr;
-	window['AscBuilder'].ApiTableCellPr     = ApiTableCellPr;
-	window['AscBuilder'].ApiTableStylePr    = ApiTableStylePr;
-	window['AscBuilder'].ApiDrawing         = ApiDrawing;
-	window['AscBuilder'].ApiImage           = ApiImage;
-	window['AscBuilder'].ApiShape           = ApiShape;
-	window['AscBuilder'].ApiChart           = ApiChart;
-	window['AscBuilder'].ApiGroup           = ApiGroup;
-	window['AscBuilder'].ApiOleObject       = ApiOleObject;
-	window['AscBuilder'].ApiInlineLvlSdt    = ApiInlineLvlSdt;
-	window['AscBuilder'].ApiBlockLvlSdt     = ApiBlockLvlSdt;
-	window['AscBuilder'].ApiFormBase        = ApiFormBase;
-	window['AscBuilder'].ApiTextForm        = ApiTextForm;
-	window['AscBuilder'].ApiPictureForm     = ApiPictureForm;
-	window['AscBuilder'].ApiDateForm        = ApiDateForm;
-	window['AscBuilder'].ApiComboBoxForm    = ApiComboBoxForm;
-	window['AscBuilder'].ApiCheckBoxForm    = ApiCheckBoxForm;
-	window['AscBuilder'].ApiComplexForm     = ApiComplexForm;
+	window['AscBuilder']                     = window['AscBuilder'] || {};
+	window['AscBuilder'].Api                 = Api;
+	window['AscBuilder'].ApiDocumentContent  = ApiDocumentContent;
+	window['AscBuilder'].ApiRange            = ApiRange;
+	window['AscBuilder'].ApiDocument         = ApiDocument;
+	window['AscBuilder'].ApiParagraph        = ApiParagraph;
+	window['AscBuilder'].ApiRun              = ApiRun;
+	window['AscBuilder'].ApiHyperlink        = ApiHyperlink;
+	window['AscBuilder'].ApiSection          = ApiSection;
+	window['AscBuilder'].ApiTable            = ApiTable;
+	window['AscBuilder'].ApiTableRow         = ApiTableRow;
+	window['AscBuilder'].ApiTableCell        = ApiTableCell;
+	window['AscBuilder'].ApiStyle            = ApiStyle;
+	window['AscBuilder'].ApiNumbering        = ApiNumbering;
+	window['AscBuilder'].ApiNumberingLevel   = ApiNumberingLevel;
+	window['AscBuilder'].ApiTextPr           = ApiTextPr;
+	window['AscBuilder'].ApiParaPr           = ApiParaPr;
+	window['AscBuilder'].ApiTablePr          = ApiTablePr;
+	window['AscBuilder'].ApiTableRowPr       = ApiTableRowPr;
+	window['AscBuilder'].ApiTableCellPr      = ApiTableCellPr;
+	window['AscBuilder'].ApiTableStylePr     = ApiTableStylePr;
+	window['AscBuilder'].ApiDrawing          = ApiDrawing;
+	window['AscBuilder'].ApiImage            = ApiImage;
+	window['AscBuilder'].ApiShape            = ApiShape;
+	window['AscBuilder'].ApiChart            = ApiChart;
+	window['AscBuilder'].ApiGroup            = ApiGroup;
+	window['AscBuilder'].ApiOleObject        = ApiOleObject;
+	window['AscBuilder'].ApiInlineLvlSdt     = ApiInlineLvlSdt;
+	window['AscBuilder'].ApiBlockLvlSdt      = ApiBlockLvlSdt;
+	window['AscBuilder'].ApiFormBase         = ApiFormBase;
+	window['AscBuilder'].ApiTextForm         = ApiTextForm;
+	window['AscBuilder'].ApiPictureForm      = ApiPictureForm;
+	window['AscBuilder'].ApiDateForm         = ApiDateForm;
+	window['AscBuilder'].ApiComboBoxForm     = ApiComboBoxForm;
+	window['AscBuilder'].ApiCheckBoxForm     = ApiCheckBoxForm;
+	window['AscBuilder'].ApiComplexForm      = ApiComplexForm;
+	window['AscBuilder'].ApiCore             = ApiCore;
+	window['AscBuilder'].ApiCustomProperties = ApiCustomProperties;
 	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	// Area for internal usage
 	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -23582,7 +26602,7 @@
 
 	function private_GetLogicDocument()
 	{
-		return editor.WordControl.m_oLogicDocument;
+		return editor && editor.WordControl ? editor.WordControl.m_oLogicDocument : null;
 	}
 	
 	function LoadFont(fontName)
@@ -24158,7 +27178,52 @@
 		}
 		return "unknown";
 	}
-
+	
+	function getSdtCheckBoxPr(pr)
+	{
+		let checkBoxPr = new AscWord.CSdtCheckBoxPr();
+		if (!pr)
+			return checkBoxPr;
+		
+		if (pr["checked"])
+			checkBoxPr.SetChecked(pr["checked"]);
+		if (pr["checkedSymbol"])
+			checkBoxPr.SetCheckedSymbol(pr["checkedSymbol"]);
+		if (pr["uncheckedSymbol"])
+			checkBoxPr.SetUncheckedSymbol(pr["uncheckedSymbol"]);
+		
+		return checkBoxPr;
+	}
+	
+	function getSdtComboBoxPr(list)
+	{
+		let comboBoxPr = new AscWord.CSdtComboBoxPr();
+		
+		if (!list || !Array.isArray(list))
+			return comboBoxPr;
+		
+		list.forEach(function(el) {
+			comboBoxPr.AddItem(el["display"], el["value"]);
+		});
+		
+		return comboBoxPr;
+	}
+	
+	function getSdtDatePickerPr(pr)
+	{
+		let datePickerPr = new AscWord.CSdtDatePickerPr();
+		if (!pr)
+			return datePickerPr;
+		
+		let lcid = Asc.g_oLcidNameToIdMap[pr["lang"]];
+		if (undefined === lcid)
+			lcid = 1033;
+		
+		datePickerPr.SetDateFormat(GetStringParameter(pr["format"], "mm/dd/yyyy"));
+		datePickerPr.SetLangId(lcid);
+		return datePickerPr;
+	}
+	
 	function logError(err) {
 		if (console.error)
 			console.error(err);
@@ -24217,6 +27282,7 @@
 	ApiParagraph.prototype.OnChangeParaPr = function(oApiParaPr)
 	{
 		this.Paragraph.Set_Pr(oApiParaPr.ParaPr);
+		this.ParaPr = this.Paragraph.Pr.Copy();
 		oApiParaPr.ParaPr = this.Paragraph.Pr.Copy();
 	};
 	ApiParagraph.prototype.OnChangeTextPr = function(oApiTextPr)
@@ -24278,6 +27344,7 @@
 	ApiRun.prototype.OnChangeTextPr = function(oApiTextPr)
 	{
 		this.Run.Set_Pr(oApiTextPr.TextPr);
+		this.TextPr = this.Run.Pr.Copy();
 		oApiTextPr.TextPr = this.Run.Pr.Copy();
 	};
 	ApiTable.prototype.private_GetImpl = function()
@@ -24287,6 +27354,7 @@
 	ApiTable.prototype.OnChangeTablePr = function(oApiTablePr)
 	{
 		this.Table.Set_Pr(oApiTablePr.TablePr);
+		this.TablePr = this.Table.Pr.Copy();
 		oApiTablePr.TablePr = this.Table.Pr.Copy();
 	};
 	ApiTable.prototype.private_PrepareTableForActions = function()
@@ -24417,11 +27485,13 @@
 	ApiTableRow.prototype.OnChangeTableRowPr = function(oApiTableRowPr)
 	{
 		this.Row.Set_Pr(oApiTableRowPr.RowPr);
+		this.RowPr = this.Row.Pr.Copy();
 		oApiTableRowPr.RowPr = this.Row.Pr.Copy();
 	};
 	ApiTableCell.prototype.OnChangeTableCellPr = function(oApiTableCellPr)
 	{
 		this.Cell.Set_Pr(oApiTableCellPr.CellPr);
+		this.CellPr = this.Cell.Pr.Copy();
 		oApiTableCellPr.CellPr = this.Cell.Pr.Copy();
 	};
 	ApiTextPr.prototype.private_OnChange = function()
@@ -24506,7 +27576,7 @@
 	};
 	ApiFormBase.prototype.OnChangeTextPr  = function(oApiTextPr)
 	{
-		this.Sdt.Apply_TextPr(oApiTextPr.TextPr);
+		this.Sdt.Apply_TextPr(oApiTextPr.TextPr, undefined, true);
 		oApiTextPr.TextPr = this.Sdt.Pr.TextPr;
 	};
 	ApiFormBase.prototype.OnChangeValue = function()

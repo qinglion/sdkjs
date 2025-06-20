@@ -40,7 +40,7 @@ const allTests = [
 	'cell/spreadsheet-calculation/autoFilterTests.html',
 	'cell/spreadsheet-calculation/UserProtectedRangesTest.html',
 	'cell/spreadsheet-calculation/FormulaTrace.html',
-	'cell/spreadsheet-calculation/GoalSeekTests.html',
+	'cell/spreadsheet-calculation/whatIfAnalysisTests.html',
 	'cell/spreadsheet-calculation/NumFormatParse.html',
 	'cell/spreadsheet-calculation/DataValidationTests.html',
 	'cell/spreadsheet-calculation/conditionalFormattingTests.html',
@@ -81,6 +81,7 @@ const allTests = [
 	'word/merge-documents/mergeDocuments.html',
 	'word/math-autocorrection/math-autocorrection.html',
 	'word/change-case/change-case.html',
+	'word/builder/api/replace-text-smart.html',
 
 	'cell/shortcuts/shortcuts.html',
 	'slide/shortcuts/shortcuts.html',

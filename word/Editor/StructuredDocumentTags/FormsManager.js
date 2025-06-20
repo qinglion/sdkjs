@@ -132,6 +132,8 @@
 		let isPicture    = oPr && oPr.Picture;
 		let isRadioGroup = oPr && oPr.RadioGroup;
 		let isComplex    = oPr && oPr.Complex;
+		let isDateTime   = oPr && oPr.DateTime;
+		let isSignature  = oPr && oPr.Signature;
 
 		let arrKeys  = [];
 		let arrForms = this.GetAllForms();
@@ -150,7 +152,9 @@
 				|| (isComboBox && oForm.IsComboBox())
 				|| (isDropDown && oForm.IsDropDownList())
 				|| (isCheckBox && oForm.IsCheckBox() && !oForm.IsRadioButton())
-				|| (isPicture && oForm.IsPicture()))
+				|| (isPicture && oForm.IsPicture() && !oForm.IsSignatureForm())
+				|| (isDateTime && oForm.IsDatePicker()
+				|| (isSignature && oForm.IsSignatureForm())))
 			{
 				sKey = oForm.GetFormKey();
 			}
@@ -204,11 +208,18 @@
 	};
 	/**
 	 * Все ли обязательные поля заполнены
-	 * @param {string} [roleName]
+	 * @param {boolean} [checkAll=false]
 	 * @returns {boolean}
 	 */
-	CFormsManager.prototype.IsAllRequiredFormsFilled = function(roleName)
+	CFormsManager.prototype.IsAllRequiredFormsFilled = function(checkAll)
 	{
+		let roleName = null;
+		if (true !== checkAll)
+		{
+			let oform = this.LogicDocument ? this.LogicDocument.GetOFormDocument() : null;
+			roleName = oform ? oform.getCurrentRole() : null;
+		}
+		
 		// TODO: Сейчас у нас здесь идет проверка и на правильность заполнения форм с форматом
 		// Возможно стоит разделить на 2 разные проверки и добавить одну общую проверку на правильность
 		// заполненности формы, куда будут входить обе предыдущие проверки
@@ -281,6 +292,23 @@
 			this.OnChangePictureForm(oForm);
 		else
 			this.OnChangeTextForm(oForm);
+	};
+	/**
+	 * Sync all specific form properties for forms with the same key
+	 * @param form
+	 */
+	CFormsManager.prototype.OnChangeFormPr = function(form)
+	{
+		let userMaster = this.GetUserMasterByForm(form);
+		let allForms   = this.GetAllFormsByKey(form.GetFormKey(), form.GetSpecificType());
+		for (let i = 0, count = allForms.length; i < count; ++i)
+		{
+			let _form = allForms[i];
+			if (_form === form || userMaster !== this.GetUserMasterByForm(_form))
+				continue;
+			
+			_form.SyncFormPrWithSameKey(form);
+		}
 	};
 	/**
 	 * Проверяем корректность изменения формы
